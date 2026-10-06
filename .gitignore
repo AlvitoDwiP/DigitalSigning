@@ -1,0 +1,78 @@
+# ==========================================
+# macOS System Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================================
+# Python & Virtual Environments
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.python-version
+
+# Virtual Environment Folders
+.venv/
+venv/
+ENV/
+env/
+
+# ==========================================
+# IDE & Editor Settings
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ==========================================
+# Environment & Secret Files
+# ==========================================
+.env
+.env.*
+*.env
+
+# ==========================================
+# PKI Secrets, Private Keys & Certificates
+# (Mencegah kebocoran Kunci Rahasia & .p12)
+# ==========================================
+# Private Keys & Request Files
+*.key
+*.pem
+*.csr
+private/
+**/root/private/*
+**/intermediate/private/*
+
+# PKCS#12 & PFX Bundles
+*.p12
+*.pfx
+
+# Issued User Certificates & Folders
+pki/issued/
+pki/bk.issued/
+pki/uploads/
+pki/p12/
+sign-api(well3)/p12/
+sign-api(well3)/bk.p12/
+
+# Kecualikan sertifikat CA Publik (Root & Intermediate CA certs aman dipush)
+!pki/root/certs/root-ca.crt
+!pki/intermediate/certs/intermediate-ca.crt
+!pki/intermediate/certs/ca-chain.crt
+
+# ==========================================
+# Temporary Files & Logs
+# ==========================================
+*.tmp
+*.log
+uploads/

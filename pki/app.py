@@ -51,7 +51,7 @@ def bangkitkan_single(
 
 
     result = subprocess.run(
-        [str(SCRIPT_SINGLE)],
+        ["bash", str(SCRIPT_SINGLE)],
         input=stdin_data,
         capture_output=True,
         text=True
@@ -81,7 +81,7 @@ def bangkitkan_bulk(
         f.write(file.file.read())
 
     result = subprocess.run(
-        [str(SCRIPT_BULK), str(csv_path)],
+        ["bash", str(SCRIPT_BULK), str(csv_path)],
         capture_output=True,
         text=True
     )

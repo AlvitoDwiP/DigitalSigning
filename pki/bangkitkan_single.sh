@@ -4,8 +4,10 @@ umask 077
 trap 'echo "❌ Error pada baris $LINENO: $BASH_COMMAND" >&2' ERR
 
 # ==================== DEFAULTS ====================
-H="${H:-/home/sysadmin}"
-P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-/home/sysadmin/sign-api(well3)/p12}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_H="$(cd "$SCRIPT_DIR/.." && pwd)"
+H="${H:-$DEFAULT_H}"
+P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api(well3)/p12}"
 
 DEFAULT_ORG_NAME="Universitas B"
 DEFAULT_OU="TTE"
@@ -17,6 +19,7 @@ INTER_CA_PASS="InterPass!ChangeMe123"
 
 # ==================== CA PATH ====================
 INT_DIR="$H/pki/intermediate"
+export INT_DIR
 INT_CNF="$INT_DIR/openssl.cnf"
 CHAIN="$INT_DIR/certs/ca-chain.crt"
 EXTFILE="$INT_DIR/pdfsign-ext.cnf"

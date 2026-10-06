@@ -3,8 +3,11 @@ set -Eeo pipefail
 umask 077
 trap 'echo "❌ ERROR di baris $LINENO: $BASH_COMMAND" >&2' ERR
 
-H="${H:-/home/sysadmin}"
-P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-/home/sysadmin/sign-api(well3)/p12}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_H="$(cd "$SCRIPT_DIR/.." && pwd)"
+H="${H:-$DEFAULT_H}"
+P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api(well3)/p12}"
+export INT_DIR="$H/pki/intermediate"
 DEFAULT_DAYS="${DEFAULT_DAYS:-730}"
 CONTINUE_ON_ERROR="${CONTINUE_ON_ERROR:-1}"
 

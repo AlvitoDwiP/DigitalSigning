@@ -2,19 +2,19 @@
 default_ca = CA_default
 
 [ CA_default ]
-dir               = /home/sysadmin/pki/intermediate
-certificate       = /home/sysadmin/pki/intermediate/certs/intermediate-ca.crt
-private_key       = /home/sysadmin/pki/intermediate/private/intermediate-ca.key
-new_certs_dir     = /home/sysadmin/pki/intermediate/newcerts
-database          = /home/sysadmin/pki/intermediate/index.txt
-serial            = /home/sysadmin/pki/intermediate/serial
-crlnumber         = /home/sysadmin/pki/intermediate/crlnumber
+dir               = $ENV::INT_DIR
+certificate       = $dir/certs/intermediate-ca.crt
+private_key       = $dir/private/intermediate-ca.key
+new_certs_dir     = $dir/newcerts
+database          = $dir/index.txt
+serial            = $dir/serial
+crlnumber         = $dir/crlnumber
 default_md        = sha256
 policy            = policy_loose
 default_days      = 1825
 unique_subject    = no
-crl_dir           = /home/sysadmin/pki/intermediate/crl
-crl               = /home/sysadmin/pki/intermediate/crl/intermediate-ca.crl
+crl_dir           = $dir/crl
+crl               = $dir/crl/intermediate-ca.crl
 x509_extensions   = v3_intermediate_ca
 
 [ policy_loose ]

@@ -10,8 +10,10 @@ trap 'echo "❌ ERROR (exit $?) di baris $LINENO: $BASH_COMMAND" >&2' ERR
 [[ "${DEBUG:-0}" == "1" ]] && set -x
 
 # ------------------ DEFAULTS (bisa dioverride via ENV) ------------------
-H="${H:-/home/sysadmin}"
-P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-/home/sysadmin/sign-api(well3)/p12}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_H="$(cd "$SCRIPT_DIR/.." && pwd)"
+H="${H:-$DEFAULT_H}"
+P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api(well3)/p12}"
 DELIM="${DELIM:-,}"                     # ',', ';', atau $'\t'
 OVERWRITE="${OVERWRITE:-1}"             # 1 timpa, 0 skip
 CONTINUE_ON_ERROR="${CONTINUE_ON_ERROR:-1}"
@@ -21,6 +23,7 @@ INTER_CA_PASS="InterPass!ChangeMe123"   # hardcoded sesuai permintaan
 
 # Lokasi CA
 INT_DIR="$H/pki/intermediate"
+export INT_DIR="$INT_DIR"
 INT_CNF="$INT_DIR/openssl.cnf"
 CHAIN="$INT_DIR/certs/ca-chain.crt"
 EXTFILE="$INT_DIR/pdfsign-ext.cnf"

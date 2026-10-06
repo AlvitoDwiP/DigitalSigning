@@ -32,13 +32,17 @@ from endesive.pdf import cms
 # =========================
 # CONFIG
 # =========================
+_BASE_DIR = Path(__file__).resolve().parent
+_DEFAULT_P12 = _BASE_DIR / "p12"
+_SYSADMIN_P12 = Path("/home/sysadmin/sign-api(well3)/p12")
+
 CONFIG = {
-    "ALLOWED_P12_DIR": "/home/sysadmin/sign-api(well3)/p12",
-    "API_KEY": "rahasia-super",
+    "ALLOWED_P12_DIR": os.getenv("ALLOWED_P12_DIR", str(_SYSADMIN_P12 if _SYSADMIN_P12.is_dir() else _DEFAULT_P12)),
+    "API_KEY": os.getenv("API_KEY", "rahasia-super"),
     "ENABLE_CERT_LIST": True,
-    "MAX_UPLOAD_BYTES": 20 * 1024 * 1024,  # 20 MB
+    "MAX_UPLOAD_BYTES": int(os.getenv("MAX_UPLOAD_BYTES", 20 * 1024 * 1024)),  # 20 MB
     # Output filename: "plain" | "short3" (default) | "unique"
-    "FILENAME_STRATEGY": "short3",
+    "FILENAME_STRATEGY": os.getenv("FILENAME_STRATEGY", "short3"),
     "ALLOW_EMPTY_P12_PASSWORD": False,
 }
 
