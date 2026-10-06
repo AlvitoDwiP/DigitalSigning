@@ -338,3 +338,4 @@ V	280927085429Z		114E	unknown	/C=ID/O=Universitas Muria Kudus/CN=Suparnyo/OU=Uni
 V	280929043833Z		114F	unknown	/C=ID/O=Institut Rahmaniyah Sekayu/CN=Wandi Subroto/OU=Institut Rahmaniyah Sekayu
 V	281001012027Z		1150	unknown	/C=ID/O=Mahkamah Konstitusi/CN=Alvito/OU=PUSTIK
 V	281005022027Z		1151	unknown	/C=ID/O=Universitas Test/CN=Budi Santoso/OU=TTE
+V	281005082240Z		1152	unknown	/C=ID/O=Org/CN=Test User/OU=OU

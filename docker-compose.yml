@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: digital_signature_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: digital_signature_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d digital_signature_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: digital_signature_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgrespassword@postgres:5432/digital_signature_db
+      - SECRET_KEY=dev-secret-key-digital-signature-platform-2026
+      - PKI_SERVICE_URL=http://pki-service:8001
+      - PKI_SERVICE_TOKEN=dev-pki-service-token-2026
+      - ENVIRONMENT=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pki-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pki-service
+    container_name: digital_signature_pki_service
+    restart: always
+    ports:
+      - "8001:8001"
+    environment:
+      - PKI_SERVICE_TOKEN=dev-pki-service-token-2026
+    volumes:
+      - ./pki:/app/pki
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: digital_signature_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

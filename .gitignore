@@ -76,3 +76,9 @@ sign-api(well3)/bk.p12/
 *.tmp
 *.log
 uploads/
+
+# Node.js & Frontend Build
+node_modules/
+dist/
+.npm
+
