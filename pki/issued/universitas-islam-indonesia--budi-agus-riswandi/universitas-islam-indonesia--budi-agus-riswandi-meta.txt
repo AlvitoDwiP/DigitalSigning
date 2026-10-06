@@ -1,0 +1,9 @@
+Person       : Budi Agus Riswandi
+Email        : budiagus@uii.ac.id
+NIK          : 3404122505750019
+Organisation : Universitas Islam Indonesia
+Org Unit     : Universitas Islam Indonesia
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-islam-indonesia--budi-agus-riswandi
+Files        : universitas-islam-indonesia--budi-agus-riswandi.key | universitas-islam-indonesia--budi-agus-riswandi.csr | universitas-islam-indonesia--budi-agus-riswandi.crt | universitas-islam-indonesia--budi-agus-riswandi.pfx | 3404122505750019.p12
+IssuedAt-UTC : 2026-02-02T08:30:30Z

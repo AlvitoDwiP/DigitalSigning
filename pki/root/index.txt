@@ -1,0 +1,1 @@
+V	301019010500Z		1000	unknown	/C=ID/ST=DKI Jakarta/O=PUSTIK MKRI/CN=PUSTIK MKRI Document Signing CA 1

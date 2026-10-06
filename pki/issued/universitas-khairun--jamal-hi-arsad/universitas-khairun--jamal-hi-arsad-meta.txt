@@ -1,0 +1,9 @@
+Person       : Jamal Hi. Arsad
+Email        : Jamal.arsad@unkhair.ac.id
+NIK          : 8271021608690005
+Organisation : Universitas Khairun
+Org Unit     : Universitas Khairun
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-khairun--jamal-hi-arsad
+Files        : universitas-khairun--jamal-hi-arsad.key | universitas-khairun--jamal-hi-arsad.csr | universitas-khairun--jamal-hi-arsad.crt | universitas-khairun--jamal-hi-arsad.pfx | 8271021608690005.p12
+IssuedAt-UTC : 2026-02-02T08:30:38Z

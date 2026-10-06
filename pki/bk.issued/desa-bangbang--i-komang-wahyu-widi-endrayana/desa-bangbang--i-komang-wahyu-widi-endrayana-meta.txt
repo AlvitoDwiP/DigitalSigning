@@ -1,0 +1,10 @@
+Person       : I Komang Wahyu Widi Endrayana
+Email        : komangwidi31121991@gmail.com
+Organisation : Desa Bangbang
+Org Unit     : TTE
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/desa-bangbang--i-komang-wahyu-widi-endrayana
+Files        : desa-bangbang--i-komang-wahyu-widi-endrayana.key | desa-bangbang--i-komang-wahyu-widi-endrayana.csr | desa-bangbang--i-komang-wahyu-widi-endrayana.crt | desa-bangbang--i-komang-wahyu-widi-endrayana.pfx | desa-bangbang--i-komang-wahyu-widi-endrayana-compat.p12
+PFX name     : I Komang Wahyu Widi Endrayana – Desa Bangbang (TTE)
+PFX pass     : komang
+IssuedAt-UTC : 2025-10-20T03:25:07Z

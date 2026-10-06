@@ -1,0 +1,9 @@
+Person       : Hamzah Halim
+Email        : anchapunggawa@gmail.com
+NIK          : 7371131501740005
+Organisation : Universitas Hasanudin
+Org Unit     : Universitas Hasanudin
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-hasanudin--hamzah-halim
+Files        : universitas-hasanudin--hamzah-halim.key | universitas-hasanudin--hamzah-halim.csr | universitas-hasanudin--hamzah-halim.crt | universitas-hasanudin--hamzah-halim.pfx | 7371131501740005.p12
+IssuedAt-UTC : 2026-04-21T08:09:08Z

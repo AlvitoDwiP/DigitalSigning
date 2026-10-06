@@ -1,0 +1,9 @@
+Person       : Yohanes Mariano Dangku
+Email        : yohanes.mariano@mkri.id
+NIK          : 5315051803730001
+Organisation : Universitas Katolik Indonesia Santu Paulus
+Org Unit     : Universitas Katolik Indonesia Santu Paulus
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-katolik-indonesia-santu-paulus--yohanes-mariano-dangku
+Files        : universitas-katolik-indonesia-santu-paulus--yohanes-mariano-dangku.key | universitas-katolik-indonesia-santu-paulus--yohanes-mariano-dangku.csr | universitas-katolik-indonesia-santu-paulus--yohanes-mariano-dangku.crt | universitas-katolik-indonesia-santu-paulus--yohanes-mariano-dangku.pfx | 5315051803730001.p12
+IssuedAt-UTC : 2026-01-28T07:38:48Z

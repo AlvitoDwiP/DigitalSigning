@@ -1,0 +1,9 @@
+Person       : Hamdani
+Email        : hamdany120r@gmail.com
+Organisation : Universitas Balikpapan
+Org Unit     : TTE
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-balikpapan--hamdani
+Files        : universitas-balikpapan--hamdani.key | universitas-balikpapan--hamdani.csr | universitas-balikpapan--hamdani.crt | universitas-balikpapan--hamdani.pfx | universitas-balikpapan--hamdani-compat.p12
+PFX name     : Hamdani – Universitas Balikpapan (TTE)
+IssuedAt-UTC : 2025-10-20T03:07:05Z

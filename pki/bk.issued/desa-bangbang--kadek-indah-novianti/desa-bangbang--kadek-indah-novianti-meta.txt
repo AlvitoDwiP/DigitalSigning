@@ -1,0 +1,10 @@
+Person       : Kadek Indah Novianti
+Email        : indah_archu@yahoo.com
+Organisation : Desa Bangbang
+Org Unit     : TTE
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/desa-bangbang--kadek-indah-novianti
+Files        : desa-bangbang--kadek-indah-novianti.key | desa-bangbang--kadek-indah-novianti.csr | desa-bangbang--kadek-indah-novianti.crt | desa-bangbang--kadek-indah-novianti.pfx | desa-bangbang--kadek-indah-novianti-compat.p12
+PFX name     : Kadek Indah Novianti – Desa Bangbang (TTE)
+PFX pass     : indah
+IssuedAt-UTC : 2025-10-20T03:24:34Z

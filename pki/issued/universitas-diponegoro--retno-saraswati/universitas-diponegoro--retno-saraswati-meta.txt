@@ -1,0 +1,9 @@
+Person       : Retno Saraswati
+Email        : saraswatiretno@yahoo.co.id
+NIK          : 3374155911670001
+Organisation : Universitas Diponegoro
+Org Unit     : Universitas Diponegoro
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-diponegoro--retno-saraswati
+Files        : universitas-diponegoro--retno-saraswati.key | universitas-diponegoro--retno-saraswati.csr | universitas-diponegoro--retno-saraswati.crt | universitas-diponegoro--retno-saraswati.pfx | 3374155911670001.p12
+IssuedAt-UTC : 2026-02-19T03:52:56Z

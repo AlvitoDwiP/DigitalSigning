@@ -1,0 +1,9 @@
+Person       : Anggalana
+Email        : anggalana@ubl.ac.id
+NIK          : 1603052906870004
+Organisation : Universitas Bandar Lampung
+Org Unit     : Universitas Bandar Lampung
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-bandar-lampung--anggalana
+Files        : universitas-bandar-lampung--anggalana.key | universitas-bandar-lampung--anggalana.csr | universitas-bandar-lampung--anggalana.crt | universitas-bandar-lampung--anggalana.pfx | 1603052906870004.p12
+IssuedAt-UTC : 2026-02-02T08:30:26Z

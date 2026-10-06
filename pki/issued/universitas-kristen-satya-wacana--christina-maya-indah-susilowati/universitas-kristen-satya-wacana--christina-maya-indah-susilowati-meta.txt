@@ -1,0 +1,9 @@
+Person       : Christina Maya Indah Susilowati
+Email        : christina.maya@uksw.edu
+NIK          : 3373014812720002
+Organisation : Universitas Kristen Satya Wacana
+Org Unit     : Universitas Kristen Satya Wacana
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-kristen-satya-wacana--christina-maya-indah-susilowati
+Files        : universitas-kristen-satya-wacana--christina-maya-indah-susilowati.key | universitas-kristen-satya-wacana--christina-maya-indah-susilowati.csr | universitas-kristen-satya-wacana--christina-maya-indah-susilowati.crt | universitas-kristen-satya-wacana--christina-maya-indah-susilowati.pfx | 3373014812720002.p12
+IssuedAt-UTC : 2026-01-28T07:45:05Z

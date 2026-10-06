@@ -1,0 +1,9 @@
+Person       : Achmad Faishal
+Email        : achmad.faishal@ulm.ac.id
+NIK          : 6371041506750015
+Organisation : Universitas Lambung Mangkurat
+Org Unit     : Universitas Lambung Mangkurat
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-lambung-mangkurat--achmad-faishal
+Files        : universitas-lambung-mangkurat--achmad-faishal.key | universitas-lambung-mangkurat--achmad-faishal.csr | universitas-lambung-mangkurat--achmad-faishal.crt | universitas-lambung-mangkurat--achmad-faishal.pfx | 6371041506750015.p12
+IssuedAt-UTC : 2026-02-02T08:30:39Z

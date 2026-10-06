@@ -1,0 +1,9 @@
+Person       : Riris Ardhanariswari
+Email        : riris.ardhanariswari@unsoed.ac.id
+NIK          : 3302224505730002
+Organisation : Universitas Jenderal Soedirman
+Org Unit     : Universitas Jenderal Soedirman
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-jenderal-soedirman--riris-ardhanariswari
+Files        : universitas-jenderal-soedirman--riris-ardhanariswari.key | universitas-jenderal-soedirman--riris-ardhanariswari.csr | universitas-jenderal-soedirman--riris-ardhanariswari.crt | universitas-jenderal-soedirman--riris-ardhanariswari.pfx | 3302224505730002.p12
+IssuedAt-UTC : 2026-02-20T06:08:10Z

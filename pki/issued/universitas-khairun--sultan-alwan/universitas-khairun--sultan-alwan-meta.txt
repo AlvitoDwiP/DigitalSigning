@@ -1,0 +1,9 @@
+Person       : Sultan Alwan
+Email        : alwansultan74@gmail.com
+NIK          : 8271020107730109
+Organisation : Universitas Khairun
+Org Unit     : Universitas Khairun
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-khairun--sultan-alwan
+Files        : universitas-khairun--sultan-alwan.key | universitas-khairun--sultan-alwan.csr | universitas-khairun--sultan-alwan.crt | universitas-khairun--sultan-alwan.pfx | 8271020107730109.p12
+IssuedAt-UTC : 2026-02-18T01:19:26Z

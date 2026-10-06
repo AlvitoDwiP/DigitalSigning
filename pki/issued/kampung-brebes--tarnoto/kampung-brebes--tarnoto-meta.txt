@@ -1,0 +1,11 @@
+Person       : Tarnoto
+Email        : tarnoto@mkri.id
+NIK          : 3333333333333333
+Organisation : Kampung Brebes
+Org Unit     : Kampung Brebes
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/kampung-brebes--tarnoto
+Files        : kampung-brebes--tarnoto.key | kampung-brebes--tarnoto.csr | kampung-brebes--tarnoto.crt | kampung-brebes--tarnoto.pfx | 3333333333333333.p12
+PFX name     : Tarnoto – Kampung Brebes (TTE)
+PFX pass     : 12345678
+IssuedAt-UTC : 2025-11-18T07:13:35Z

@@ -1,0 +1,107 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 4103 (0x1007)
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=ID, ST=DKI Jakarta, O=PUSTIK MKRI, CN=PUSTIK MKRI Document Signing CA 1
+        Validity
+            Not Before: Oct 20 03:33:10 2025 GMT
+            Not After : Oct 20 03:33:10 2027 GMT
+        Subject: C=ID, O=Desa Bangbang, CN=I Kadek Artawan, OU=TTE
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (3072 bit)
+                Modulus:
+                    00:b6:72:49:42:08:87:fc:fd:9b:20:ff:f5:59:dd:
+                    9d:8a:8b:c9:77:1e:55:ad:76:66:ec:67:41:5c:6e:
+                    4f:11:e4:52:30:ef:da:2f:bf:a5:e8:5c:85:c0:2a:
+                    ec:7f:43:3d:b3:61:ba:7a:d5:d0:93:77:da:9a:c5:
+                    2b:22:44:3c:86:14:fd:7f:18:0d:24:97:f3:58:3d:
+                    17:e9:2f:9c:a4:d9:f3:47:2d:64:7f:1d:ff:1b:12:
+                    44:a5:8e:29:fb:2c:1b:7c:1d:95:49:29:8c:28:b5:
+                    72:77:db:6f:53:67:22:d9:20:e2:5a:39:ad:b2:2f:
+                    71:b8:92:b5:34:bc:d4:f6:82:bb:9b:e3:79:50:44:
+                    87:5b:c5:74:b5:37:9f:a5:81:bb:fc:69:80:93:56:
+                    b6:93:fe:b4:45:b6:1b:57:3a:0d:43:87:2c:08:06:
+                    d3:b2:f3:1e:53:51:4c:3a:dd:3d:0c:4c:e6:26:24:
+                    f9:db:ad:f5:09:41:e8:40:1a:ba:85:14:59:52:e3:
+                    aa:d4:20:75:62:47:51:96:c2:78:bc:dd:ec:45:8e:
+                    78:6c:4c:81:32:32:9a:15:23:5f:c2:14:a6:39:0f:
+                    f6:60:e8:61:a1:d5:08:32:1a:9e:96:9d:2a:3a:35:
+                    ed:db:1d:97:f4:e3:33:76:b2:29:87:fa:fe:6a:1a:
+                    20:80:e2:64:ec:0d:b7:14:4b:9d:79:a3:3a:e6:b8:
+                    5c:25:fa:ea:03:d4:54:1f:e2:c8:fc:ad:d8:f8:8c:
+                    38:93:14:b4:51:83:99:3b:a9:54:55:69:b6:34:59:
+                    73:b0:ba:9f:22:50:28:21:d7:6d:47:91:e9:d3:57:
+                    f0:67:35:98:73:cf:88:32:39:10:78:79:3a:04:8e:
+                    7e:d0:ad:3c:ad:a0:1d:17:81:44:59:b1:47:e2:fd:
+                    ad:33:07:12:57:e2:8c:48:ed:76:47:31:bb:3b:bf:
+                    9d:d9:2e:b0:51:a2:a5:3b:da:f4:dc:87:02:95:a2:
+                    c8:03:4c:28:25:db:92:79:2f:61
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Key Usage: critical
+                Digital Signature, Non Repudiation
+            X509v3 Extended Key Usage: 
+                E-mail Protection, TLS Web Client Authentication
+            X509v3 Subject Key Identifier: 
+                87:EE:21:5F:84:E7:10:4F:E2:A1:1A:B0:25:F6:1D:B7:0C:9C:85:5A
+            X509v3 Authority Key Identifier: 
+                DD:0E:9B:B6:E3:E4:1F:F2:AF:77:C1:39:1B:7F:7F:5C:37:4C:51:11
+            X509v3 Subject Alternative Name: 
+                <EMPTY>
+
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        29:a3:cd:e2:41:38:7f:9e:49:c7:25:93:dc:5e:0f:ff:1d:ea:
+        58:90:45:02:ab:73:87:26:c8:23:28:0a:79:db:67:77:8a:bd:
+        f9:5d:16:c2:29:02:74:e4:76:80:b8:2d:fa:76:66:89:36:6e:
+        c4:c8:a3:92:4b:80:ba:39:94:34:e0:ad:2c:c0:10:d0:a3:e2:
+        65:f0:7c:89:52:81:2e:50:15:6f:a1:a8:cd:00:23:1a:42:56:
+        78:4f:d5:90:e6:65:08:2c:9b:ed:f5:3b:1f:c8:55:92:a0:a9:
+        5d:06:fd:16:38:4e:f6:1c:98:e3:ce:86:64:cb:90:8b:04:59:
+        31:06:5d:39:5a:82:5b:ea:bc:ec:16:9c:83:8b:a0:7c:0b:1a:
+        86:18:8f:5f:6d:b5:ad:a7:9d:e1:7b:0b:ba:8d:8e:ab:a1:e3:
+        d5:c2:7f:ea:68:98:4a:b5:06:08:9e:c7:ef:58:bc:a7:09:48:
+        64:4b:c4:d7:67:81:75:f0:4f:67:32:ac:a9:52:b6:94:df:d9:
+        07:f0:4c:ee:ea:51:73:fa:ef:96:83:4b:e1:dc:76:f6:44:f1:
+        d4:ff:c1:f7:ef:3d:1f:2e:b3:cc:9f:16:78:54:48:e5:60:4e:
+        1c:03:f5:31:cd:92:ec:ce:ea:44:11:f1:54:b9:55:b0:db:fa:
+        51:7d:81:62:57:69:b7:26:ac:c6:95:d2:82:ed:01:47:23:e8:
+        eb:01:74:4f:2e:5f:2a:2e:c0:8a:ce:66:4e:10:9e:64:93:cb:
+        a8:98:ae:70:5f:29:54:8e:a3:ae:83:ff:71:c5:01:f2:77:7c:
+        ea:99:9a:51:3c:80:af:ca:86:09:96:d8:c4:58:41:7c:ef:97:
+        4f:72:f6:5f:bf:15:0e:f3:2a:99:fe:2d:e6:80:80:b9:82:35:
+        2c:3c:0c:e1:2a:6d:b5:a1:e5:b2:16:89:1c:05:24:c3:57:23:
+        2f:0a:03:11:7d:b7:6c:74:f1:f8:27:f4:04:60:4a:b8:e8:ec:
+        ff:a3:10:f0:b0:19
+-----BEGIN CERTIFICATE-----
+MIIEujCCAyKgAwIBAgICEAcwDQYJKoZIhvcNAQELBQAwZTELMAkGA1UEBhMCSUQx
+FDASBgNVBAgMC0RLSSBKYWthcnRhMRQwEgYDVQQKDAtQVVNUSUsgTUtSSTEqMCgG
+A1UEAwwhUFVTVElLIE1LUkkgRG9jdW1lbnQgU2lnbmluZyBDQSAxMB4XDTI1MTAy
+MDAzMzMxMFoXDTI3MTAyMDAzMzMxMFowTTELMAkGA1UEBhMCSUQxFjAUBgNVBAoM
+DURlc2EgQmFuZ2JhbmcxGDAWBgNVBAMMD0kgS2FkZWsgQXJ0YXdhbjEMMAoGA1UE
+CwwDVFRFMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAtnJJQgiH/P2b
+IP/1Wd2diovJdx5VrXZm7GdBXG5PEeRSMO/aL7+l6FyFwCrsf0M9s2G6etXQk3fa
+msUrIkQ8hhT9fxgNJJfzWD0X6S+cpNnzRy1kfx3/GxJEpY4p+ywbfB2VSSmMKLVy
+d9tvU2ci2SDiWjmtsi9xuJK1NLzU9oK7m+N5UESHW8V0tTefpYG7/GmAk1a2k/60
+RbYbVzoNQ4csCAbTsvMeU1FMOt09DEzmJiT52631CUHoQBq6hRRZUuOq1CB1YkdR
+lsJ4vN3sRY54bEyBMjKaFSNfwhSmOQ/2YOhhodUIMhqelp0qOjXt2x2X9OMzdrIp
+h/r+ahoggOJk7A23FEudeaM65rhcJfrqA9RUH+LI/K3Y+Iw4kxS0UYOZO6lUVWm2
+NFlzsLqfIlAoIddtR5Hp01fwZzWYc8+IMjkQeHk6BI5+0K08raAdF4FEWbFH4v2t
+MwcSV+KMSO12RzG7O7+d2S6wUaKlO9r03IcClaLIA0woJduSeS9hAgMBAAGjgYsw
+gYgwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCBsAwHQYDVR0lBBYwFAYIKwYB
+BQUHAwQGCCsGAQUFBwMCMB0GA1UdDgQWBBSH7iFfhOcQT+KhGrAl9h23DJyFWjAf
+BgNVHSMEGDAWgBTdDpu24+Qf8q93wTkbf39cN0xRETAJBgNVHREEAjAAMA0GCSqG
+SIb3DQEBCwUAA4IBgQApo83iQTh/nknHJZPcXg//HepYkEUCq3OHJsgjKAp522d3
+ir35XRbCKQJ05HaAuC36dmaJNm7EyKOSS4C6OZQ04K0swBDQo+Jl8HyJUoEuUBVv
+oajNACMaQlZ4T9WQ5mUILJvt9TsfyFWSoKldBv0WOE72HJjjzoZky5CLBFkxBl05
+WoJb6rzsFpyDi6B8CxqGGI9fbbWtp53hewu6jY6roePVwn/qaJhKtQYInsfvWLyn
+CUhkS8TXZ4F18E9nMqypUraU39kH8Ezu6lFz+u+Wg0vh3Hb2RPHU/8H37z0fLrPM
+nxZ4VEjlYE4cA/UxzZLszupEEfFUuVWw2/pRfYFiV2m3JqzGldKC7QFHI+jrAXRP
+Ll8qLsCKzmZOEJ5kk8uomK5wXylUjqOug/9xxQHyd3zqmZpRPICvyoYJltjEWEF8
+75dPcvZfvxUO8yqZ/i3mgIC5gjUsPAzhKm21oeWyFokcBSTDVyMvCgMRfbdsdPH4
+J/QEYEq46Oz/oxDwsBk=
+-----END CERTIFICATE-----

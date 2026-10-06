@@ -1,0 +1,9 @@
+Person       : Kus Rizkianto
+Email        : fhupstegal@gmail.com
+NIK          : 3328150906850010
+Organisation : Universitas Pancasakti Tegal
+Org Unit     : Universitas Pancasakti Tegal
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-pancasakti-tegal--kus-rizkianto
+Files        : universitas-pancasakti-tegal--kus-rizkianto.key | universitas-pancasakti-tegal--kus-rizkianto.csr | universitas-pancasakti-tegal--kus-rizkianto.crt | universitas-pancasakti-tegal--kus-rizkianto.pfx | 3328150906850010.p12
+IssuedAt-UTC : 2026-01-27T04:57:24Z

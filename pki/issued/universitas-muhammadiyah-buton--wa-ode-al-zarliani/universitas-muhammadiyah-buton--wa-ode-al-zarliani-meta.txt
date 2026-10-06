@@ -1,0 +1,11 @@
+Person       : Wa Ode Al Zarliani
+Email        : wd.alzarliani@umbuton.ac.id
+NIK          : 7472014711740001
+Organisation : Universitas Muhammadiyah Buton
+Org Unit     : Universitas Muhammadiyah Buton
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-muhammadiyah-buton--wa-ode-al-zarliani
+Files        : universitas-muhammadiyah-buton--wa-ode-al-zarliani.key | universitas-muhammadiyah-buton--wa-ode-al-zarliani.csr | universitas-muhammadiyah-buton--wa-ode-al-zarliani.crt | universitas-muhammadiyah-buton--wa-ode-al-zarliani.pfx | 7472014711740001.p12
+PFX name     : Wa Ode Al Zarliani – Universitas Muhammadiyah Buton (TTE)
+PFX pass     : 12345678
+IssuedAt-UTC : 2025-12-16T03:37:00Z

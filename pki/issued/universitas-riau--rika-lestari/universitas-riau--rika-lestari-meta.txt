@@ -1,0 +1,9 @@
+Person       : Rika Lestari
+Email        : rika.lestari@lecturer.unri.ac.id
+NIK          : 1471084505800001
+Organisation : Universitas Riau
+Org Unit     : Universitas Riau
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-riau--rika-lestari
+Files        : universitas-riau--rika-lestari.key | universitas-riau--rika-lestari.csr | universitas-riau--rika-lestari.crt | universitas-riau--rika-lestari.pfx | 1471084505800001.p12
+IssuedAt-UTC : 2026-01-28T00:47:45Z

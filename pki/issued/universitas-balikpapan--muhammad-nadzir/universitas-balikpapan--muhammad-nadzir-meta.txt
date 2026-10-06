@@ -1,0 +1,9 @@
+Person       : Muhammad Nadzir
+Email        : caknadzir@uniba-bpn.ac.id
+NIK          : 6471041508770007
+Organisation : Universitas Balikpapan
+Org Unit     : Universitas Balikpapan
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-balikpapan--muhammad-nadzir
+Files        : universitas-balikpapan--muhammad-nadzir.key | universitas-balikpapan--muhammad-nadzir.csr | universitas-balikpapan--muhammad-nadzir.crt | universitas-balikpapan--muhammad-nadzir.pfx | 6471041508770007.p12
+IssuedAt-UTC : 2026-07-01T02:22:45Z

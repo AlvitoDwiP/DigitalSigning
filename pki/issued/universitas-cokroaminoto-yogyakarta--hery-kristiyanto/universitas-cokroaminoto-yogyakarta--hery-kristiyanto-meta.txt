@@ -1,0 +1,9 @@
+Person       : Hery Kristiyanto
+Email        : info@ucy.ac.id
+NIK          : 3404090504720005
+Organisation : Universitas Cokroaminoto Yogyakarta
+Org Unit     : Universitas Cokroaminoto Yogyakarta
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-cokroaminoto-yogyakarta--hery-kristiyanto
+Files        : universitas-cokroaminoto-yogyakarta--hery-kristiyanto.key | universitas-cokroaminoto-yogyakarta--hery-kristiyanto.csr | universitas-cokroaminoto-yogyakarta--hery-kristiyanto.crt | universitas-cokroaminoto-yogyakarta--hery-kristiyanto.pfx | 3404090504720005.p12
+IssuedAt-UTC : 2026-02-18T01:07:15Z

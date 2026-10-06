@@ -1,0 +1,9 @@
+Person       : Adonia Ivonne Laturette
+Email        : laturettedony@gmail.com
+NIK          : 3578314802670002
+Organisation : Universitas Pattimura
+Org Unit     : Universitas Pattimura
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-pattimura--adonia-ivonne-laturette
+Files        : universitas-pattimura--adonia-ivonne-laturette.key | universitas-pattimura--adonia-ivonne-laturette.csr | universitas-pattimura--adonia-ivonne-laturette.crt | universitas-pattimura--adonia-ivonne-laturette.pfx | 3578314802670002.p12
+IssuedAt-UTC : 2026-04-01T06:32:05Z

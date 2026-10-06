@@ -1,0 +1,9 @@
+Person       : Pande Pandu Winata
+Email        : pandepandu1111@gmail.com
+NIK          : 5106031111850004
+Organisation : Desa Bangbang
+Org Unit     : Desa Bangbang
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/desa-bangbang--pande-pandu-winata
+Files        : desa-bangbang--pande-pandu-winata.key | desa-bangbang--pande-pandu-winata.csr | desa-bangbang--pande-pandu-winata.crt | desa-bangbang--pande-pandu-winata.pfx | 5106031111850004.p12
+IssuedAt-UTC : 2026-01-28T07:37:09Z

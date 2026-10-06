@@ -1,0 +1,9 @@
+Person       : Edy Soesanto
+Email        : kerjasama@umkudus.ac.id
+NIK          : 332101151070007
+Organisation : Universitas Muhammadiyah Kudus
+Org Unit     : Universitas Muhammadiyah Kudus
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-muhammadiyah-kudus--edy-soesanto
+Files        : universitas-muhammadiyah-kudus--edy-soesanto.key | universitas-muhammadiyah-kudus--edy-soesanto.csr | universitas-muhammadiyah-kudus--edy-soesanto.crt | universitas-muhammadiyah-kudus--edy-soesanto.pfx | 332101151070007.p12
+IssuedAt-UTC : 2026-09-07T06:51:10Z

@@ -1,0 +1,9 @@
+Person       : Yusrianto Kadir
+Email        : yusriantokadir@unigo.ac.id
+NIK          : 7571030201870001
+Organisation : Universitas Gorontalo
+Org Unit     : Universitas Gorontalo
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-gorontalo--yusrianto-kadir
+Files        : universitas-gorontalo--yusrianto-kadir.key | universitas-gorontalo--yusrianto-kadir.csr | universitas-gorontalo--yusrianto-kadir.crt | universitas-gorontalo--yusrianto-kadir.pfx | 7571030201870001.p12
+IssuedAt-UTC : 2026-01-26T08:27:26Z

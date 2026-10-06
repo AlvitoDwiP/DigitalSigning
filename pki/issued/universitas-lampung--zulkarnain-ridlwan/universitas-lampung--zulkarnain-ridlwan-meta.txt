@@ -1,0 +1,9 @@
+Person       : Zulkarnain Ridlwan
+Email        : zulkarnain.ridlwan@fh.unila.ac.id
+NIK          : 1871102310850006
+Organisation : Universitas Lampung
+Org Unit     : Universitas Lampung
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-lampung--zulkarnain-ridlwan
+Files        : universitas-lampung--zulkarnain-ridlwan.key | universitas-lampung--zulkarnain-ridlwan.csr | universitas-lampung--zulkarnain-ridlwan.crt | universitas-lampung--zulkarnain-ridlwan.pfx | 1871102310850006.p12
+IssuedAt-UTC : 2026-02-05T00:24:41Z

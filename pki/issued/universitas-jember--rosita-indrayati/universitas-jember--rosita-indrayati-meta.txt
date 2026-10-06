@@ -1,0 +1,9 @@
+Person       : Rosita Indrayati
+Email        : 197805312005012001@mail.unej.ac.id
+NIK          : 3509207105780005
+Organisation : Universitas Jember
+Org Unit     : Universitas Jember
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-jember--rosita-indrayati
+Files        : universitas-jember--rosita-indrayati.key | universitas-jember--rosita-indrayati.csr | universitas-jember--rosita-indrayati.crt | universitas-jember--rosita-indrayati.pfx | 3509207105780005.p12
+IssuedAt-UTC : 2026-02-02T08:30:36Z

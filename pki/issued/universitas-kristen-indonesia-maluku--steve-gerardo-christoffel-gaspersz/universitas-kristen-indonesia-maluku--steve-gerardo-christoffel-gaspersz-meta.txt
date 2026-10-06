@@ -1,0 +1,9 @@
+Person       : Steve Gerardo Christoffel Gaspersz
+Email        : steve.gerardo@mkri.id
+NIK          : 8171030909710003
+Organisation : Universitas Kristen Indonesia Maluku
+Org Unit     : Universitas Kristen Indonesia Maluku
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-kristen-indonesia-maluku--steve-gerardo-christoffel-gaspersz
+Files        : universitas-kristen-indonesia-maluku--steve-gerardo-christoffel-gaspersz.key | universitas-kristen-indonesia-maluku--steve-gerardo-christoffel-gaspersz.csr | universitas-kristen-indonesia-maluku--steve-gerardo-christoffel-gaspersz.crt | universitas-kristen-indonesia-maluku--steve-gerardo-christoffel-gaspersz.pfx | 8171030909710003.p12
+IssuedAt-UTC : 2026-01-22T07:12:33Z

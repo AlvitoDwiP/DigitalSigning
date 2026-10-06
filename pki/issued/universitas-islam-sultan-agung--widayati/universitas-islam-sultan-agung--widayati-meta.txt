@@ -1,0 +1,9 @@
+Person       : Widayati
+Email        : widayanti@mkri.id
+NIK          : 3321016006680005
+Organisation : Universitas Islam Sultan Agung
+Org Unit     : Universitas Islam Sultan Agung
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-islam-sultan-agung--widayati
+Files        : universitas-islam-sultan-agung--widayati.key | universitas-islam-sultan-agung--widayati.csr | universitas-islam-sultan-agung--widayati.crt | universitas-islam-sultan-agung--widayati.pfx | 3321016006680005.p12
+IssuedAt-UTC : 2026-02-02T08:30:35Z

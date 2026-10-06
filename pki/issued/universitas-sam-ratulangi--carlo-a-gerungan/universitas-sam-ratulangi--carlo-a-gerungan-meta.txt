@@ -1,0 +1,9 @@
+Person       : Carlo A. Gerungan
+Email        : carlogerungan@yahoo.co.id
+NIK          : 7102132707690003
+Organisation : Universitas Sam Ratulangi
+Org Unit     : Universitas Sam Ratulangi
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-sam-ratulangi--carlo-a-gerungan
+Files        : universitas-sam-ratulangi--carlo-a-gerungan.key | universitas-sam-ratulangi--carlo-a-gerungan.csr | universitas-sam-ratulangi--carlo-a-gerungan.crt | universitas-sam-ratulangi--carlo-a-gerungan.pfx | 7102132707690003.p12
+IssuedAt-UTC : 2026-02-09T04:03:50Z

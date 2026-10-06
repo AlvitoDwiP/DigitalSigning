@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Bangkitkan User</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6f8;
+            padding: 40px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+        .card {
+            background: #fff;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.08);
+            margin-bottom: 30px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 12px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+        }
+        button {
+            margin-top: 18px;
+            padding: 10px 16px;
+            border: none;
+            background: #2563eb;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .spinner {
+            display: none;
+            margin-top: 15px;
+            color: #444;
+            font-style: italic;
+        }
+        pre {
+            background: #0f172a;
+            color: #e5e7eb;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+    </style>
+
+    <script>
+        function showProgress() {
+            document.getElementById("spinner").style.display = "block";
+        }
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Bangkitkan User</h1>
+
+    <!-- ===== SINGLE USER ===== -->
+    <div class="card">
+        <h2>Bangkitkan 1 User</h2>
+        <form action="/single" method="post" onsubmit="showProgress()">
+            <label>ORG</label>
+            <input name="org" required>
+
+            <label>OU</label>
+            <input name="ou" required>
+
+            <label>CN</label>
+            <input name="cn" required>
+
+            <label>Email</label>
+            <input name="email" type="email" required>
+
+            <label>NIK</label>
+            <input name="nik" required>
+
+            <label>Password PFX</label>
+            <input name="pfx_pass" type="password" required>
+
+            <button type="submit">Jalankan bangkitkan_single.sh</button>
+            <div id="spinner" class="spinner">⏳ Proses sedang berjalan, mohon tunggu…</div>
+        </form>
+    </div>
+
+    <!-- ===== BULK ===== -->
+    <div class="card">
+        <h2>Bangkitkan Banyak User (CSV)</h2>
+        <p><b>Struktur CSV WAJIB:</b></p>
+        <pre>org,ou,cn,email,nik,pfx_pass</pre>
+
+        <form action="/bulk" method="post" enctype="multipart/form-data" onsubmit="showProgress()">
+            <input type="file" name="file" accept=".csv" required>
+            <button type="submit">Upload & Jalankan bangkitkan_banyak.sh</button>
+        </form>
+    </div>
+
+    <!-- ===== OUTPUT ===== -->
+    {% if output %}
+    <div class="card">
+        <h2>Output</h2>
+        <pre>{{ output }}</pre>
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

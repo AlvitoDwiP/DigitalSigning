@@ -1,0 +1,9 @@
+Person       : Muhammad Rinaldy Bima
+Email        : muhrinaldy.bima@umi.ac.id
+NIK          : 7371131306690014
+Organisation : Universitas Muslim Indonesia
+Org Unit     : Universitas Muslim Indonesia
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-muslim-indonesia--muhammad-rinaldy-bima
+Files        : universitas-muslim-indonesia--muhammad-rinaldy-bima.key | universitas-muslim-indonesia--muhammad-rinaldy-bima.csr | universitas-muslim-indonesia--muhammad-rinaldy-bima.crt | universitas-muslim-indonesia--muhammad-rinaldy-bima.pfx | 7371131306690014.p12
+IssuedAt-UTC : 2026-01-27T08:06:44Z

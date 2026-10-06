@@ -1,0 +1,46 @@
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir               = /home/sysadmin/pki/intermediate
+certificate       = /home/sysadmin/pki/intermediate/certs/intermediate-ca.crt
+private_key       = /home/sysadmin/pki/intermediate/private/intermediate-ca.key
+new_certs_dir     = /home/sysadmin/pki/intermediate/newcerts
+database          = /home/sysadmin/pki/intermediate/index.txt
+serial            = /home/sysadmin/pki/intermediate/serial
+crlnumber         = /home/sysadmin/pki/intermediate/crlnumber
+default_md        = sha256
+policy            = policy_loose
+default_days      = 1825
+unique_subject    = no
+crl_dir           = /home/sysadmin/pki/intermediate/crl
+crl               = /home/sysadmin/pki/intermediate/crl/intermediate-ca.crl
+x509_extensions   = v3_intermediate_ca
+
+[ policy_loose ]
+countryName            = supplied
+organizationName       = supplied
+commonName             = supplied
+stateOrProvinceName    = optional
+organizationalUnitName = optional
+
+[ req ]
+default_bits        = 3072
+distinguished_name  = req_dn
+string_mask         = utf8only
+default_md          = sha256
+x509_extensions     = v3_intermediate_ca
+prompt              = no
+
+[ req_dn ]
+C  = ID
+O  = PUSTIK MKRI
+CN = PUSTIK MKRI Document Signing CA 1
+ST = DKI Jakarta
+L  = Jakarta
+
+[ v3_intermediate_ca ]
+basicConstraints = critical, CA:true, pathlen:0
+keyUsage         = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer:always

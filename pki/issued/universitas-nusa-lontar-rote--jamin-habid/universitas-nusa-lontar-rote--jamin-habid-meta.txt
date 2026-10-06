@@ -1,0 +1,9 @@
+Person       : Jamin Habid
+Email        : jaminh53@gmail.com
+NIK          : 3172060304530003
+Organisation : Universitas Nusa Lontar Rote
+Org Unit     : Universitas Nusa Lontar Rote
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-nusa-lontar-rote--jamin-habid
+Files        : universitas-nusa-lontar-rote--jamin-habid.key | universitas-nusa-lontar-rote--jamin-habid.csr | universitas-nusa-lontar-rote--jamin-habid.crt | universitas-nusa-lontar-rote--jamin-habid.pfx | 3172060304530003.p12
+IssuedAt-UTC : 2026-02-20T07:08:22Z

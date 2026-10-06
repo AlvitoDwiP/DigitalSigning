@@ -1,0 +1,9 @@
+Person       : Ema Septaria
+Email        : emaseptaria@unib.ac.id
+NIK          : 1771066809820002
+Organisation : Universitas Bengkulu
+Org Unit     : Universitas Bengkulu
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-bengkulu--ema-septaria
+Files        : universitas-bengkulu--ema-septaria.key | universitas-bengkulu--ema-septaria.csr | universitas-bengkulu--ema-septaria.crt | universitas-bengkulu--ema-septaria.pfx | 1771066809820002.p12
+IssuedAt-UTC : 2026-01-28T02:19:47Z

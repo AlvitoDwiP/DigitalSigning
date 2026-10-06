@@ -1,0 +1,46 @@
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir               = /home/sysadmin/pki/root
+certificate       = /home/sysadmin/pki/root/certs/root-ca.crt
+private_key       = /home/sysadmin/pki/root/private/root-ca.key
+new_certs_dir     = /home/sysadmin/pki/root/newcerts
+database          = /home/sysadmin/pki/root/index.txt
+serial            = /home/sysadmin/pki/root/serial
+crlnumber         = /home/sysadmin/pki/root/crlnumber
+default_md        = sha256
+policy            = policy_strict
+default_days      = 3650
+unique_subject    = no
+crl_dir           = /home/sysadmin/pki/root/crl
+crl               = /home/sysadmin/pki/root/crl/root-ca.crl
+x509_extensions   = v3_ca
+
+[ policy_strict ]
+countryName             = supplied
+stateOrProvinceName     = optional
+organizationName        = supplied
+organizationalUnitName  = optional
+commonName              = supplied
+
+[ req ]
+default_bits        = 4096
+distinguished_name  = req_dn
+string_mask         = utf8only
+default_md          = sha256
+x509_extensions     = v3_ca
+prompt              = no
+
+[ req_dn ]
+C  = ID
+O  = PUSTIK MKRI
+CN = PUSTIK MKRI Root CA
+ST = DKI Jakarta
+L  = Jakarta
+
+[ v3_ca ]
+basicConstraints = critical, CA:true, pathlen:1
+keyUsage         = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always

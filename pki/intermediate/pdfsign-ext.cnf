@@ -1,0 +1,7 @@
+[pdfsign]
+basicConstraints = critical, CA:false
+keyUsage         = critical, digitalSignature, nonRepudiation
+extendedKeyUsage = emailProtection, clientAuth
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid,issuer
+subjectAltName         = email:copy

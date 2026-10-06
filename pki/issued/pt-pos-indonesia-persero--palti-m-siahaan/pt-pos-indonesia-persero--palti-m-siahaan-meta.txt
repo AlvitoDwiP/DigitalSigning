@@ -1,0 +1,9 @@
+Person       : Palti M. Siahaan
+Email        : siahaan@posindonesia.co.id
+NIK          : 3273140507720013
+Organisation : PT Pos Indonesia (Persero)
+Org Unit     : PT Pos Indonesia (Persero)
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/pt-pos-indonesia-persero--palti-m-siahaan
+Files        : pt-pos-indonesia-persero--palti-m-siahaan.key | pt-pos-indonesia-persero--palti-m-siahaan.csr | pt-pos-indonesia-persero--palti-m-siahaan.crt | pt-pos-indonesia-persero--palti-m-siahaan.pfx | 3273140507720013.p12
+IssuedAt-UTC : 2026-01-22T05:56:24Z

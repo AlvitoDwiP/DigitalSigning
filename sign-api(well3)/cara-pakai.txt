@@ -1,0 +1,11 @@
+python3 -m uvicorn app:app --host 0.0.0.0 --port 8001
+
+curl -X POST "http://192.168.30.47:8001/sign" \
+  -H "X-API-Key: rahasia-super" \
+  -H "X-P12-Password: maiga" \
+  -F "pdf=@test.pdf;type=application/pdf" \
+  -F "nik=1234567890987654" \
+  -F "stamp=@visualisasi.png;type=image/png" \
+  -F "page=1" \
+  -F "llx=386" -F "lly=207" -F "urx=433" -F "ury=253" \
+  -OJ

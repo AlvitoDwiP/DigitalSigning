@@ -1,0 +1,9 @@
+Person       : Lekipiouw
+Email        : lekipiouw.sherlock@gmail.com
+NIK          : 8171010601800002
+Organisation : Universitas Pattimura
+Org Unit     : Universitas Pattimura
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-pattimura--lekipiouw
+Files        : universitas-pattimura--lekipiouw.key | universitas-pattimura--lekipiouw.csr | universitas-pattimura--lekipiouw.crt | universitas-pattimura--lekipiouw.pfx | 8171010601800002.p12
+IssuedAt-UTC : 2026-02-02T08:30:46Z

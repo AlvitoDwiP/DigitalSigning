@@ -1,0 +1,9 @@
+Person       : Muhammad Massyat
+Email        : fisip@mail.unasman.ac.id
+NIK          : 7371132912770003
+Organisation : Universitas Al Syariah Mandar
+Org Unit     : Universitas Al Syariah Mandar
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-al-syariah-mandar--muhammad-massyat
+Files        : universitas-al-syariah-mandar--muhammad-massyat.key | universitas-al-syariah-mandar--muhammad-massyat.csr | universitas-al-syariah-mandar--muhammad-massyat.crt | universitas-al-syariah-mandar--muhammad-massyat.pfx | 7371132912770003.p12
+IssuedAt-UTC : 2026-01-28T02:20:22Z

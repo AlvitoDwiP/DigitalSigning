@@ -1,0 +1,9 @@
+Person       : R.Y. Gatot Raditya
+Email        : y.gatot@yahoo.co.id
+NIK          : 3471131606620001
+Organisation : Sekolah Tinggi APMD Yogyakarta
+Org Unit     : Sekolah Tinggi APMD Yogyakarta
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/sekolah-tinggi-apmd-yogyakarta--r-y-gatot-raditya
+Files        : sekolah-tinggi-apmd-yogyakarta--r-y-gatot-raditya.key | sekolah-tinggi-apmd-yogyakarta--r-y-gatot-raditya.csr | sekolah-tinggi-apmd-yogyakarta--r-y-gatot-raditya.crt | sekolah-tinggi-apmd-yogyakarta--r-y-gatot-raditya.pfx | 3471131606620001.p12
+IssuedAt-UTC : 2026-02-02T08:04:10Z

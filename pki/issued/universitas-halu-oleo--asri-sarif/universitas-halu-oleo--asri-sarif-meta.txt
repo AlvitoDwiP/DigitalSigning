@@ -1,0 +1,9 @@
+Person       : Asri Sarif
+Email        : asrisarif@uho.ac.id
+NIK          : 7407052303880001
+Organisation : Universitas Halu Oleo
+Org Unit     : Universitas Halu Oleo
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-halu-oleo--asri-sarif
+Files        : universitas-halu-oleo--asri-sarif.key | universitas-halu-oleo--asri-sarif.csr | universitas-halu-oleo--asri-sarif.crt | universitas-halu-oleo--asri-sarif.pfx | 7407052303880001.p12
+IssuedAt-UTC : 2026-02-02T08:30:29Z

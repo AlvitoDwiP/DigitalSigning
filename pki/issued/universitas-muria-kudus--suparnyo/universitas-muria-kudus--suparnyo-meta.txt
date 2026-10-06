@@ -1,0 +1,9 @@
+Person       : Suparnyo
+Email        : suparnyo@umk.ac.id
+NIK          : 3319072809620001
+Organisation : Universitas Muria Kudus
+Org Unit     : Universitas Muria Kudus
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-muria-kudus--suparnyo
+Files        : universitas-muria-kudus--suparnyo.key | universitas-muria-kudus--suparnyo.csr | universitas-muria-kudus--suparnyo.crt | universitas-muria-kudus--suparnyo.pfx | 3319072809620001.p12
+IssuedAt-UTC : 2026-09-28T08:54:29Z

@@ -1,0 +1,9 @@
+Person       : Suhendro Tri Anggono
+Email        : suhendrotrianggono@uinjkt.ac.id
+NIK          : 3201112407710001
+Organisation : UIN Jakarta
+Org Unit     : UIN Jakarta
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/uin-jakarta--suhendro-tri-anggono
+Files        : uin-jakarta--suhendro-tri-anggono.key | uin-jakarta--suhendro-tri-anggono.csr | uin-jakarta--suhendro-tri-anggono.crt | uin-jakarta--suhendro-tri-anggono.pfx | 3201112407710001.p12
+IssuedAt-UTC : 2026-02-02T08:30:34Z

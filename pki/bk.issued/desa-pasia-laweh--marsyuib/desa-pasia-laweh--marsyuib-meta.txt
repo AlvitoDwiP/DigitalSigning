@@ -1,0 +1,11 @@
+Person       : MARSYUIB
+Email        : marsuibpasla@gmail.com
+NIK          : 1234567890123456
+Organisation : Desa Pasia Laweh
+Org Unit     : TTE
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/desa-pasia-laweh--marsyuib
+Files        : desa-pasia-laweh--marsyuib.key | desa-pasia-laweh--marsyuib.csr | desa-pasia-laweh--marsyuib.crt | desa-pasia-laweh--marsyuib.pfx | 1234567890123456.p12
+PFX name     : MARSYUIB – Desa Pasia Laweh (TTE)
+PFX pass     : marsyuib
+IssuedAt-UTC : 2025-10-20T05:12:06Z

@@ -1,0 +1,11 @@
+Person       : Zul Arfin
+Email        : zularifin62@gmail.com
+NIK          : 1306101007760001
+Organisation : Desa Konstitusi Pasia Laweh
+Org Unit     : Desa Konstitusi Pasia Laweh
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/desa-konstitusi-pasia-laweh--zul-arfin
+Files        : desa-konstitusi-pasia-laweh--zul-arfin.key | desa-konstitusi-pasia-laweh--zul-arfin.csr | desa-konstitusi-pasia-laweh--zul-arfin.crt | desa-konstitusi-pasia-laweh--zul-arfin.pfx | 1306101007760001.p12
+PFX name     : Zul Arfin – Desa Konstitusi Pasia Laweh (TTE)
+PFX pass     : 12345678
+IssuedAt-UTC : 2025-11-20T07:09:28Z

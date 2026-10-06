@@ -1,0 +1,84 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 4096 (0x1000)
+        Signature Algorithm: ecdsa-with-SHA256
+        Issuer: C=ID, O=PUSTIK MKRI, CN=PUSTIK MKRI Root CA, ST=DKI Jakarta, L=Jakarta
+        Validity
+            Not Before: Oct 20 01:05:00 2025 GMT
+            Not After : Oct 19 01:05:00 2030 GMT
+        Subject: C=ID, ST=DKI Jakarta, O=PUSTIK MKRI, CN=PUSTIK MKRI Document Signing CA 1
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (3072 bit)
+                Modulus:
+                    00:d6:0b:56:f8:4d:47:ae:15:fd:e1:09:01:d9:9e:
+                    13:7c:3f:82:d4:23:8c:00:78:a9:1d:c3:35:2b:e0:
+                    2d:3a:4c:58:03:7f:0f:1b:2e:25:d9:77:48:65:df:
+                    bc:00:98:8f:d5:e0:fe:ff:c9:65:e0:14:c8:a2:93:
+                    c6:18:99:67:10:c8:27:77:63:99:4a:6d:ec:90:2b:
+                    b9:56:21:67:c9:20:85:c6:c1:ee:79:2c:8f:48:67:
+                    16:b5:cd:94:32:07:f9:fd:bb:25:10:f7:ad:b2:77:
+                    63:2b:a5:55:2b:73:ac:7e:15:56:b5:ce:38:83:0b:
+                    37:1f:e4:4c:8f:e4:ae:cf:3d:74:3a:a0:79:a6:e0:
+                    87:f4:ff:e0:1f:74:f9:3c:d2:16:f9:b2:49:51:d4:
+                    c3:0e:8a:f8:38:bc:d6:ca:8e:e7:e7:91:78:71:81:
+                    f3:f3:25:c9:c2:34:39:e7:59:d8:69:ef:93:9c:b8:
+                    3a:cd:f0:4c:24:e4:44:18:51:27:da:a0:35:98:0c:
+                    16:60:96:77:84:ff:5d:aa:44:c1:8c:76:50:2c:c4:
+                    f8:11:bf:6e:b2:5b:53:df:5c:25:cf:40:46:8f:68:
+                    e6:7c:41:e9:b0:d6:57:d2:29:10:d4:b4:14:ac:89:
+                    45:37:ae:cd:9c:3e:1c:57:11:b3:da:22:37:4d:1a:
+                    06:64:76:b9:d2:20:2d:45:f2:a8:de:40:02:1e:3d:
+                    b6:94:f2:e8:d7:e1:8e:69:d5:50:54:7d:3c:6e:37:
+                    c6:b2:f1:f9:dd:42:02:a4:3e:d8:5a:bf:c0:66:39:
+                    c5:00:a7:d4:c8:02:14:16:61:5f:80:a4:dc:b8:53:
+                    bb:e4:af:91:80:48:fd:c6:58:08:8f:82:9a:1f:a8:
+                    cf:7d:e6:a8:bc:7d:b1:5f:da:ca:2f:52:10:50:f4:
+                    cd:9c:eb:5d:3f:d4:f9:b6:6b:da:ce:7f:4c:13:20:
+                    6b:fd:71:6c:8a:8a:78:d6:a2:8a:16:50:cc:53:c2:
+                    78:1e:fe:78:d0:e8:1f:8d:22:df
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: critical
+                CA:TRUE, pathlen:0
+            X509v3 Key Usage: critical
+                Certificate Sign, CRL Sign
+            X509v3 Subject Key Identifier: 
+                DD:0E:9B:B6:E3:E4:1F:F2:AF:77:C1:39:1B:7F:7F:5C:37:4C:51:11
+            X509v3 Authority Key Identifier: 
+                keyid:B6:02:78:16:61:40:53:31:10:38:66:ED:5B:2F:C1:F3:38:D4:80:98
+                DirName:/C=ID/O=PUSTIK MKRI/CN=PUSTIK MKRI Root CA/ST=DKI Jakarta/L=Jakarta
+                serial:6E:70:07:0E:39:16:4E:85:4A:A9:C9:31:01:97:AE:56:44:0D:1E:E3
+    Signature Algorithm: ecdsa-with-SHA256
+    Signature Value:
+        30:65:02:30:45:87:2e:34:e1:36:64:36:08:67:d4:a7:85:18:
+        88:07:8a:7e:9c:36:c6:f5:f9:ff:e6:34:22:68:df:bd:6f:7f:
+        94:9f:bc:0c:e8:4c:43:34:d2:3e:34:75:58:aa:ba:31:02:31:
+        00:9e:64:9f:4a:86:70:e9:ae:66:bf:94:d8:c5:80:66:90:0c:
+        3b:74:14:6b:74:dd:aa:2f:88:81:07:72:e9:f5:b8:65:92:e9:
+        89:b3:85:8e:dd:9b:43:d5:b8:70:4b:1d:5c
+-----BEGIN CERTIFICATE-----
+MIIEGTCCA5+gAwIBAgICEAAwCgYIKoZIzj0EAwIwaTELMAkGA1UEBhMCSUQxFDAS
+BgNVBAoMC1BVU1RJSyBNS1JJMRwwGgYDVQQDDBNQVVNUSUsgTUtSSSBSb290IENB
+MRQwEgYDVQQIDAtES0kgSmFrYXJ0YTEQMA4GA1UEBwwHSmFrYXJ0YTAeFw0yNTEw
+MjAwMTA1MDBaFw0zMDEwMTkwMTA1MDBaMGUxCzAJBgNVBAYTAklEMRQwEgYDVQQI
+DAtES0kgSmFrYXJ0YTEUMBIGA1UECgwLUFVTVElLIE1LUkkxKjAoBgNVBAMMIVBV
+U1RJSyBNS1JJIERvY3VtZW50IFNpZ25pbmcgQ0EgMTCCAaIwDQYJKoZIhvcNAQEB
+BQADggGPADCCAYoCggGBANYLVvhNR64V/eEJAdmeE3w/gtQjjAB4qR3DNSvgLTpM
+WAN/DxsuJdl3SGXfvACYj9Xg/v/JZeAUyKKTxhiZZxDIJ3djmUpt7JAruVYhZ8kg
+hcbB7nksj0hnFrXNlDIH+f27JRD3rbJ3YyulVStzrH4VVrXOOIMLNx/kTI/krs89
+dDqgeabgh/T/4B90+TzSFvmySVHUww6K+Di81sqO5+eReHGB8/MlycI0OedZ2Gnv
+k5y4Os3wTCTkRBhRJ9qgNZgMFmCWd4T/XapEwYx2UCzE+BG/brJbU99cJc9ARo9o
+5nxB6bDWV9IpENS0FKyJRTeuzZw+HFcRs9oiN00aBmR2udIgLUXyqN5AAh49tpTy
+6NfhjmnVUFR9PG43xrLx+d1CAqQ+2Fq/wGY5xQCn1MgCFBZhX4Ck3LhTu+SvkYBI
+/cZYCI+Cmh+oz33mqLx9sV/ayi9SEFD0zZzrXT/U+bZr2s5/TBMga/1xbIqKeNai
+ihZQzFPCeB7+eNDoH40i3wIDAQABo4HvMIHsMBIGA1UdEwEB/wQIMAYBAf8CAQAw
+DgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBTdDpu24+Qf8q93wTkbf39cN0xRETCB
+pgYDVR0jBIGeMIGbgBS2AngWYUBTMRA4Zu1bL8HzONSAmKFtpGswaTELMAkGA1UE
+BhMCSUQxFDASBgNVBAoMC1BVU1RJSyBNS1JJMRwwGgYDVQQDDBNQVVNUSUsgTUtS
+SSBSb290IENBMRQwEgYDVQQIDAtES0kgSmFrYXJ0YTEQMA4GA1UEBwwHSmFrYXJ0
+YYIUbnAHDjkWToVKqckxAZeuVkQNHuMwCgYIKoZIzj0EAwIDaAAwZQIwRYcuNOE2
+ZDYIZ9SnhRiIB4p+nDbG9fn/5jQiaN+9b3+Un7wM6ExDNNI+NHVYqroxAjEAnmSf
+SoZw6a5mv5TYxYBmkAw7dBRrdN2qL4iBB3Lp9bhlkumJs4WO3ZtD1bhwSx1c
+-----END CERTIFICATE-----

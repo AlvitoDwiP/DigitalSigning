@@ -1,0 +1,11 @@
+Person       : Sri Achyuniwati
+Email        : sri.achyuniwati@uii.ac.id
+NIK          : 0813287801250000
+Organisation : Universitas Islam Indonesia
+Org Unit     : Universitas Islam Indonesia
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-islam-indonesia--sri-achyuniwati
+Files        : universitas-islam-indonesia--sri-achyuniwati.key | universitas-islam-indonesia--sri-achyuniwati.csr | universitas-islam-indonesia--sri-achyuniwati.crt | universitas-islam-indonesia--sri-achyuniwati.pfx | 0813287801250000.p12
+PFX name     : Sri Achyuniwati – Universitas Islam Indonesia (TTE)
+PFX pass     : sri
+IssuedAt-UTC : 2025-10-21T02:51:56Z

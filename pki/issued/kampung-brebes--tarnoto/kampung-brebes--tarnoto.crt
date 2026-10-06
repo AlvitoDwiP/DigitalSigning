@@ -1,0 +1,107 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 4333 (0x10ed)
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=ID, ST=DKI Jakarta, O=PUSTIK MKRI, CN=PUSTIK MKRI Document Signing CA 1
+        Validity
+            Not Before: Nov 18 07:13:35 2025 GMT
+            Not After : Nov 18 07:13:35 2027 GMT
+        Subject: C=ID, O=Kampung Brebes, CN=Tarnoto, OU=Kampung Brebes
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (3072 bit)
+                Modulus:
+                    00:bc:14:98:ff:fa:e7:a4:53:91:ac:c6:55:cd:a8:
+                    3d:f8:22:20:ca:39:5e:bb:da:8f:a0:dd:7f:4d:53:
+                    a0:96:e5:e2:14:d7:ff:f0:69:7f:46:77:b5:fe:6a:
+                    5b:e5:71:d4:bd:8d:c4:82:c1:1f:5b:e7:ec:12:84:
+                    6b:58:eb:a6:0e:5d:fd:d6:6c:f9:cd:c3:4c:2f:3b:
+                    e6:f8:46:eb:52:7f:8f:95:56:88:f5:79:e1:f8:14:
+                    47:1c:a6:b4:1d:5e:62:c0:d6:4b:ea:b0:50:ec:5a:
+                    f3:f1:f0:7b:42:dd:64:93:b9:ba:d7:6c:d9:ef:29:
+                    07:80:35:84:e0:d5:82:f6:29:6b:69:d0:c7:f0:8d:
+                    cf:45:fb:78:14:96:8a:05:f6:40:25:fa:0c:6c:10:
+                    cc:6b:4b:62:16:25:a6:10:e7:3c:0a:61:cd:0b:36:
+                    f7:f6:30:f2:dd:4f:69:0f:bb:68:37:5e:28:ca:96:
+                    73:38:f9:c2:d3:e7:11:f3:e6:98:0c:60:d6:3b:96:
+                    03:10:d1:3f:da:9d:e7:3d:ed:23:00:57:ad:40:99:
+                    4c:90:2f:3d:79:bc:4a:32:22:f6:e2:b2:39:95:89:
+                    ee:fc:40:7c:2d:fd:c0:e6:45:79:43:25:c1:c3:78:
+                    2e:0c:0b:8e:b6:76:a1:37:27:91:4d:b4:fb:e8:c8:
+                    6a:3b:4f:d2:59:79:79:dd:01:81:bf:fb:47:85:60:
+                    9c:c4:eb:f3:11:84:83:2d:ac:fc:c2:ee:c2:06:25:
+                    31:25:25:71:29:91:05:32:a5:cc:7a:46:56:03:d9:
+                    00:3b:c1:84:14:c9:e6:a9:e9:ec:83:1a:d2:55:88:
+                    dc:f0:32:30:d9:76:fa:fe:95:db:82:ed:c5:de:94:
+                    b9:f1:84:f5:f0:a6:90:4c:72:45:c7:52:50:e0:33:
+                    ed:77:d5:81:29:6a:9e:36:ed:37:3c:c6:ec:88:1c:
+                    75:c9:81:29:fe:d3:e4:04:62:2e:43:76:fd:3e:e7:
+                    1b:29:4e:6f:42:b6:59:1c:eb:73
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Key Usage: critical
+                Digital Signature, Non Repudiation
+            X509v3 Extended Key Usage: 
+                E-mail Protection, TLS Web Client Authentication
+            X509v3 Subject Key Identifier: 
+                3E:EA:18:10:69:E0:D7:F2:DD:6C:08:C1:09:0D:A6:DD:F0:FB:D7:4D
+            X509v3 Authority Key Identifier: 
+                DD:0E:9B:B6:E3:E4:1F:F2:AF:77:C1:39:1B:7F:7F:5C:37:4C:51:11
+            X509v3 Subject Alternative Name: 
+                <EMPTY>
+
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        46:3f:ee:dc:d3:88:04:2f:f4:0c:00:31:c7:92:a8:c6:a8:7c:
+        fd:df:84:2d:8f:27:25:e8:64:d3:78:76:84:1a:38:e4:4b:f5:
+        58:dc:51:7c:82:e1:fb:ec:86:db:81:61:16:a9:8b:e2:6f:f3:
+        e9:20:ad:45:9a:89:2e:3e:aa:5a:bd:ef:84:aa:22:b3:dd:ea:
+        49:08:20:42:6c:91:0b:f9:b2:ce:51:57:41:e4:a9:33:e3:c1:
+        57:3c:e0:3f:10:46:a9:cd:78:16:e6:d2:52:42:3e:87:98:18:
+        ca:72:8b:cb:74:e1:f4:8a:61:cc:8c:33:f0:8e:86:d4:68:90:
+        9c:13:ea:7d:89:14:c6:6e:03:59:58:9b:a8:58:65:1f:c0:b0:
+        15:0d:13:f7:6c:ad:07:59:12:ef:a8:f3:62:c5:e4:fc:6a:08:
+        1d:88:73:ba:a6:07:cd:63:bb:ff:02:0c:e4:c9:5f:01:1e:1b:
+        1e:98:f6:3f:d6:75:0b:a3:2f:4e:23:d1:36:3c:fe:22:8a:dc:
+        41:8a:65:aa:5a:55:8a:ed:7c:de:4a:9d:30:d4:70:82:46:38:
+        25:53:f2:a1:06:f2:1b:f2:76:70:d7:d7:84:49:9c:cc:bb:1d:
+        10:27:94:f0:de:32:4f:ca:a3:d1:a6:5f:91:ff:74:1b:69:e5:
+        71:15:13:31:be:97:34:01:74:c0:36:40:f5:47:14:a2:ec:44:
+        e4:43:dc:9b:df:2e:16:f4:81:72:fe:e9:2a:62:f1:5b:98:78:
+        92:bb:d7:9b:fc:0b:07:da:ac:44:67:d0:80:97:4e:fb:55:6b:
+        d4:29:71:1f:d9:49:a0:a4:c3:7b:f6:82:81:7a:c1:20:99:4e:
+        08:1f:bc:47:7a:d6:52:e9:1b:87:3d:ca:3c:8e:70:50:9d:d1:
+        70:b2:8f:77:8c:53:fc:9e:b5:02:62:27:da:8a:d7:2d:de:77:
+        49:4b:eb:62:7e:fb:72:32:00:0a:82:25:b1:38:b5:1c:09:d4:
+        52:e4:3e:16:71:99
+-----BEGIN CERTIFICATE-----
+MIIEvjCCAyagAwIBAgICEO0wDQYJKoZIhvcNAQELBQAwZTELMAkGA1UEBhMCSUQx
+FDASBgNVBAgMC0RLSSBKYWthcnRhMRQwEgYDVQQKDAtQVVNUSUsgTUtSSTEqMCgG
+A1UEAwwhUFVTVElLIE1LUkkgRG9jdW1lbnQgU2lnbmluZyBDQSAxMB4XDTI1MTEx
+ODA3MTMzNVoXDTI3MTExODA3MTMzNVowUTELMAkGA1UEBhMCSUQxFzAVBgNVBAoM
+DkthbXB1bmcgQnJlYmVzMRAwDgYDVQQDDAdUYXJub3RvMRcwFQYDVQQLDA5LYW1w
+dW5nIEJyZWJlczCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBALwUmP/6
+56RTkazGVc2oPfgiIMo5Xrvaj6Ddf01ToJbl4hTX//Bpf0Z3tf5qW+Vx1L2NxILB
+H1vn7BKEa1jrpg5d/dZs+c3DTC875vhG61J/j5VWiPV54fgURxymtB1eYsDWS+qw
+UOxa8/Hwe0LdZJO5utds2e8pB4A1hODVgvYpa2nQx/CNz0X7eBSWigX2QCX6DGwQ
+zGtLYhYlphDnPAphzQs29/Yw8t1PaQ+7aDdeKMqWczj5wtPnEfPmmAxg1juWAxDR
+P9qd5z3tIwBXrUCZTJAvPXm8SjIi9uKyOZWJ7vxAfC39wOZFeUMlwcN4LgwLjrZ2
+oTcnkU20++jIajtP0ll5ed0Bgb/7R4VgnMTr8xGEgy2s/MLuwgYlMSUlcSmRBTKl
+zHpGVgPZADvBhBTJ5qnp7IMa0lWI3PAyMNl2+v6V24Ltxd6UufGE9fCmkExyRcdS
+UOAz7XfVgSlqnjbtNzzG7IgcdcmBKf7T5ARiLkN2/T7nGylOb0K2WRzrcwIDAQAB
+o4GLMIGIMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgbAMB0GA1UdJQQWMBQG
+CCsGAQUFBwMEBggrBgEFBQcDAjAdBgNVHQ4EFgQUPuoYEGng1/LdbAjBCQ2m3fD7
+100wHwYDVR0jBBgwFoAU3Q6btuPkH/Kvd8E5G39/XDdMUREwCQYDVR0RBAIwADAN
+BgkqhkiG9w0BAQsFAAOCAYEARj/u3NOIBC/0DAAxx5Koxqh8/d+ELY8nJehk03h2
+hBo45Ev1WNxRfILh++yG24FhFqmL4m/z6SCtRZqJLj6qWr3vhKois93qSQggQmyR
+C/myzlFXQeSpM+PBVzzgPxBGqc14FubSUkI+h5gYynKLy3Th9IphzIwz8I6G1GiQ
+nBPqfYkUxm4DWVibqFhlH8CwFQ0T92ytB1kS76jzYsXk/GoIHYhzuqYHzWO7/wIM
+5MlfAR4bHpj2P9Z1C6MvTiPRNjz+IorcQYplqlpViu183kqdMNRwgkY4JVPyoQby
+G/J2cNfXhEmczLsdECeU8N4yT8qj0aZfkf90G2nlcRUTMb6XNAF0wDZA9UcUouxE
+5EPcm98uFvSBcv7pKmLxW5h4krvXm/wLB9qsRGfQgJdO+1Vr1ClxH9lJoKTDe/aC
+gXrBIJlOCB+8R3rWUukbhz3KPI5wUJ3RcLKPd4xT/J61AmIn2orXLd53SUvrYn77
+cjIACoIlsTi1HAnUUuQ+FnGZ
+-----END CERTIFICATE-----

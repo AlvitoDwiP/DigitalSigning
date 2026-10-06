@@ -1,0 +1,9 @@
+Person       : Sutoyo
+Email        : sutoyopratama@gmail.com
+NIK          : 3313210102630003
+Organisation : Universitas Slamet Riyadi
+Org Unit     : Universitas Slamet Riyadi
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-slamet-riyadi--sutoyo
+Files        : universitas-slamet-riyadi--sutoyo.key | universitas-slamet-riyadi--sutoyo.csr | universitas-slamet-riyadi--sutoyo.crt | universitas-slamet-riyadi--sutoyo.pfx | 3313210102630003.p12
+IssuedAt-UTC : 2026-04-08T03:51:24Z

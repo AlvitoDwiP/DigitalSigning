@@ -1,0 +1,9 @@
+Person       : Dri Utari Christina Rachmawati
+Email        : dri.utari@fh.unair.ac.id
+NIK          : 3578266705790002
+Organisation : Universitas Airlangga
+Org Unit     : Universitas Airlangga
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-airlangga--dri-utari-christina-rachmawati
+Files        : universitas-airlangga--dri-utari-christina-rachmawati.key | universitas-airlangga--dri-utari-christina-rachmawati.csr | universitas-airlangga--dri-utari-christina-rachmawati.crt | universitas-airlangga--dri-utari-christina-rachmawati.pfx | 3578266705790002.p12
+IssuedAt-UTC : 2026-02-02T08:30:22Z

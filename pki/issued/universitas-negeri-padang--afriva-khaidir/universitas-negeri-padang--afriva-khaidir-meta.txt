@@ -1,0 +1,9 @@
+Person       : Afriva Khaidir
+Email        : af.khaidir@fis.unp.ac.id
+NIK          : 1371041104660003
+Organisation : Universitas Negeri Padang
+Org Unit     : Universitas Negeri Padang
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-negeri-padang--afriva-khaidir
+Files        : universitas-negeri-padang--afriva-khaidir.key | universitas-negeri-padang--afriva-khaidir.csr | universitas-negeri-padang--afriva-khaidir.crt | universitas-negeri-padang--afriva-khaidir.pfx | 1371041104660003.p12
+IssuedAt-UTC : 2026-01-28T02:18:30Z

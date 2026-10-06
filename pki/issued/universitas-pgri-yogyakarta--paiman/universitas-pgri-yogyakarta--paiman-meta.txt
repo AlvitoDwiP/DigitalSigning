@@ -1,0 +1,9 @@
+Person       : Paiman
+Email        : paiman@mkri.id
+NIK          : 3402121609650002
+Organisation : Universitas PGRI Yogyakarta
+Org Unit     : Universitas PGRI Yogyakarta
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-pgri-yogyakarta--paiman
+Files        : universitas-pgri-yogyakarta--paiman.key | universitas-pgri-yogyakarta--paiman.csr | universitas-pgri-yogyakarta--paiman.crt | universitas-pgri-yogyakarta--paiman.pfx | 3402121609650002.p12
+IssuedAt-UTC : 2026-04-22T01:34:01Z

@@ -1,0 +1,107 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 4402 (0x1132)
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=ID, ST=DKI Jakarta, O=PUSTIK MKRI, CN=PUSTIK MKRI Document Signing CA 1
+        Validity
+            Not Before: Feb  4 01:23:06 2026 GMT
+            Not After : Feb  4 01:23:06 2028 GMT
+        Subject: C=ID, O=Desa Mekar Sari, CN=Mahmudi, OU=Desa Mekar Sari
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (3072 bit)
+                Modulus:
+                    00:88:f7:21:3c:0d:0c:2e:29:64:be:22:25:5c:d1:
+                    82:36:4a:22:d8:a6:52:38:15:80:40:66:b6:f6:c6:
+                    8f:01:94:85:6f:6a:cc:aa:88:35:f5:26:00:d0:c4:
+                    98:c0:91:ce:b4:c4:11:f7:b0:3b:fb:4b:3c:00:70:
+                    54:8e:d0:65:4c:67:15:e4:3f:6d:d8:78:8a:86:a7:
+                    85:9e:39:b0:78:0c:dc:df:6f:d9:b0:ed:08:3e:3f:
+                    fc:ef:ce:65:97:ae:c5:fa:81:c9:88:9d:08:9a:2a:
+                    19:ef:16:3d:e0:3d:c6:92:19:fa:6f:8a:20:df:e8:
+                    1c:76:9b:2a:d2:b8:c8:10:0d:0b:0a:1d:8b:41:ce:
+                    ec:c8:9c:26:6e:67:33:e2:77:85:96:a3:45:e9:bb:
+                    64:ba:a1:0a:fa:d7:ea:3e:2f:51:7c:11:cd:9c:6e:
+                    c4:01:2d:cd:1c:bc:95:78:13:4e:01:09:1f:96:79:
+                    d8:dd:80:c1:b5:21:71:97:86:52:55:3f:78:04:8b:
+                    67:4b:27:ce:43:73:09:cb:d1:1d:5a:b7:a4:7c:09:
+                    f7:36:d2:87:a9:82:16:7b:72:5b:d2:61:c4:13:05:
+                    67:6a:b6:90:51:b2:f4:65:ba:6c:61:da:47:96:44:
+                    30:af:42:79:cc:ff:54:ab:98:c6:73:ea:2c:b6:e2:
+                    67:8c:a5:90:2b:00:39:72:2e:04:d8:4a:df:1a:d4:
+                    51:41:69:7f:9d:55:95:38:7e:a3:9f:0f:f6:10:c1:
+                    5b:23:ee:b2:06:a3:6f:90:c1:40:aa:28:67:a3:c8:
+                    77:d3:b5:03:bd:c3:5a:19:07:b5:8e:a6:fd:37:b0:
+                    74:e1:fd:fe:5e:e4:35:07:bf:0b:a7:e1:97:75:82:
+                    da:b9:5c:7d:7c:f7:a7:7a:12:eb:3c:15:8a:f2:ef:
+                    f3:86:ca:00:09:81:63:7c:f3:c5:98:de:81:16:01:
+                    b0:c4:27:25:c7:c4:5c:24:6b:2d:78:e5:ca:65:cb:
+                    65:9f:ac:17:c5:94:34:30:c9:a9
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Key Usage: critical
+                Digital Signature, Non Repudiation
+            X509v3 Extended Key Usage: 
+                E-mail Protection, TLS Web Client Authentication
+            X509v3 Subject Key Identifier: 
+                90:9B:25:C7:56:0A:E7:D8:06:86:5E:86:76:F8:F6:E8:7E:70:80:3A
+            X509v3 Authority Key Identifier: 
+                DD:0E:9B:B6:E3:E4:1F:F2:AF:77:C1:39:1B:7F:7F:5C:37:4C:51:11
+            X509v3 Subject Alternative Name: 
+                <EMPTY>
+
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        11:85:57:fd:45:ae:89:f0:da:83:07:f3:2f:da:8c:8f:da:14:
+        15:07:a1:be:52:6a:26:0e:b3:54:76:57:49:dc:cf:d5:88:5e:
+        64:de:61:d8:11:0b:08:05:ec:98:64:45:c9:ce:bd:15:8d:9d:
+        8d:bb:6a:b6:44:3d:60:e1:6b:83:bf:f6:6c:f6:d8:c8:7c:00:
+        78:fa:59:5a:22:bb:df:31:98:fd:f3:0e:8a:1f:4f:62:f0:56:
+        d5:0b:ab:2a:55:13:26:9d:88:76:53:c6:0f:6c:f0:35:6f:98:
+        ad:12:93:82:4a:ca:92:67:ce:8d:3a:f8:32:51:80:2d:3a:e2:
+        74:b0:0b:14:19:e0:52:43:85:c1:69:af:81:5b:5a:33:26:14:
+        08:a8:38:f6:1e:8c:8c:7c:54:a5:90:24:ec:a2:eb:27:48:45:
+        de:cb:b9:2a:53:21:ce:ae:90:0f:de:bf:de:ee:cf:2e:9c:59:
+        fd:f0:85:50:46:52:04:9a:74:08:de:f5:6c:f1:0a:7c:93:44:
+        b4:20:22:ce:dc:01:61:e8:bb:eb:db:99:22:7f:13:88:03:0f:
+        a5:87:3b:62:3f:65:0c:e5:03:a2:e5:36:8e:4f:d5:49:ae:50:
+        91:70:36:38:6b:ff:c0:ef:72:60:bb:1b:5e:cd:8a:1c:36:4b:
+        0f:a5:87:20:7c:e1:98:e7:70:21:a5:14:b3:e0:22:83:cb:af:
+        16:de:b5:5c:41:1b:5a:71:14:76:b5:d3:1d:13:84:4e:e0:d4:
+        97:77:d9:78:4e:d0:35:18:74:0e:e2:a4:c2:15:39:a9:95:bd:
+        0d:c3:1d:08:fe:fa:2a:7c:d2:1a:96:48:ef:2d:24:f0:57:88:
+        58:fe:4c:89:e3:61:e5:60:97:69:af:64:04:05:09:09:ab:34:
+        ef:5d:bf:84:50:77:31:30:5f:b9:b3:fc:1f:e8:33:e9:f7:49:
+        96:2e:e7:10:ef:2a:65:4d:18:e1:64:f1:3d:6e:c2:12:1d:72:
+        74:2a:60:52:2d:93
+-----BEGIN CERTIFICATE-----
+MIIEwDCCAyigAwIBAgICETIwDQYJKoZIhvcNAQELBQAwZTELMAkGA1UEBhMCSUQx
+FDASBgNVBAgMC0RLSSBKYWthcnRhMRQwEgYDVQQKDAtQVVNUSUsgTUtSSTEqMCgG
+A1UEAwwhUFVTVElLIE1LUkkgRG9jdW1lbnQgU2lnbmluZyBDQSAxMB4XDTI2MDIw
+NDAxMjMwNloXDTI4MDIwNDAxMjMwNlowUzELMAkGA1UEBhMCSUQxGDAWBgNVBAoM
+D0Rlc2EgTWVrYXIgU2FyaTEQMA4GA1UEAwwHTWFobXVkaTEYMBYGA1UECwwPRGVz
+YSBNZWthciBTYXJpMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAiPch
+PA0MLilkviIlXNGCNkoi2KZSOBWAQGa29saPAZSFb2rMqog19SYA0MSYwJHOtMQR
+97A7+0s8AHBUjtBlTGcV5D9t2HiKhqeFnjmweAzc32/ZsO0IPj/8785ll67F+oHJ
+iJ0ImioZ7xY94D3Gkhn6b4og3+gcdpsq0rjIEA0LCh2LQc7syJwmbmcz4neFlqNF
+6btkuqEK+tfqPi9RfBHNnG7EAS3NHLyVeBNOAQkflnnY3YDBtSFxl4ZSVT94BItn
+SyfOQ3MJy9EdWrekfAn3NtKHqYIWe3Jb0mHEEwVnaraQUbL0ZbpsYdpHlkQwr0J5
+zP9Uq5jGc+ostuJnjKWQKwA5ci4E2ErfGtRRQWl/nVWVOH6jnw/2EMFbI+6yBqNv
+kMFAqihno8h307UDvcNaGQe1jqb9N7B04f3+XuQ1B78Lp+GXdYLauVx9fPenehLr
+PBWK8u/zhsoACYFjfPPFmN6BFgGwxCclx8RcJGsteOXKZctln6wXxZQ0MMmpAgMB
+AAGjgYswgYgwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCBsAwHQYDVR0lBBYw
+FAYIKwYBBQUHAwQGCCsGAQUFBwMCMB0GA1UdDgQWBBSQmyXHVgrn2AaGXoZ2+Pbo
+fnCAOjAfBgNVHSMEGDAWgBTdDpu24+Qf8q93wTkbf39cN0xRETAJBgNVHREEAjAA
+MA0GCSqGSIb3DQEBCwUAA4IBgQARhVf9Ra6J8NqDB/Mv2oyP2hQVB6G+UmomDrNU
+dldJ3M/ViF5k3mHYEQsIBeyYZEXJzr0VjZ2Nu2q2RD1g4WuDv/Zs9tjIfAB4+lla
+IrvfMZj98w6KH09i8FbVC6sqVRMmnYh2U8YPbPA1b5itEpOCSsqSZ86NOvgyUYAt
+OuJ0sAsUGeBSQ4XBaa+BW1ozJhQIqDj2HoyMfFSlkCTsousnSEXey7kqUyHOrpAP
+3r/e7s8unFn98IVQRlIEmnQI3vVs8Qp8k0S0ICLO3AFh6Lvr25kifxOIAw+lhzti
+P2UM5QOi5TaOT9VJrlCRcDY4a//A73JguxtezYocNksPpYcgfOGY53AhpRSz4CKD
+y68W3rVcQRtacRR2tdMdE4RO4NSXd9l4TtA1GHQO4qTCFTmplb0Nwx0I/voqfNIa
+lkjvLSTwV4hY/kyJ42HlYJdpr2QEBQkJqzTvXb+EUHcxMF+5s/wf6DPp90mWLucQ
+7yplTRjhZPE9bsISHXJ0KmBSLZM=
+-----END CERTIFICATE-----

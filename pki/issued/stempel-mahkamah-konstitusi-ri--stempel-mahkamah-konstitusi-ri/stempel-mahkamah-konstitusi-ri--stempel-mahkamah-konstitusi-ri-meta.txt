@@ -1,0 +1,11 @@
+Person       : STEMPEL MAHKAMAH KONSTITUSI RI
+Email        : stempel@mkri.id
+NIK          : 1111111111111111
+Organisation : STEMPEL MAHKAMAH KONSTITUSI RI
+Org Unit     : STEMPEL MAHKAMAH KONSTITUSI RI
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/stempel-mahkamah-konstitusi-ri--stempel-mahkamah-konstitusi-ri
+Files        : stempel-mahkamah-konstitusi-ri--stempel-mahkamah-konstitusi-ri.key | stempel-mahkamah-konstitusi-ri--stempel-mahkamah-konstitusi-ri.csr | stempel-mahkamah-konstitusi-ri--stempel-mahkamah-konstitusi-ri.crt | stempel-mahkamah-konstitusi-ri--stempel-mahkamah-konstitusi-ri.pfx | 1111111111111111.p12
+PFX name     : STEMPEL MAHKAMAH KONSTITUSI RI – STEMPEL MAHKAMAH KONSTITUSI RI (TTE)
+PFX pass     : 12345678
+IssuedAt-UTC : 2025-10-23T03:44:21Z

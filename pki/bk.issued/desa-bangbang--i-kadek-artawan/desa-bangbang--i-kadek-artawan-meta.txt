@@ -1,0 +1,10 @@
+Person       : \I Kadek Artawan
+Email        : dektawan87@gmail.com
+Organisation : Desa Bangbang
+Org Unit     : TTE
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/desa-bangbang--i-kadek-artawan
+Files        : desa-bangbang--i-kadek-artawan.key | desa-bangbang--i-kadek-artawan.csr | desa-bangbang--i-kadek-artawan.crt | desa-bangbang--i-kadek-artawan.pfx | desa-bangbang--i-kadek-artawan-compat.p12
+PFX name     : \I Kadek Artawan – Desa Bangbang (TTE)
+PFX pass     : dekta
+IssuedAt-UTC : 2025-10-20T03:33:10Z

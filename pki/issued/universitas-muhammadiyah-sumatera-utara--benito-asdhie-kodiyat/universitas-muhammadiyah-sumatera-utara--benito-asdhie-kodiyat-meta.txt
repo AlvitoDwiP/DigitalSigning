@@ -1,0 +1,9 @@
+Person       : Benito Asdhie Kodiyat
+Email        : benitoasdhiekodiyat@umsu.ac.id
+NIK          : 1271011012880008
+Organisation : Universitas Muhammadiyah Sumatera Utara
+Org Unit     : Universitas Muhammadiyah Sumatera Utara
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-muhammadiyah-sumatera-utara--benito-asdhie-kodiyat
+Files        : universitas-muhammadiyah-sumatera-utara--benito-asdhie-kodiyat.key | universitas-muhammadiyah-sumatera-utara--benito-asdhie-kodiyat.csr | universitas-muhammadiyah-sumatera-utara--benito-asdhie-kodiyat.crt | universitas-muhammadiyah-sumatera-utara--benito-asdhie-kodiyat.pfx | 1271011012880008.p12
+IssuedAt-UTC : 2026-02-02T08:30:41Z

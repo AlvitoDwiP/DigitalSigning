@@ -1,0 +1,9 @@
+Person       : Testing Orang 2
+Email        : testing@univ2.ac.id
+NIK          : 0811222233334445
+Organisation : Testing Univ 2
+Org Unit     : Testing Univ 2
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/testing-univ-2--testing-orang-2
+Files        : testing-univ-2--testing-orang-2.key | testing-univ-2--testing-orang-2.csr | testing-univ-2--testing-orang-2.crt | testing-univ-2--testing-orang-2.pfx | 0811222233334445.p12
+IssuedAt-UTC : 2025-12-26T08:39:55Z

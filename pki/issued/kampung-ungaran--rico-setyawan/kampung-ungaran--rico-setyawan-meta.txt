@@ -1,0 +1,11 @@
+Person       : Rico Setyawan
+Email        : rico.setyawan@mkri.id
+NIK          : 4444444444444444
+Organisation : Kampung Ungaran
+Org Unit     : Kampung Ungaran
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/kampung-ungaran--rico-setyawan
+Files        : kampung-ungaran--rico-setyawan.key | kampung-ungaran--rico-setyawan.csr | kampung-ungaran--rico-setyawan.crt | kampung-ungaran--rico-setyawan.pfx | 4444444444444444.p12
+PFX name     : Rico Setyawan – Kampung Ungaran (TTE)
+PFX pass     : 12345678
+IssuedAt-UTC : 2025-11-18T07:18:21Z

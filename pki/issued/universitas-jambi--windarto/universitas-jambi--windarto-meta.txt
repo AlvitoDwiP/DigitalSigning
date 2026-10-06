@@ -1,0 +1,9 @@
+Person       : Windarto
+Email        : mas_wiend@unja.ac.id
+NIK          : 1571012705840021
+Organisation : Universitas Jambi
+Org Unit     : Universitas Jambi
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-jambi--windarto
+Files        : universitas-jambi--windarto.key | universitas-jambi--windarto.csr | universitas-jambi--windarto.crt | universitas-jambi--windarto.pfx | 1571012705840021.p12
+IssuedAt-UTC : 2026-02-05T02:46:19Z

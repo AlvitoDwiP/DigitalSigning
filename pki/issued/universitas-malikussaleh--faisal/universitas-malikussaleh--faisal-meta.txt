@@ -1,0 +1,9 @@
+Person       : Faisal
+Email        : faisal@unimal.ac.id
+NIK          : 1171021808740002
+Organisation : Universitas Malikussaleh
+Org Unit     : Universitas Malikussaleh
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-malikussaleh--faisal
+Files        : universitas-malikussaleh--faisal.key | universitas-malikussaleh--faisal.csr | universitas-malikussaleh--faisal.crt | universitas-malikussaleh--faisal.pfx | 1171021808740002.p12
+IssuedAt-UTC : 2026-02-02T08:30:40Z

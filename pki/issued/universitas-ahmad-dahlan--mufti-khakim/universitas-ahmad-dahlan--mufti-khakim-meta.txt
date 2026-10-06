@@ -1,0 +1,9 @@
+Person       : Mufti Khakim
+Email        : lab@law.uad.ac.id
+NIK          : 3402150702770003
+Organisation : Universitas Ahmad Dahlan
+Org Unit     : Universitas Ahmad Dahlan
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/universitas-ahmad-dahlan--mufti-khakim
+Files        : universitas-ahmad-dahlan--mufti-khakim.key | universitas-ahmad-dahlan--mufti-khakim.csr | universitas-ahmad-dahlan--mufti-khakim.crt | universitas-ahmad-dahlan--mufti-khakim.pfx | 3402150702770003.p12
+IssuedAt-UTC : 2026-01-28T02:19:16Z

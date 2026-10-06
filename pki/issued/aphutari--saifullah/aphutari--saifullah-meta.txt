@@ -1,0 +1,9 @@
+Person       : Saifullah
+Email        : saifullah@syariah.uin-malang.ac.id
+NIK          : 3573050512650008
+Organisation : APHUTARI
+Org Unit     : APHUTARI
+Validity     : 730 days
+Folder       : /home/sysadmin/pki/issued/aphutari--saifullah
+Files        : aphutari--saifullah.key | aphutari--saifullah.csr | aphutari--saifullah.crt | aphutari--saifullah.pfx | 3573050512650008.p12
+IssuedAt-UTC : 2026-02-24T07:26:29Z
