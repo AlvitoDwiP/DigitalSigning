@@ -50,7 +50,7 @@ slugify () {
 SLUG_ORG="$(slugify "$ORG_NAME")"
 SLUG_CN="$(slugify "$CN")"
 PERSON_SLUG="${SLUG_ORG}--${SLUG_CN}"
-OUT_DIR="$H/pki/issued/$PERSON_SLUG"
+OUT_DIR="${OUT_DIR:-$H/pki/issued/$PERSON_SLUG}"
 mkdir -p "$OUT_DIR"
 
 # ==================== EXTENSION FILE (IDENTIK) ====================

@@ -1,95 +1,107 @@
 #!/usr/bin/env bash
-set -Eeo pipefail
+set -Eeuo pipefail
 umask 077
-trap 'echo "❌ ERROR di baris $LINENO: $BASH_COMMAND" >&2' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_H="$(cd "$SCRIPT_DIR/.." && pwd)"
 H="${H:-$DEFAULT_H}"
-P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api(well3)/p12}"
 export INT_DIR="$H/pki/intermediate"
 DEFAULT_DAYS="${DEFAULT_DAYS:-730}"
-CONTINUE_ON_ERROR="${CONTINUE_ON_ERROR:-1}"
 
-[[ $# -ge 1 ]] || { echo "Usage: $0 <file.csv>"; exit 1; }
+if [[ $# -lt 1 ]]; then
+  echo '{"status":"FAILED","error":"Usage: bangkitkan_banyak.sh <file.tsv>"}'
+  exit 1
+fi
+
 INPUT_FILE="$1"
-[[ -f "$INPUT_FILE" ]] || { echo "ERROR: file tidak ditemukan: $INPUT_FILE"; exit 1; }
-
-# ==== CLEAN CSV (hapus CRLF + BOM) ====
-CLEAN_TMP="$(mktemp)"
-trap 'rm -f "$CLEAN_TMP"' EXIT
-sed -e 's/\r$//' "$INPUT_FILE" | sed '1s/^\xEF\xBB\xBF//' > "$CLEAN_TMP"
-
-# ==== AUTO DETECT DELIMITER (dari header) ====
-HEADER_LINE="$(sed -n '1p' "$CLEAN_TMP")"
-if [[ "$HEADER_LINE" == *";"* ]]; then
-  DELIM=";"
-elif [[ "$HEADER_LINE" == *","* ]]; then
-  DELIM=","
-else
-  echo "ERROR: delimiter tidak dikenali (bukan , atau ;)"
+if [[ ! -f "$INPUT_FILE" ]]; then
+  echo '{"status":"FAILED","error":"TSV file not found"}'
   exit 1
 fi
 
-echo "Delimiter terdeteksi: '$DELIM'"
-
-# ==== BACA SEMUA BARIS ROBUST (baris terakhir tanpa newline tetap dihitung) ====
-mapfile -t LINES < "$CLEAN_TMP"
-
-TOTAL_LINES="${#LINES[@]}"
-if (( TOTAL_LINES <= 1 )); then
-  echo "Total baris data: 0"
-  echo "Tidak ada baris data."
-  exit 1
-fi
-
-TOTAL=$((TOTAL_LINES - 1))
-echo "Total baris data: $TOTAL"
-echo
-
-# ==== PROSES DATA (SKIP HEADER) ====
-IDX=0; OK=0; FAIL=0
-
-for ((i=1; i<${#LINES[@]}; i++)); do
-  line="${LINES[$i]}"
-
-  # skip kosong / comment
+# Process TSV line by line
+while IFS= read -r line || [[ -n "$line" ]]; do
+  # Skip empty lines or comments
   [[ -z "${line// }" ]] && continue
   [[ "${line:0:1}" == "#" ]] && continue
 
-  # parse kolom
-  IFS="$DELIM" read -r ORG OU CN EMAIL NIK PFXPASS _ <<< "$line"
+  # Parse TSV (expecting exactly 6 fields: ORG, OU, CN, EMAIL, NIK, PFXPASS)
+  IFS=$'\t' read -r ORG OU CN EMAIL NIK PFXPASS EXTRA <<< "$line"
 
-  ORG="$(echo "${ORG//\"/}" | xargs)"
-  [[ -z "$ORG" ]] && continue
+  # Validate fields
+  if [[ -n "${EXTRA:-}" ]] || [[ -z "${ORG:-}" ]] || [[ -z "${OU:-}" ]] || [[ -z "${CN:-}" ]] || [[ -z "${EMAIL:-}" ]] || [[ -z "${NIK:-}" ]] || [[ -z "${PFXPASS:-}" ]]; then
+    nik_display="${NIK:-unknown}"
+    printf '{"nik":"%s","status":"FAILED","error":"Invalid TSV row format: missing or extra fields"}\n' "$nik_display"
+    continue
+  fi
 
-  OU="$(echo "${OU//\"/}" | xargs)"
-  CN="$(echo "${CN//\"/}" | xargs)"
-  EMAIL="$(echo "${EMAIL//\"/}" | xargs)"
-  NIK="$(echo "$NIK" | tr -cd '0-9')"
-  PFXPASS="$(echo "${PFXPASS:-}" | xargs)"
-  [[ -n "$PFXPASS" ]] || PFXPASS="PfxPass!ChangeMe123"
+  # Validate NIK is exactly 16 digits
+  if ! [[ "$NIK" =~ ^[0-9]{16}$ ]]; then
+    printf '{"nik":"%s","status":"FAILED","error":"Invalid NIK: must be 16 digits"}\n' "$NIK"
+    continue
+  fi
 
-  IDX=$((IDX+1))
-  echo "[${IDX}/${TOTAL}] $CN — $ORG (NIK: $NIK)"
-
-  if ./bangkitkan_single.sh <<<"$ORG
+  # Call bangkitkan_single.sh capturing stdout and stderr
+  set +e
+  single_output=$("$SCRIPT_DIR/bangkitkan_single.sh" <<EOF 2>&1
+$ORG
 $OU
 $CN
 $EMAIL
 $DEFAULT_DAYS
 $NIK
-$PFXPASS"; then
-    OK=$((OK+1))
-  else
-    FAIL=$((FAIL+1))
-    if [[ "$CONTINUE_ON_ERROR" != "1" ]]; then
-      echo "STOP karena error (set CONTINUE_ON_ERROR=1 untuk lanjut)."
-      exit 1
-    fi
-  fi
-  echo
-done
+$PFXPASS
+EOF
+)
+  exit_code=$?
+  set -e
 
-echo "SELESAI ✅  Total: $TOTAL | OK: $OK | FAIL: $FAIL"
-echo "Arsip P12: $P12_ARCHIVE_DIR"
+  if [[ $exit_code -ne 0 ]]; then
+    printf '{"nik":"%s","status":"FAILED","error":"PKI generation failed"}\n' "$NIK"
+    continue
+  fi
+
+  # Extract Output dir
+  out_dir=""
+  while IFS= read -r outline; do
+    if [[ "$outline" =~ Output\ dir\ :\ (.*) ]]; then
+      out_dir="${BASH_REMATCH[1]}"
+      out_dir="$(echo "$out_dir" | xargs)"
+    fi
+  done <<< "$single_output"
+
+  if [[ -z "$out_dir" ]] || [[ ! -d "$out_dir" ]]; then
+    printf '{"nik":"%s","status":"FAILED","error":"Output directory not found"}\n' "$NIK"
+    continue
+  fi
+
+  folder_name="$(basename "$out_dir")"
+  crt_file="$out_dir/${folder_name}.crt"
+  p12_file="$out_dir/${NIK}.p12"
+
+  if [[ ! -f "$crt_file" ]]; then
+    printf '{"nik":"%s","status":"FAILED","error":"Certificate file not found"}\n' "$NIK"
+    continue
+  fi
+
+  # Extract certificate info via openssl
+  serial=""
+  not_before=""
+  not_after=""
+  fingerprint=""
+
+  while IFS='=' read -r k v; do
+    case "$k" in
+      serial) serial="$(echo "$v" | xargs)" ;;
+      notBefore) not_before="$(echo "$v" | xargs)" ;;
+      notAfter) not_after="$(echo "$v" | xargs)" ;;
+      *Fingerprint*|*fingerprint*) fingerprint="$(echo "$v" | xargs)" ;;
+    esac
+  done < <(openssl x509 -in "$crt_file" -noout -serial -dates -fingerprint -sha256 2>/dev/null || true)
+
+  # Output single JSON line
+  # Escape any quotes if necessary (serial, dates, fingerprint don't have special chars)
+  printf '{"nik":"%s","status":"SUCCESS","metadata":{"serial_number":"%s","fingerprint_sha256":"%s","certificate_path":"%s","p12_reference":"%s","issued_at":"%s","expires_at":"%s"}}\n' \
+    "$NIK" "$serial" "$fingerprint" "$crt_file" "$p12_file" "$not_before" "$not_after"
+
+done < "$INPUT_FILE"

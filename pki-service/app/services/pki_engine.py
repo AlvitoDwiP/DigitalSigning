@@ -1,6 +1,10 @@
 import os
 import subprocess
 import re
+import json
+import tempfile
+import shutil
+import uuid
 from pathlib import Path
 from app.core.config import pki_settings
 
@@ -9,14 +13,42 @@ class PKIEngineError(Exception):
         super().__init__(message)
         self.code = code
 
-def execute_script(script_name: str, input_data: str = None, args: list = None, timeout: int = 30) -> str:
-    script_path = Path(pki_settings.PKI_ENGINE_DIR) / script_name
+def slugify(text: str) -> str:
+    text = text.lower()
+    text = re.sub(r'[^a-z0-9]+', '-', text)
+    return text.strip('-')
+
+
+def get_pki_paths():
+    pki_engine_dir = Path(pki_settings.PKI_ENGINE_DIR)
+    pki_dir = pki_engine_dir if pki_engine_dir.name == "pki" else pki_engine_dir.parent
+    h_dir = pki_dir.parent
+    issued_dir = pki_dir / "issued"
+    p12_archive_dir = Path(os.environ.get("P12_ARCHIVE_DIR", str(h_dir / "sign-api(well3)" / "p12")))
+    chain_path = pki_dir / "intermediate" / "certs" / "ca-chain.crt"
+    return pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path
+
+def execute_script(script_name: str, input_data: str = None, args: list = None, timeout: int = 30, env: dict = None) -> str:
+    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path = get_pki_paths()
+    script_path = pki_engine_dir / script_name
     if not script_path.is_file():
-        raise PKIEngineError(f"Script {script_name} not found", "INTERNAL_ERROR")
+        # Fallback check in pki_dir directly if not in pki_engine_dir
+        if (pki_dir / script_name).is_file():
+            script_path = pki_dir / script_name
+        else:
+            raise PKIEngineError(f"Script {script_name} not found", "INTERNAL_ERROR")
         
     cmd = ["bash", str(script_path)]
     if args:
         cmd.extend(args)
+        
+    run_env = os.environ.copy()
+    run_env["H"] = str(h_dir)
+    run_env["ISSUED_ROOT"] = str(issued_dir)
+    run_env["P12_ARCHIVE_DIR"] = str(p12_archive_dir)
+    run_env["CHAIN_PATH"] = str(chain_path)
+    if env:
+        run_env.update(env)
         
     try:
         result = subprocess.run(
@@ -25,12 +57,10 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
             capture_output=True,
             text=True,
             timeout=timeout,
-            cwd=pki_settings.PKI_ENGINE_DIR
+            cwd=str(pki_engine_dir),
+            env=run_env
         )
         if result.returncode != 0:
-            # We don't want to leak passwords/private keys in the error message, 
-            # so we only log/return safe generic error. 
-            # Safe parsing of stderr could be done, but for now generic.
             raise PKIEngineError(f"Script {script_name} failed with code {result.returncode}", "PKI_GENERATION_FAILED")
         return result.stdout
     except subprocess.TimeoutExpired:
@@ -41,10 +71,6 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
         raise PKIEngineError("Unexpected error executing PKI engine", "INTERNAL_ERROR")
 
 def generate_single(name: str, nik: str, email: str, organization: str, ou: str, pfx_password: str):
-    # Prepare standard input data expected by the bash script
-    # Input order: ORG, OU, CN, EMAIL, DAYS, NIK_RAW, PFX_PASS
-    
-    # Days is left empty to use default.
     lines = [
         organization,
         ou,
@@ -58,8 +84,6 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
     
     stdout = execute_script("bangkitkan_single.sh", input_data=input_data)
     
-    # Parse the output to get the generated paths
-    # Output contains "Output dir : <path>" and "Arsip P12  : <path>"
     out_dir_match = re.search(r"Output dir :\s+(.*)", stdout)
     if not out_dir_match:
         raise PKIEngineError("Could not determine output directory from PKI engine", "ARTIFACT_ERROR")
@@ -70,12 +94,10 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
     if not meta_file.is_file():
         raise PKIEngineError("Metadata file not generated", "ARTIFACT_ERROR")
         
-    # Example meta parse, but actual cert data can be read from the CRT file using cryptography or openssl
     crt_file = out_dir / f"{out_dir.name}.crt"
     if not crt_file.is_file():
         raise PKIEngineError("Certificate file not generated", "ARTIFACT_ERROR")
         
-    # Validate certificate and extract metadata
     try:
         cert_info = subprocess.run(
             ["openssl", "x509", "-in", str(crt_file), "-noout", "-serial", "-dates", "-fingerprint", "-sha256"],
@@ -84,7 +106,6 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
     except subprocess.CalledProcessError:
         raise PKIEngineError("Failed to read generated certificate", "CERTIFICATE_VALIDATION_FAILED")
         
-    # Parse serial, dates, fingerprint
     serial = ""
     not_before = ""
     not_after = ""
@@ -98,14 +119,14 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
         elif line.startswith("notAfter="):
             not_after = line.split("=")[1].strip()
         elif "Fingerprint" in line:
-            fingerprint = line.split("=")[1].strip()
+            fingerprint = line.split("=")[1].strip().replace(":", "")
             
     p12_file = out_dir / f"{nik}.p12"
     
     return {
         "serial_number": serial,
         "subject": f"/C=ID/O={organization}/OU={ou}/CN={name}/emailAddress={email}",
-        "issuer": "Intermediate CA",  # We can extract actual issuer if needed
+        "issuer": "Intermediate CA",
         "fingerprint_sha256": fingerprint,
         "issued_at": not_before,
         "expires_at": not_after,
@@ -113,16 +134,245 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
         "p12_reference": str(p12_file)
     }
 
-def change_p12_passphrase(nik: str, new_password: str):
-    # Input expects NIK, Passphrase baru, Ulangi passphrase baru (only 2 lines if non-tty)
-    # The script uses `read -r P12_NEW_SECRET` twice or once depending on tty.
-    # From script: 
-    # IFS= read -r NIK || die ...
-    # IFS= read -r P12_NEW_SECRET || die ...
+def generate_staged(name: str, nik: str, email: str, organization: str, ou: str, pfx_password: str) -> dict:
+    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path = get_pki_paths()
+    
+    person_slug = f"{slugify(organization)}--{slugify(name)}"
+    final_user_dir = issued_dir / person_slug
+    final_p12_path = p12_archive_dir / f"{nik}.p12"
+    
+    # Create unique isolated staging directory
+    staging_id = uuid.uuid4().hex
+    staging_dir = issued_dir / f".staging_{person_slug}_{staging_id}"
+    staging_archive = staging_dir / "archive"
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    staging_archive.mkdir(parents=True, exist_ok=True)
+    
     lines = [
+        organization,
+        ou,
+        name,
+        email,
+        "",
         nik,
-        new_password
+        pfx_password
     ]
     input_data = "\n".join(lines) + "\n"
-    execute_script("change_p12_passphrase.sh", input_data=input_data)
+    
+    env = {
+        "OUT_DIR": str(staging_dir),
+        "P12_ARCHIVE_DIR": str(staging_archive)
+    }
+    
+    try:
+        stdout = execute_script("bangkitkan_single.sh", input_data=input_data, env=env)
+    except Exception as e:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        raise e
+        
+    crt_files = list(staging_dir.glob("*.crt"))
+    if not crt_files:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        raise PKIEngineError("Certificate file not generated in staging", "ARTIFACT_ERROR")
+        
+    crt_file = crt_files[0]
+    
+    try:
+        cert_info = subprocess.run(
+            ["openssl", "x509", "-in", str(crt_file), "-noout", "-serial", "-dates", "-fingerprint", "-sha256"],
+            capture_output=True, text=True, check=True
+        ).stdout
+    except subprocess.CalledProcessError:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        raise PKIEngineError("Failed to read generated certificate", "CERTIFICATE_VALIDATION_FAILED")
+        
+    serial = ""
+    not_before = ""
+    not_after = ""
+    fingerprint = ""
+    
+    for line in cert_info.splitlines():
+        if line.startswith("serial="):
+            serial = line.split("=")[1].strip()
+        elif line.startswith("notBefore="):
+            not_before = line.split("=")[1].strip()
+        elif line.startswith("notAfter="):
+            not_after = line.split("=")[1].strip()
+        elif "Fingerprint" in line:
+            fingerprint = line.split("=")[1].strip().replace(":", "")
+            
+    final_crt_path = final_user_dir / f"{person_slug}.crt"
+    final_p12_ref = final_user_dir / f"{nik}.p12"
+    
+    return {
+        "staging_token": str(staging_dir),
+        "target_user_dir": str(final_user_dir),
+        "target_archive_p12": str(final_p12_path),
+        "metadata": {
+            "serial_number": serial,
+            "subject": f"/C=ID/O={organization}/OU={ou}/CN={name}/emailAddress={email}",
+            "issuer": "Intermediate CA",
+            "fingerprint_sha256": fingerprint,
+            "issued_at": not_before,
+            "expires_at": not_after,
+            "certificate_path": str(final_crt_path),
+            "p12_reference": str(final_p12_ref)
+        }
+    }
+
+def commit_staged(staging_token: str, target_user_dir: str, target_archive_p12: str) -> bool:
+    staging_path = Path(staging_token)
+    if not staging_path.exists():
+        raise PKIEngineError("Staging directory not found", "ARTIFACT_ERROR")
+        
+    target_dir = Path(target_user_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Copy all files from staging into target_user_dir
+    for item in staging_path.iterdir():
+        if item.is_file():
+            shutil.copy2(item, target_dir / item.name)
+            
+    # Copy p12 to archive
+    staging_archive = staging_path / "archive"
+    if staging_archive.exists():
+        for p12 in staging_archive.glob("*.p12"):
+            archive_target = Path(target_archive_p12)
+            archive_target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(p12, archive_target)
+            
+    # Cleanup staging
+    shutil.rmtree(staging_path, ignore_errors=True)
     return True
+
+def cleanup_staged(staging_token: str) -> bool:
+    staging_path = Path(staging_token)
+    if staging_path.exists():
+        shutil.rmtree(staging_path, ignore_errors=True)
+    return True
+
+def generate_bulk(requests: list) -> list:
+    if not requests:
+        return []
+        
+    temp_fd, temp_path_str = tempfile.mkstemp(suffix=".tsv", prefix="pki_bulk_")
+    temp_path = Path(temp_path_str)
+    
+    try:
+        os.chmod(temp_path, 0o600)
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
+            for req in requests:
+                req_dict = req if isinstance(req, dict) else req.model_dump()
+                for k in ["organization", "ou", "name", "email", "nik", "pfx_password"]:
+                    val = str(req_dict.get(k, ""))
+                    if "\t" in val or "\r" in val or "\n" in val:
+                        raise PKIEngineError(f"Field {k} contains forbidden tab/newline characters", "INVALID_INPUT")
+                row = f"{req_dict['organization']}\t{req_dict['ou']}\t{req_dict['name']}\t{req_dict['email']}\t{req_dict['nik']}\t{req_dict['pfx_password']}\n"
+                f.write(row)
+                
+        timeout = max(60, len(requests) * 30)
+        stdout = execute_script("bangkitkan_banyak.sh", args=[str(temp_path)], timeout=timeout)
+        
+        results = []
+        for line in stdout.splitlines():
+            line_str = line.strip()
+            if not line_str:
+                continue
+            try:
+                item = json.loads(line_str)
+                if item.get("status") == "SUCCESS" and "metadata" in item:
+                    meta = item["metadata"]
+                    if "subject" not in meta:
+                        matched_req = next((r if isinstance(r, dict) else r.model_dump() for r in requests if (r if isinstance(r, dict) else r.model_dump()).get("nik") == item.get("nik")), None)
+                        if matched_req:
+                            meta["subject"] = f"/C=ID/O={matched_req['organization']}/OU={matched_req['ou']}/CN={matched_req['name']}/emailAddress={matched_req['email']}"
+                        else:
+                            meta["subject"] = "CN=Unknown"
+                    if "issuer" not in meta:
+                        meta["issuer"] = "Intermediate CA"
+                results.append(item)
+            except json.JSONDecodeError:
+                continue
+                
+        return results
+    finally:
+        if temp_path.exists():
+            try:
+                temp_path.unlink()
+            except Exception:
+                pass
+
+def change_p12_passphrase_user(nik: str, old_password: str, new_password: str) -> bool:
+    nik_safe = re.sub(r'[^0-9]', '', nik)
+    if len(nik_safe) != 16:
+        raise PKIEngineError("NIK must be 16 digits", "INVALID_IDENTIFIER")
+        
+    for val in [old_password, new_password]:
+        if "\n" in val or "\r" in val or "\t" in val:
+            raise PKIEngineError("Password cannot contain newlines or tabs", "INVALID_INPUT")
+            
+    input_data = f"{nik_safe}\n{old_password}\n{new_password}\n"
+    execute_script("change_p12_passphrase-user.sh", input_data=input_data)
+    return True
+
+def change_p12_passphrase_admin(nik: str, new_password: str) -> bool:
+    nik_safe = re.sub(r'[^0-9]', '', nik)
+    if len(nik_safe) != 16:
+        raise PKIEngineError("NIK must be 16 digits", "INVALID_IDENTIFIER")
+        
+    if "\n" in new_password or "\r" in new_password or "\t" in new_password:
+        raise PKIEngineError("Password cannot contain newlines or tabs", "INVALID_INPUT")
+        
+    input_data = f"{nik_safe}\n{new_password}\n"
+    execute_script("change_p12_passphrase-admin.sh", input_data=input_data)
+    return True
+
+def change_p12_passphrase(nik: str, new_password: str):
+    return change_p12_passphrase_admin(nik, new_password)
+
+def delete_user_pki_materials(nik: str) -> dict:
+    nik_safe = re.sub(r'[^0-9]', '', nik)
+    if not nik_safe:
+        raise PKIEngineError("Invalid NIK provided", "INVALID_IDENTIFIER")
+        
+    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, _ = get_pki_paths()
+    
+    deleted_files = []
+    failed_files = []
+    
+    def try_delete(filepath: Path):
+        if filepath.exists():
+            try:
+                filepath.unlink()
+                deleted_files.append(str(filepath))
+            except Exception as e:
+                failed_files.append(str(filepath))
+                
+    archive_p12 = p12_archive_dir / f"{nik_safe}.p12"
+    try_delete(archive_p12)
+    
+    if issued_dir.exists():
+        for p12_file in issued_dir.glob(f"*/{nik_safe}.p12"):
+            out_dir = p12_file.parent
+            person_slug = out_dir.name
+            
+            try_delete(out_dir / f"{person_slug}.key")
+            try_delete(out_dir / f"{person_slug}.csr")
+            try_delete(out_dir / f"{person_slug}.crt")
+            try_delete(out_dir / f"{person_slug}.pfx")
+            try_delete(out_dir / f"{person_slug}-meta.txt")
+            try_delete(p12_file)
+            
+            try:
+                if not any(out_dir.iterdir()):
+                    out_dir.rmdir()
+            except Exception:
+                pass
+                
+    if failed_files:
+        raise PKIEngineError("Partial cleanup failure", "PARTIAL_CLEANUP_FAILURE")
+        
+    return {"success": True, "deleted": deleted_files}

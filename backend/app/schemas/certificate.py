@@ -1,0 +1,54 @@
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+import uuid
+
+class CertificateBase(BaseModel):
+    serial_number: str
+    subject: str
+    issuer: str
+    fingerprint_sha256: str
+    issued_at: datetime
+    expires_at: datetime
+    status: str
+
+class CertificateResponse(CertificateBase):
+    id: uuid.UUID
+    
+    class Config:
+        from_attributes = True
+
+class CertificateInDB(CertificateBase):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    certificate_path: str
+    p12_reference: str
+    replaced_by: Optional[uuid.UUID] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class RegenerateCertificateRequest(BaseModel):
+    pfx_password: Optional[str] = None
+    confirm_pfx_password: Optional[str] = None
+
+class RegenerateCertificateNewCertData(BaseModel):
+    id: uuid.UUID
+    serial_number: str
+    issued_at: datetime
+    expires_at: datetime
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class RegenerateCertificateData(BaseModel):
+    old_certificate_id: uuid.UUID
+    new_certificate: RegenerateCertificateNewCertData
+
+class RegenerateCertificateResponse(BaseModel):
+    success: bool = True
+    data: RegenerateCertificateData
+

@@ -23,8 +23,12 @@ app.add_middleware(
 )
 
 # Include routers
-from app.api.endpoints import auth
+from app.api.endpoints import auth, users, account, dashboard, audit_logs
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Auth"])
+app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["Users"])
+app.include_router(account.router, prefix=f"{settings.API_V1_STR}/account", tags=["Account"])
+app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["Dashboard"])
+app.include_router(audit_logs.router, prefix=f"{settings.API_V1_STR}/audit-logs", tags=["Audit Log"])
 app.include_router(health_router, prefix=settings.API_V1_STR, tags=["Health"])
 app.include_router(health_router, tags=["Health"]) # Root /health convenience
 

@@ -2,15 +2,23 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install OpenSSL and bash dependencies for PKI engine execution
+# Install system dependencies for OpenSSL and PKI engine scripts
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     openssl \
     curl \
+    util-linux \
+    coreutils \
+    findutils \
+    diffutils \
+    sed \
+    gawk \
+    grep \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pki-service/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --default-timeout=100 -r requirements.txt
 
 COPY pki-service/app ./app
 

@@ -11,7 +11,7 @@ class PKISettings(BaseSettings):
     PORT: int = int(os.getenv("PKI_SERVICE_PORT", "8001"))
     
     PKI_SERVICE_TOKEN: str = os.getenv("PKI_SERVICE_TOKEN", "dev-pki-service-token-2026")
-    PKI_ENGINE_DIR: str = str(BASE_DIR / "pki")
+    PKI_ENGINE_DIR: str = os.getenv("PKI_ENGINE_DIR", str(BASE_DIR / "pki" / "scripts"))
     
     class Config:
         env_file = str(ENV_FILE) if ENV_FILE.exists() else None

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -18,6 +16,33 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - platform_network
+
+  pki-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pki-service
+    container_name: digital_signature_pki_service
+    restart: always
+    ports:
+      - "8001:8001"
+    environment:
+      - PKI_SERVICE_TOKEN=dev-pki-service-token-2026
+      - PKI_ENGINE_DIR=/app/pki/scripts
+      - P12_ARCHIVE_DIR=/app/sign-api(well3)/p12
+      - PORT=8001
+    volumes:
+      - ./pki:/app/pki
+      - ./sign-api(well3):/app/sign-api(well3)
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - platform_network
 
   backend:
     build:
@@ -33,22 +58,20 @@ services:
       - PKI_SERVICE_URL=http://pki-service:8001
       - PKI_SERVICE_TOKEN=dev-pki-service-token-2026
       - ENVIRONMENT=development
+      - PORT=8000
     depends_on:
       postgres:
         condition: service_healthy
-
-  pki-service:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.pki-service
-    container_name: digital_signature_pki_service
-    restart: always
-    ports:
-      - "8001:8001"
-    environment:
-      - PKI_SERVICE_TOKEN=dev-pki-service-token-2026
-    volumes:
-      - ./pki:/app/pki
+      pki-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - platform_network
 
   frontend:
     build:
@@ -57,9 +80,18 @@ services:
     container_name: digital_signature_frontend
     restart: always
     ports:
-      - "3000:80"
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://backend:8000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    networks:
+      - platform_network
 
 volumes:
   postgres_data:
+
+networks:
+  platform_network:
+    driver: bridge
