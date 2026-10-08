@@ -59,16 +59,23 @@ def setup_exception_handlers(app: FastAPI):
             404: "NOT_FOUND",
             409: "CERTIFICATE_ALREADY_EXISTS",
             500: "INTERNAL_ERROR",
+            501: "NOT_IMPLEMENTED",
             502: "PKI_SERVICE_UNAVAILABLE"
         }
         code = code_map.get(exc.status_code, "INTERNAL_ERROR")
+        if isinstance(exc.detail, dict):
+            code = exc.detail.get("code", code)
+            message = exc.detail.get("message", "HTTP Error")
+        else:
+            message = str(exc.detail) if exc.detail else "HTTP Error"
+            
         return JSONResponse(
             status_code=exc.status_code,
             content={
                 "success": False,
                 "error": {
                     "code": code,
-                    "message": str(exc.detail) if isinstance(exc.detail, str) else "HTTP Error"
+                    "message": message
                 }
             }
         )

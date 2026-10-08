@@ -10,6 +10,7 @@ from app.models.audit_log import AuditLog
 
 router = APIRouter()
 
+@router.get("", response_model=dict)
 @router.get("/", response_model=dict)
 def get_dashboard(
     db: Session = Depends(deps.get_db),

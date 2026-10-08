@@ -78,7 +78,7 @@ Aturan pakai: merah bukan hiasan. Merah dipakai untuk sidebar, tombol utama, dan
 - Dua kartu expiry sejajar dan setinggi sama di desktop, bertumpuk satu kolom di HP.
 - **Pengguna**: daftar dengan pencarian, filter status pengguna, filter sertifikat, dan urutan (nama atau sertifikat paling dekat berakhir). Tidak ada tombol "Tambah pengguna". Aksi baris: Detail dan Hapus.
 - **Detail Pengguna** (halaman, bukan dialog): informasi pengguna, sertifikat aktif (Regenerate, Ubah PFX, Lihat detail, Hapus sertifikat), Riwayat sertifikat (ACTIVE, REPLACED, EXPIRED), dan Riwayat regenerate (termasuk percobaan gagal).
-- **Generate** berarti Generate User: tab "Generate 1 User" dan "Generate Bulk User". Generate User membuat user sekaligus melakukan provisioning sertifikat melalui PKI engine. Format CSV platform: `name,nik,email,organization,ou,pfx_pass`.
+- **Generate** berarti Generate User: tab "Generate 1 User" dan "Generate Bulk User". Generate User membuat user sekaligus melakukan provisioning sertifikat melalui PKI engine. Format CSV platform: `name,nik,email,organization,ou,password,pfx_pass`.
 - **Ubah PFX** berbeda dari Regenerate: tidak menerbitkan sertifikat baru, serial, masa berlaku, dan status tetap. Password tidak disimpan, tidak ditampilkan, tidak dicatat.
 - **Hapus**: Delete User menghapus data operasional pengguna dan sertifikatnya, Audit Log tetap. Delete Certificate (audit/backend lifecycle only) pada sertifikat non-ACTIVE menghapus berkas operasional tetapi catatannya tetap tampil di riwayat. Pada sertifikat ACTIVE, sertifikat dan berkasnya dihapus. Keduanya tercatat di Audit Log.
 - Tidak ada KPI di luar tiga statistik utama.

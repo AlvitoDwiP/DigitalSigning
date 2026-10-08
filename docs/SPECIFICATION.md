@@ -124,6 +124,7 @@ Input:
 - Email
 - Organization
 - OU
+- Password (Password Login Akun)
 - PFX Password
 - Confirm PFX Password
 
@@ -147,10 +148,10 @@ Generate dianggap berhasil hanya jika hasil PKI berhasil dan output certificate/
 
 ### Bulk Generate
 
-CSV menggunakan field:
+CSV menggunakan field (7 kolom):
 
 ```text
-name,nik,email,organization,ou,pfx_pass
+name,nik,email,organization,ou,password,pfx_pass
 ```
 
 Mapping ke existing PKI engine:
@@ -163,6 +164,8 @@ email        → EMAIL
 nik          → NIK
 pfx_pass     → PFX_PASS
 ```
+
+*Catatan: `password` adalah password login akun pengguna dan disimpan dalam bentuk hash di database platform, bukan dikirim ke PKI engine.*
 
 Flow:
 

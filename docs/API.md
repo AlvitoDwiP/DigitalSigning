@@ -203,16 +203,18 @@ Mengambil daftar user.
 search
 role
 status
+certificate_status
 sort
 order
 page
+skip
 limit
 ```
 
 Contoh:
 
 ```text
-GET /api/v1/users?search=Budi&sort=expires_at&order=asc&page=1&limit=20
+GET /api/v1/users?search=Budi&sort=nearest_expiry&order=asc&page=1&limit=20
 ```
 
 ### Response
@@ -279,6 +281,7 @@ Membuat user baru sekaligus melakukan provisioning certificate melalui PKI Servi
   "email": "budi@mkri.go.id",
   "organization": "Mahkamah Konstitusi Republik Indonesia",
   "ou": "TTE",
+  "password": "Password123!",
   "pfx_password": "********",
   "confirm_pfx_password": "********"
 }
@@ -291,6 +294,7 @@ Membuat user baru sekaligus melakukan provisioning certificate melalui PKI Servi
 - email valid;
 - email unik;
 - field wajib tersedia;
+- Password login akun memenuhi kebijakan keamanan (min. 8 karakter, 1 huruf besar, 1 simbol/non-alphanumeric);
 - Password PFX tersedia;
 - confirm Password PFX sesuai.
 
@@ -326,7 +330,7 @@ USER
 }
 ```
 
-PFX Password tidak boleh dikembalikan.
+PFX Password dan password login plaintext tidak boleh dikembalikan.
 
 ---
 
@@ -344,11 +348,11 @@ Multipart form-data:
 file: users.csv
 ```
 
-Format CSV:
+Format CSV (7 kolom):
 
 ```csv
-name,nik,email,organization,ou,pfx_pass
-Budi Santoso,327xxxxxxxxxxxxx,budi@mkri.go.id,Mahkamah Konstitusi Republik Indonesia,TTE,password123
+name,nik,email,organization,ou,password,pfx_pass
+Budi Santoso,327xxxxxxxxxxxxx,budi@mkri.go.id,Mahkamah Konstitusi Republik Indonesia,TTE,Password123!,pfxpass123
 ```
 
 ### Validasi
@@ -360,6 +364,7 @@ Budi Santoso,327xxxxxxxxxxxxx,budi@mkri.go.id,Mahkamah Konstitusi Republik Indon
 - duplicate email;
 - duplicate terhadap database;
 - email valid;
+- Password login akun memenuhi kebijakan keamanan;
 - PFX Password tersedia.
 
 ### Response

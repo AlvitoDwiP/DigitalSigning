@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, and_, asc, desc
 from sqlalchemy.exc import IntegrityError
 import uuid
 from typing import List, Any, Dict, Optional
@@ -182,13 +183,87 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
 
 @router.get("/", response_model=dict)
 def get_users(
+    search: Optional[str] = Query(None, description="Search across name, nik, or email"),
+    role: Optional[str] = Query(None, description="Filter by role: SUPER_ADMIN, ADMIN, USER"),
+    status: Optional[str] = Query(None, description="Filter by user status: ACTIVE, INACTIVE"),
+    certificate_status: Optional[str] = Query(None, description="Filter by certificate status: ACTIVE, EXPIRED, REPLACED, REVOKED"),
+    sort: Optional[str] = Query("created_at", description="Sort field: name, created_at, nearest_expiry, expires_at"),
+    order: Optional[str] = Query("desc", description="Sort order: asc, desc"),
+    page: Optional[int] = Query(None, ge=1, description="Page number (1-based)"),
+    skip: Optional[int] = Query(0, ge=0, description="Offset (used if page is not provided)"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
     db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"])),
-    skip: int = 0,
-    limit: int = 100
+    current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"]))
 ):
-    users = db.query(User).offset(skip).limit(limit).all()
-    return {"success": True, "data": {"items": [UserSchema.model_validate(u).model_dump() for u in users], "pagination": {"page": 1, "limit": limit, "total": len(users)}}}
+    query = db.query(User)
+
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            or_(
+                User.name.ilike(search_pattern),
+                User.nik.ilike(search_pattern),
+                User.email.ilike(search_pattern)
+            )
+        )
+
+    if role:
+        query = query.filter(User.role == role)
+
+    if status:
+        query = query.filter(User.status == status)
+
+    if certificate_status:
+        query = query.join(Certificate, Certificate.user_id == User.id).filter(
+            Certificate.status == certificate_status
+        ).distinct()
+
+    # Sorting
+    is_asc = (order.lower() == "asc") if order else False
+    if sort in ["nearest_expiry", "expires_at"]:
+        query = query.outerjoin(
+            Certificate,
+            and_(Certificate.user_id == User.id, Certificate.status == "ACTIVE")
+        )
+        if is_asc:
+            query = query.order_by(Certificate.expires_at.asc().nullslast(), User.created_at.desc())
+        else:
+            query = query.order_by(Certificate.expires_at.desc().nullslast(), User.created_at.desc())
+    elif sort == "name":
+        query = query.order_by(User.name.asc() if is_asc else User.name.desc())
+    else:  # default created_at
+        query = query.order_by(User.created_at.asc() if is_asc else User.created_at.desc())
+
+    total = query.count()
+
+    # Pagination calculation
+    if page is not None:
+        offset = (page - 1) * limit
+        current_page = page
+    else:
+        offset = skip if skip is not None else 0
+        current_page = (offset // limit) + 1 if limit > 0 else 1
+
+    users = query.offset(offset).limit(limit).all()
+
+    items = []
+    for u in users:
+        u_dict = UserSchema.model_validate(u).model_dump()
+        active_cert = next((c for c in u.certificates if c.status == "ACTIVE"), None)
+        u_dict["active_certificate"] = CertificateResponse.model_validate(active_cert).model_dump() if active_cert else None
+        items.append(u_dict)
+
+    return {
+        "success": True,
+        "data": {
+            "items": items,
+            "pagination": {
+                "page": current_page,
+                "limit": limit,
+                "total": total
+            }
+        }
+    }
 
 @router.get("/{user_id}", response_model=dict)
 def get_user(

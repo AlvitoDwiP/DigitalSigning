@@ -1,105 +1,136 @@
-import { useEffect, useState } from 'react';
-
-interface HealthData {
-  status: string;
-  service: string;
-  version: string;
-  environment: string;
-  database: {
-    status: string;
-    database_url_masked?: string;
-    error?: string;
-  };
-}
+import { useState, useEffect } from 'react';
+import { LoginPage } from './pages/LoginPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { UsersPage } from './pages/UsersPage';
+import { AppShell } from './components/layout/AppShell';
+import { PlaceholderPage } from './pages/PlaceholderPage';
+import { getAuthToken, clearAuthSession } from './services/api';
 
 export default function App() {
-  const [health, setHealth] = useState<HealthData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // Path state initialized from browser window.location.pathname
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname) {
+      const p = window.location.pathname;
+      return p === '/' ? '/dashboard' : p;
+    }
+    return '/dashboard';
+  });
 
-  const fetchHealth = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/v1/health');
-      if (!res.ok) {
-        throw new Error(`HTTP Error ${res.status}`);
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/login') {
+      return false;
+    }
+    const token = getAuthToken();
+    return !!token;
+  });
+
+  // Handle browser popstate (back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname || '/dashboard';
+      if (path === '/login') {
+        setIsAuthenticated(false);
+      } else {
+        const token = getAuthToken();
+        setIsAuthenticated(!!token);
       }
-      const data = await res.json();
-      setHealth(data);
-    } catch (err: any) {
-      setError(err.message || 'Gagal terhubung ke Backend API');
-    } finally {
-      setLoading(false);
+      setCurrentPath(path === '/' ? '/dashboard' : path);
+    };
+
+    const handleUnauthorized = () => {
+      setIsAuthenticated(false);
+      navigateTo('/login');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, []);
+
+  const navigateTo = (path: string) => {
+    setCurrentPath(path);
+    if (typeof window !== 'undefined' && window.history) {
+      window.history.pushState({}, '', path);
+    }
+    if (path === '/login') {
+      setIsAuthenticated(false);
     }
   };
 
-  useEffect(() => {
-    fetchHealth();
-  }, []);
+  const handleLoginSuccess = (_email: string) => {
+    setIsAuthenticated(true);
+    navigateTo('/dashboard');
+  };
+
+  const handleLogout = () => {
+    clearAuthSession();
+    setIsAuthenticated(false);
+    navigateTo('/login');
+  };
+
+  if (!isAuthenticated || currentPath === '/login') {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  const renderContent = () => {
+    if (currentPath === '/dashboard') {
+      return <DashboardPage onNavigate={navigateTo} />;
+    }
+    if (currentPath === '/users') {
+      return <UsersPage onNavigate={navigateTo} />;
+    }
+    if (currentPath.startsWith('/users/')) {
+      return (
+        <PlaceholderPage
+          title="Detail Pengguna"
+          subtitle="Informasi akun pengguna dan riwayat sertifikat X.509."
+          iconName="users"
+        />
+      );
+    }
+    switch (currentPath) {
+      case '/generate':
+        return (
+          <PlaceholderPage
+            title="Generate"
+            subtitle="Penerbitan single user certificate dan batch generate via CSV import."
+            iconName="generate"
+          />
+        );
+      case '/audit-logs':
+        return (
+          <PlaceholderPage
+            title="Audit Log"
+            subtitle="Riwayat aktivitas sistem yang aman dan append-only untuk kepatuhan keamanan."
+            iconName="audit-logs"
+          />
+        );
+      case '/signing':
+        return (
+          <PlaceholderPage
+            title="Penandatanganan"
+            subtitle="Modul penandatanganan dokumen PDF digital (Reserved)."
+            iconName="signing"
+            isReserved={true}
+          />
+        );
+      default:
+        return <DashboardPage onNavigate={navigateTo} />;
+    }
+  };
 
   return (
-    <div className="container">
-      <header className="header-brand">
-        <div className="brand-badge">DS</div>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Digital Signature Platform</h1>
-          <p style={{ color: 'var(--muted)', fontSize: '14px' }}>
-            System Foundation & Health Check Status
-          </p>
-        </div>
-      </header>
-
-      <main className="card">
-        <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
-          Backend & Database Connection Status
-        </h2>
-
-        {loading && <p style={{ color: 'var(--muted)' }}>Memeriksa koneksi backend...</p>}
-
-        {error && (
-          <div style={{ padding: '16px', backgroundColor: '#FCE3DF', color: '#A91E17', borderRadius: '12px' }}>
-            <p><strong>Status Error:</strong> {error}</p>
-            <button onClick={fetchHealth} className="btn" style={{ marginTop: '12px' }}>
-              Coba Lagi
-            </button>
-          </div>
-        )}
-
-        {health && (
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
-              <div style={{ padding: '16px', backgroundColor: 'var(--panel)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block' }}>Service Status</span>
-                <span className={`status-badge ${health.status === 'ok' ? 'status-ok' : 'status-degraded'}`}>
-                  {health.status.toUpperCase()}
-                </span>
-              </div>
-              <div style={{ padding: '16px', backgroundColor: 'var(--panel)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block' }}>Database Status</span>
-                <span className={`status-badge ${health.database.status === 'connected' ? 'status-ok' : 'status-degraded'}`}>
-                  {health.database.status.toUpperCase()}
-                </span>
-              </div>
-              <div style={{ padding: '16px', backgroundColor: 'var(--panel)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block' }}>Environment</span>
-                <span style={{ fontWeight: 700 }}>{health.environment}</span>
-              </div>
-            </div>
-
-            <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
-              <p><strong>Backend Service:</strong> {health.service} (v{health.version})</p>
-              {health.database.database_url_masked && (
-                <p><strong>Target Database:</strong> {health.database.database_url_masked}</p>
-              )}
-            </div>
-
-            <button onClick={fetchHealth} className="btn" style={{ marginTop: '20px' }}>
-              Refresh Status
-            </button>
-          </div>
-        )}
-      </main>
-    </div>
+    <AppShell
+      currentPath={currentPath}
+      onNavigate={navigateTo}
+      onLogout={handleLogout}
+    >
+      {renderContent()}
+    </AppShell>
   );
 }
