@@ -291,7 +291,7 @@ def generate_user(
     current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"]))
 ):
     if req.pfx_password != req.confirm_pfx_password:
-        raise HTTPException(status_code=400, detail={"code": "INVALID_INPUT", "message": "Confirm PFX password does not match"})
+        raise HTTPException(status_code=400, detail={"code": "INVALID_INPUT", "message": "Konfirmasi passphrase tidak cocok"})
         
     # Pre-validation Database checking
     existing_nik = db.query(User).filter(User.nik == req.nik).first()
@@ -692,7 +692,7 @@ def change_user_pfx_password(
     db.add(audit)
     db.commit()
     
-    return {"success": True, "message": "Password PFX berhasil diubah"}
+    return {"success": True, "message": "Passphrase berhasil diubah"}
 
 @router.delete("/{user_id}", response_model=dict)
 def delete_user(
@@ -778,13 +778,13 @@ def regenerate_user_certificate(
             detail={"code": "NO_ACTIVE_CERTIFICATE", "message": "User tidak memiliki sertifikat aktif untuk di-regenerate"}
         )
 
-    pfx_pass = "12345678"
+    pfx_pass = "Mkri006!"
     if req:
         if req.pfx_password:
             if req.confirm_pfx_password is not None and req.pfx_password != req.confirm_pfx_password:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"code": "INVALID_INPUT", "message": "Confirm PFX password does not match"}
+                    detail={"code": "INVALID_INPUT", "message": "Konfirmasi passphrase tidak cocok"}
                 )
             pfx_pass = req.pfx_password
 
@@ -857,10 +857,8 @@ def regenerate_user_certificate(
 
     new_cert_id = uuid.uuid4()
     old_cert_id = active_cert.id
-
     try:
         active_cert.status = "REPLACED"
-        active_cert.replaced_by = new_cert_id
         active_cert.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
         new_cert = Certificate(
@@ -877,6 +875,9 @@ def regenerate_user_certificate(
             status="ACTIVE"
         )
         db.add(new_cert)
+        db.flush()
+
+        active_cert.replaced_by = new_cert_id
 
         audit_success = AuditLog(
             id=uuid.uuid4(),

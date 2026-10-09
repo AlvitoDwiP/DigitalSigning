@@ -1,0 +1,371 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { UserDetailData } from '../types/users';
+import {
+  fetchUserDetail,
+  regenerateUserCertificate,
+  changeUserPfxPassword,
+  deleteUser,
+} from '../services/users';
+import { UserInfoCard } from '../components/users/detail/UserInfoCard';
+import { ActiveCertificateCard } from '../components/users/detail/ActiveCertificateCard';
+import { CertificateHistoryCard } from '../components/users/detail/CertificateHistoryCard';
+import { RegenerateDialog } from '../components/users/detail/RegenerateDialog';
+import { ChangePfxDialog } from '../components/users/detail/ChangePfxDialog';
+import { UserDeleteDialog } from '../components/users/UserDeleteDialog';
+import {
+  IconCheckCircle,
+  IconAlertTriangle,
+  IconRefresh,
+  IconUsers,
+} from '../components/icons/Icons';
+
+
+interface UserDetailPageProps {
+  userId: string;
+  onNavigate: (path: string) => void;
+}
+
+export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
+  const [user, setUser] = useState<UserDetailData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isNotFound, setIsNotFound] = useState(false);
+
+  // Success Feedback Toast
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Dialog States
+  const [isRegenerateOpen, setIsRegenerateOpen] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
+
+  const [isChangePfxOpen, setIsChangePfxOpen] = useState(false);
+  const [isChangingPfx, setIsChangingPfx] = useState(false);
+  const [changePfxError, setChangePfxError] = useState<string | null>(null);
+
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const showFeedback = (msg: string) => {
+    setFeedbackMessage(msg);
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+    feedbackTimerRef.current = setTimeout(() => {
+      setFeedbackMessage(null);
+    }, 4000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  const loadData = useCallback(async () => {
+    if (!userId) {
+      setIsNotFound(true);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setIsNotFound(false);
+
+    try {
+      const res = await fetchUserDetail(userId);
+      if (res.success && res.data) {
+        setUser(res.data);
+      } else {
+        const msg = typeof res.detail === 'string'
+          ? res.detail
+          : (res.detail?.message || res.message || 'Gagal memuat detail pengguna.');
+        setError(msg);
+      }
+    } catch (err: any) {
+      const errMsg = err.message || '';
+      if (errMsg.includes('404') || errMsg.toLowerCase().includes('not found') || errMsg.toLowerCase().includes('tidak ditemukan')) {
+        setIsNotFound(true);
+      } else {
+        setError(errMsg || 'Terjadi kesalahan saat memuat detail pengguna.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Regenerate Actions
+  const handleOpenRegenerate = () => {
+    setRegenerateError(null);
+    setIsRegenerateOpen(true);
+  };
+
+  const handleCloseRegenerate = () => {
+    if (!isRegenerating) {
+      setIsRegenerateOpen(false);
+      setRegenerateError(null);
+    }
+  };
+
+  const handleConfirmRegenerate = async () => {
+    if (!user) return;
+    setIsRegenerating(true);
+    setRegenerateError(null);
+
+    try {
+      const res = await regenerateUserCertificate(user.id);
+      if (res.success) {
+        setIsRegenerateOpen(false);
+        showFeedback('Sertifikat baru berhasil diterbitkan dan status sertifikat lama telah diperbarui.');
+        await loadData();
+      } else {
+        const msg = typeof res.detail === 'string'
+          ? res.detail
+          : (res.detail?.message || res.message || 'Gagal menerbitkan ulang sertifikat.');
+        setRegenerateError(msg);
+      }
+    } catch (err: any) {
+      setRegenerateError(err.message || 'Gagal menjalankan proses penerbitan ulang sertifikat.');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  // Change PFX Actions
+  const handleOpenChangePfx = () => {
+    setChangePfxError(null);
+    setIsChangePfxOpen(true);
+  };
+
+  const handleCloseChangePfx = () => {
+    if (!isChangingPfx) {
+      setIsChangePfxOpen(false);
+      setChangePfxError(null);
+    }
+  };
+
+  const handleConfirmChangePfx = async (newPassword: string, confirmPassword: string) => {
+    if (!user) return;
+    setIsChangingPfx(true);
+    setChangePfxError(null);
+
+    try {
+      const res = await changeUserPfxPassword(user.id, {
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+
+      if (res.success) {
+        setIsChangePfxOpen(false);
+        showFeedback('Passphrase berhasil diperbarui.');
+        await loadData();
+      } else {
+        const msg = typeof res.detail === 'string'
+          ? res.detail
+          : (res.detail?.message || res.message || 'Gagal mengubah passphrase.');
+        setChangePfxError(msg);
+      }
+    } catch (err: any) {
+      setChangePfxError(err.message || 'Gagal mengubah passphrase.');
+    } finally {
+      setIsChangingPfx(false);
+    }
+  };
+
+  // Delete User Actions
+  const handleOpenDelete = () => {
+    setDeleteError(null);
+    setIsDeleteOpen(true);
+  };
+
+  const handleCloseDelete = () => {
+    if (!isDeleting) {
+      setIsDeleteOpen(false);
+      setDeleteError(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!user) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await deleteUser(user.id);
+      if (res.success) {
+        setIsDeleteOpen(false);
+        onNavigate('/users');
+      } else {
+        const msg = typeof res.detail === 'string'
+          ? res.detail
+          : (res.detail?.message || res.message || 'Gagal menghapus pengguna.');
+        setDeleteError(msg);
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || 'Gagal menghapus pengguna dari sistem.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // 404 Not Found State
+  if (isNotFound) {
+    return (
+      <div className="user-detail-page-container">
+        <nav className="detail-breadcrumbs" aria-label="Navigasi rekam jejak">
+          <button
+            type="button"
+            className="btn-breadcrumb"
+            onClick={() => onNavigate('/users')}
+          >
+            ← Kembali ke Pengguna
+          </button>
+        </nav>
+
+        <div className="users-empty-state-card" role="status">
+          <div className="empty-state-icon" aria-hidden="true">
+            <IconUsers size={32} />
+          </div>
+          <h2 className="empty-state-title">Pengguna Tidak Ditemukan</h2>
+          <p className="empty-state-description">
+            Data pengguna dengan identifier yang diminta tidak ditemukan di basis data atau telah dihapus.
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary empty-state-action-btn"
+            onClick={() => onNavigate('/users')}
+          >
+            Kembali ke Daftar Pengguna
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <div className="user-detail-page-container">
+        <nav className="detail-breadcrumbs" aria-label="Navigasi rekam jejak">
+          <button
+            type="button"
+            className="btn-breadcrumb"
+            onClick={() => onNavigate('/users')}
+          >
+            ← Kembali ke Pengguna
+          </button>
+        </nav>
+
+        <div className="users-error-card" role="alert">
+          <div className="error-icon" aria-hidden="true">
+            <IconAlertTriangle size={32} />
+          </div>
+          <div className="error-body">
+            <h2 className="error-title">Gagal Memuat Detail Pengguna</h2>
+            <p className="error-description">{error}</p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost error-retry-btn"
+            onClick={loadData}
+          >
+            <IconRefresh size={16} aria-hidden="true" />
+            <span>Muat Ulang</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="user-detail-page-container">
+      {/* Breadcrumb Navigation */}
+      <nav className="detail-breadcrumbs" aria-label="Navigasi rekam jejak">
+        <button
+          type="button"
+          className="btn-breadcrumb"
+          onClick={() => onNavigate('/users')}
+        >
+          <span>Pengguna</span>
+          <span className="breadcrumb-separator" aria-hidden="true">/</span>
+          <span className="breadcrumb-current">{user ? user.name : 'Detail Pengguna'}</span>
+        </button>
+      </nav>
+
+      {/* Success Toast Feedback */}
+      {feedbackMessage && (
+        <div className="feedback-banner feedback-success" role="status" aria-live="polite">
+          <IconCheckCircle size={18} aria-hidden="true" />
+          <span>{feedbackMessage}</span>
+        </div>
+      )}
+
+      {/* Content Layout */}
+      {isLoading || !user ? (
+        <div className="detail-skeleton-container" aria-busy="true" aria-label="Memuat detail pengguna...">
+          <div className="skeleton-card skeleton-card-user" />
+          <div className="skeleton-card skeleton-card-cert" />
+          <div className="skeleton-card skeleton-card-history" />
+        </div>
+      ) : (
+        <div className="user-detail-grid">
+          {/* User Information Card */}
+          <UserInfoCard
+            user={user}
+            onDeleteUser={handleOpenDelete}
+          />
+
+          {/* Active Certificate Card */}
+          <ActiveCertificateCard
+            certificate={user.active_certificate}
+            onRegenerate={handleOpenRegenerate}
+            onChangePfx={handleOpenChangePfx}
+            disabled={isRegenerating || isChangingPfx}
+          />
+
+          {/* Certificate History Card */}
+          <CertificateHistoryCard
+            history={user.certificate_history}
+          />
+        </div>
+      )}
+
+      {/* Dialogs */}
+      <RegenerateDialog
+        user={user}
+        isOpen={isRegenerateOpen}
+        isProcessing={isRegenerating}
+        error={regenerateError}
+        onConfirm={handleConfirmRegenerate}
+        onClose={handleCloseRegenerate}
+      />
+
+      <ChangePfxDialog
+        user={user}
+        isOpen={isChangePfxOpen}
+        isProcessing={isChangingPfx}
+        error={changePfxError}
+        onConfirm={handleConfirmChangePfx}
+        onClose={handleCloseChangePfx}
+      />
+
+      <UserDeleteDialog
+        user={user}
+        isOpen={isDeleteOpen}
+        isDeleting={isDeleting}
+        error={deleteError}
+        onConfirm={handleConfirmDelete}
+        onClose={handleCloseDelete}
+      />
+    </div>
+  );
+}

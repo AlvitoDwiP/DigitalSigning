@@ -39,12 +39,12 @@ function getActionInfo(action: string) {
       desc: 'Pembaruan masa berlaku sertifikat digital',
     };
   }
-  if (norm.includes('PFX') || norm.includes('PASSWORD')) {
+  if (norm.includes('PFX') || norm.includes('PASSWORD') || norm.includes('PASSPHRASE')) {
     return {
-      title: 'Ubah Password PFX',
+      title: 'Ubah Passphrase',
       icon: IconShield,
       badgeClass: 'badge-blue',
-      desc: 'Pembaruan kredensial proteksi berkas PFX',
+      desc: 'Pembaruan passphrase proteksi berkas PFX',
     };
   }
   if (norm.includes('DELETE') || norm.includes('HAPUS')) {

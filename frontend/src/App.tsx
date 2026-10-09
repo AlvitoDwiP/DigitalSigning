@@ -2,9 +2,15 @@ import { useState, useEffect } from 'react';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
-import { AppShell } from './components/layout/AppShell';
+import { UserDetailPage } from './pages/UserDetailPage';
+import { GeneratePage } from './pages/GeneratePage';
+import { AdminsPage } from './pages/AdminsPage';
+import { AuditLogsPage } from './pages/AuditLogsPage';
+import { AccountPage } from './pages/AccountPage';
+import { ForbiddenPage } from './pages/ForbiddenPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
-import { getAuthToken, clearAuthSession } from './services/api';
+import { AppShell } from './components/layout/AppShell';
+import { getAuthToken, getAuthUser, clearAuthSession } from './services/api';
 
 export default function App() {
   // Path state initialized from browser window.location.pathname
@@ -77,51 +83,92 @@ export default function App() {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
+  const authUser = getAuthUser();
+  const currentRole = authUser?.role || 'USER';
+
   const renderContent = () => {
     if (currentPath === '/dashboard') {
       return <DashboardPage onNavigate={navigateTo} />;
     }
+
     if (currentPath === '/users') {
+      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+        return (
+          <ForbiddenPage
+            onNavigate={navigateTo}
+            message="Halaman Pengguna hanya dapat diakses oleh Administrator."
+          />
+        );
+      }
       return <UsersPage onNavigate={navigateTo} />;
     }
+
     if (currentPath.startsWith('/users/')) {
+      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+        return (
+          <ForbiddenPage
+            onNavigate={navigateTo}
+            message="Halaman Detail Pengguna hanya dapat diakses oleh Administrator."
+          />
+        );
+      }
+      const userId = currentPath.replace('/users/', '').split('?')[0].split('#')[0];
+      return <UserDetailPage userId={userId} onNavigate={navigateTo} />;
+    }
+
+    if (currentPath === '/generate') {
+      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+        return (
+          <ForbiddenPage
+            onNavigate={navigateTo}
+            message="Halaman Generate User & Sertifikat hanya dapat diakses oleh Administrator."
+          />
+        );
+      }
+      return <GeneratePage onNavigate={navigateTo} />;
+    }
+
+    if (currentPath === '/admins') {
+      if (currentRole !== 'SUPER_ADMIN') {
+        return (
+          <ForbiddenPage
+            onNavigate={navigateTo}
+            message="Halaman Management Admin hanya dapat diakses oleh Super Admin."
+          />
+        );
+      }
+      return <AdminsPage onNavigate={navigateTo} />;
+    }
+
+    if (currentPath === '/audit-log' || currentPath === '/audit-logs') {
+      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+        return (
+          <ForbiddenPage
+            onNavigate={navigateTo}
+            message="Halaman Audit Log hanya dapat diakses oleh Administrator."
+          />
+        );
+      }
+      return <AuditLogsPage onNavigate={navigateTo} />;
+    }
+
+    if (currentPath === '/account') {
+      return <AccountPage onNavigate={navigateTo} />;
+    }
+
+    if (currentPath === '/signing') {
       return (
         <PlaceholderPage
-          title="Detail Pengguna"
-          subtitle="Informasi akun pengguna dan riwayat sertifikat X.509."
-          iconName="users"
+          title="Penandatanganan"
+          subtitle="Modul penandatanganan dokumen PDF digital (Reserved for Phase 2)."
+          iconName="signing"
+          isReserved={true}
         />
       );
     }
-    switch (currentPath) {
-      case '/generate':
-        return (
-          <PlaceholderPage
-            title="Generate"
-            subtitle="Penerbitan single user certificate dan batch generate via CSV import."
-            iconName="generate"
-          />
-        );
-      case '/audit-logs':
-        return (
-          <PlaceholderPage
-            title="Audit Log"
-            subtitle="Riwayat aktivitas sistem yang aman dan append-only untuk kepatuhan keamanan."
-            iconName="audit-logs"
-          />
-        );
-      case '/signing':
-        return (
-          <PlaceholderPage
-            title="Penandatanganan"
-            subtitle="Modul penandatanganan dokumen PDF digital (Reserved)."
-            iconName="signing"
-            isReserved={true}
-          />
-        );
-      default:
-        return <DashboardPage onNavigate={navigateTo} />;
-    }
+
+    // Fallback default
+    return <DashboardPage onNavigate={navigateTo} />;
   };
 
   return (

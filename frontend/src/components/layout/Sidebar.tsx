@@ -5,9 +5,12 @@ import {
   IconGenerate,
   IconAudit,
   IconSignature,
-  IconClose
+  IconShield,
+  IconUser,
+  IconClose,
 } from '../icons/Icons';
 import { StatusChip } from '../ui/StatusChip';
+import { getAuthUser } from '../../services/api';
 
 export interface NavItem {
   id: string;
@@ -18,40 +21,111 @@ export interface NavItem {
   reservedBadge?: string;
 }
 
-export const ADMIN_NAV_ITEMS: NavItem[] = [
-  {
-    id: 'dashboard',
-    path: '/dashboard',
-    label: 'Dashboard',
-    icon: IconDashboard,
-  },
-  {
-    id: 'users',
-    path: '/users',
-    label: 'Pengguna',
-    icon: IconUsers,
-  },
-  {
-    id: 'generate',
-    path: '/generate',
-    label: 'Generate',
-    icon: IconGenerate,
-  },
-  {
-    id: 'audit-logs',
-    path: '/audit-logs',
-    label: 'Audit Log',
-    icon: IconAudit,
-  },
-  {
-    id: 'signing',
-    path: '/signing',
-    label: 'Penandatanganan',
-    icon: IconSignature,
-    isReserved: true,
-    reservedBadge: 'Segera',
-  },
-];
+export function getNavItemsForRole(role: string): NavItem[] {
+  if (role === 'SUPER_ADMIN') {
+    return [
+      {
+        id: 'dashboard',
+        path: '/dashboard',
+        label: 'Dashboard',
+        icon: IconDashboard,
+      },
+      {
+        id: 'users',
+        path: '/users',
+        label: 'Pengguna',
+        icon: IconUsers,
+      },
+      {
+        id: 'generate',
+        path: '/generate',
+        label: 'Generate',
+        icon: IconGenerate,
+      },
+      {
+        id: 'admins',
+        path: '/admins',
+        label: 'Management Admin',
+        icon: IconShield,
+      },
+      {
+        id: 'audit-log',
+        path: '/audit-log',
+        label: 'Audit Log',
+        icon: IconAudit,
+      },
+      {
+        id: 'signing',
+        path: '/signing',
+        label: 'Penandatanganan',
+        icon: IconSignature,
+        isReserved: true,
+        reservedBadge: 'Segera',
+      },
+    ];
+  }
+
+  if (role === 'ADMIN') {
+    return [
+      {
+        id: 'dashboard',
+        path: '/dashboard',
+        label: 'Dashboard',
+        icon: IconDashboard,
+      },
+      {
+        id: 'users',
+        path: '/users',
+        label: 'Pengguna',
+        icon: IconUsers,
+      },
+      {
+        id: 'generate',
+        path: '/generate',
+        label: 'Generate',
+        icon: IconGenerate,
+      },
+      {
+        id: 'audit-log',
+        path: '/audit-log',
+        label: 'Audit Log',
+        icon: IconAudit,
+      },
+      {
+        id: 'signing',
+        path: '/signing',
+        label: 'Penandatanganan',
+        icon: IconSignature,
+        isReserved: true,
+        reservedBadge: 'Segera',
+      },
+    ];
+  }
+
+  // Role: USER
+  return [
+    {
+      id: 'dashboard',
+      path: '/dashboard',
+      label: 'Dashboard',
+      icon: IconDashboard,
+    },
+    {
+      id: 'account',
+      path: '/account',
+      label: 'Kelola Akun',
+      icon: IconUser,
+    },
+    {
+      id: 'signing',
+      path: '/signing',
+      label: 'Penandatanganan',
+      icon: IconSignature,
+      isReserved: true,
+      reservedBadge: 'Segera',
+    },
+  ];
+}
 
 interface SidebarProps {
   currentPath: string;
@@ -68,6 +142,16 @@ export function Sidebar({
   onCloseMobile,
   onLogout,
 }: SidebarProps) {
+  const authUser = getAuthUser();
+  const currentRole = authUser?.role || 'ADMIN';
+  const navItems = getNavItemsForRole(currentRole);
+
+  const isPathActive = (itemPath: string) => {
+    if (currentPath === itemPath) return true;
+    if (itemPath === '/audit-log' && (currentPath === '/audit-logs' || currentPath === '/audit-log')) return true;
+    return false;
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -90,7 +174,9 @@ export function Sidebar({
           </div>
           <div className="brand-text">
             <span className="brand-title">Digital Signature</span>
-            <span className="brand-subtitle">Admin Platform</span>
+            <span className="brand-subtitle">
+              {currentRole === 'USER' ? 'Portal Pengguna' : 'Admin Platform'}
+            </span>
           </div>
           {isOpenMobile && (
             <button
@@ -107,8 +193,8 @@ export function Sidebar({
         {/* Navigation List */}
         <nav className="sidebar-nav">
           <ul className="nav-list">
-            {ADMIN_NAV_ITEMS.map((item) => {
-              const isActive = currentPath === item.path;
+            {navItems.map((item) => {
+              const isActive = isPathActive(item.path);
               const Icon = item.icon;
 
               return (
@@ -147,7 +233,7 @@ export function Sidebar({
               type="button"
               className="sidebar-logout-btn"
               onClick={onLogout}
-              aria-label="Keluar dari sesi Admin"
+              aria-label="Keluar dari sesi akun"
             >
               <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

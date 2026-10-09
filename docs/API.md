@@ -295,8 +295,8 @@ Membuat user baru sekaligus melakukan provisioning certificate melalui PKI Servi
 - email unik;
 - field wajib tersedia;
 - Password login akun memenuhi kebijakan keamanan (min. 8 karakter, 1 huruf besar, 1 simbol/non-alphanumeric);
-- Password PFX tersedia;
-- confirm Password PFX sesuai.
+- Passphrase tersedia;
+- confirm Passphrase sesuai.
 
 Role otomatis:
 
@@ -330,7 +330,7 @@ USER
 }
 ```
 
-PFX Password dan password login plaintext tidak boleh dikembalikan.
+Passphrase dan password login plaintext tidak boleh dikembalikan. Default credential jika menggunakan default adalah `Mkri006!`.
 
 ---
 
@@ -365,7 +365,7 @@ Budi Santoso,327xxxxxxxxxxxxx,budi@mkri.go.id,Mahkamah Konstitusi Republik Indon
 - duplicate terhadap database;
 - email valid;
 - Password login akun memenuhi kebijakan keamanan;
-- PFX Password tersedia.
+- Passphrase tersedia.
 
 ### Response
 
@@ -389,7 +389,7 @@ Budi Santoso,327xxxxxxxxxxxxx,budi@mkri.go.id,Mahkamah Konstitusi Republik Indon
 }
 ```
 
-PFX Password tidak ditampilkan pada preview.
+Passphrase tidak ditampilkan pada preview.
 
 ---
 
@@ -453,13 +453,13 @@ Mengambil history certificate user.
 }
 ```
 
-PFX Password dan private key tidak pernah dikembalikan.
+Passphrase dan private key tidak pernah dikembalikan.
 
 ---
 
 ## POST `/api/v1/users/{user_id}/certificates/regenerate`
 
-Menerbitkan certificate baru.
+Menerbitkan certificate baru dengan default passphrase `Mkri006!`.
 
 ### Role
 
@@ -468,7 +468,7 @@ Menerbitkan certificate baru.
 
 ### Request
 
-Tidak membutuhkan body khusus.
+Tidak membutuhkan body khusus (menggunakan default passphrase `Mkri006!`).
 
 ### Flow
 
@@ -505,11 +505,11 @@ old = ACTIVE
 
 ---
 
-# 9. Ubah Password PFX
+# 9. Ubah Passphrase
 
 ## POST `/api/v1/users/{user_id}/pfx-password`
 
-Mengubah Password PFX/P12 user.
+Mengubah Passphrase PFX/P12 user.
 
 ### Role
 
@@ -531,11 +531,11 @@ Mengubah Password PFX/P12 user.
 ```json
 {
   "success": true,
-  "message": "Password PFX berhasil diubah"
+  "message": "Passphrase berhasil diubah"
 }
 ```
 
-Password tidak disimpan dan tidak dikembalikan.
+Passphrase tidak disimpan dan tidak dikembalikan.
 
 ---
 
@@ -673,7 +673,7 @@ NIK tidak boleh diubah tanpa mekanisme khusus karena menjadi identifier yang dig
 
 ## POST `/api/v1/account/pfx-password`
 
-Shortcut untuk mengubah Password PFX milik user sendiri.
+Shortcut untuk mengubah Passphrase milik user sendiri.
 
 Request:
 
@@ -799,7 +799,7 @@ Response metadata:
 
 Tidak mengembalikan password/private key.
 
-### PFX Password
+### Passphrase
 
 Request:
 
@@ -851,7 +851,7 @@ Raw error dari engine tidak boleh menjadi response publik.
 | Users | ✓ | ✓ | - |
 | Generate | ✓ | ✓ | - |
 | Regenerate | ✓ | ✓ | - |
-| Ubah PFX User | ✓ | ✓ | Own |
+| Ubah Passphrase User | ✓ | ✓ | Own |
 | Delete User | ✓ | ✓ | - |
 | Management Admin | ✓ | - | - |
 | Account | - | - | Own |

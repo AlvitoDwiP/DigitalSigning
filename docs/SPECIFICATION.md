@@ -2,7 +2,7 @@
 
 ## 1. Product Overview
 
-Digital Signature Platform adalah aplikasi web untuk mengelola user, provisioning sertifikat/credential, pengelolaan Password PFX, audit, dan persiapan integrasi proses penandatanganan digital.
+Digital Signature Platform adalah aplikasi web untuk mengelola user, provisioning sertifikat/credential, pengelolaan Passphrase, audit, dan persiapan integrasi proses penandatanganan digital.
 
 Platform menggunakan PKI engine yang sudah tersedia sebagai engine penerbitan sertifikat. Platform tidak menulis ulang proses kriptografi pada Phase 1.
 
@@ -28,7 +28,7 @@ Dokumen ini merupakan **master specification / source of truth** untuk kebutuhan
 6. Generate User bulk melalui CSV.
 7. Certificate metadata management.
 8. Regenerate certificate.
-9. Ubah Password PFX.
+9. Ubah Passphrase.
 10. Management Admin.
 11. Audit Log.
 12. Kelola Akun.
@@ -70,7 +70,7 @@ Terdapat tiga role:
 | Audit Log | ✓ | ✓ | - |
 | Penandatanganan | - | ✓ | ✓ |
 | Kelola Akun | - | - | ✓ |
-| Ubah Password PFX | - | Kelola user | ✓ |
+| Ubah Passphrase | - | Kelola user | ✓ |
 | Regenerate | Kelola user | Kelola user | - |
 
 Authorization wajib diperiksa di backend. Frontend hanya mengatur tampilan dan navigasi berdasarkan role.
@@ -125,8 +125,8 @@ Input:
 - Organization
 - OU
 - Password (Password Login Akun)
-- PFX Password
-- Confirm PFX Password
+- Passphrase
+- Confirm Passphrase
 
 Role tidak dipilih dari form Generate dan otomatis menjadi `USER`.
 
@@ -162,7 +162,7 @@ organization → ORG
 ou           → OU
 email        → EMAIL
 nik          → NIK
-pfx_pass     → PFX_PASS
+pfx_pass     → PFX_PASS (Passphrase)
 ```
 
 *Catatan: `password` adalah password login akun pengguna dan disimpan dalam bentuk hash di database platform, bukan dikirim ke PKI engine.*
@@ -188,8 +188,8 @@ Validasi mencakup:
 - Duplicate NIK dalam CSV.
 - Duplicate email dalam CSV.
 - Duplicate terhadap database.
-- PFX Password tersedia.
-- Tidak menampilkan PFX Password pada preview.
+- Passphrase tersedia.
+- Tidak menampilkan Passphrase pada preview.
 
 CSV tidak digunakan sebagai tempat penyimpanan permanen credential.
 
@@ -231,7 +231,7 @@ Backend bertanggung jawab memastikan status expiration diperbarui berdasarkan `e
 
 ## 7. Regenerate
 
-Regenerate menerbitkan certificate baru untuk user yang sudah ada.
+Regenerate menerbitkan certificate baru untuk user yang sudah ada dengan default passphrase `Mkri006!`.
 
 Aturan:
 
@@ -249,9 +249,9 @@ User tidak dapat melakukan regenerate.
 
 ---
 
-## 8. Ubah Password PFX
+## 8. Ubah Passphrase
 
-Ubah Password PFX hanya mengubah password PFX/P12.
+Ubah Passphrase hanya mengubah passphrase PFX/P12.
 
 Tidak menerbitkan certificate baru.
 
@@ -270,11 +270,11 @@ Request
 → validasi akses
 → PKI Service
 → change_p12_passphrase.sh
-→ validasi P12 menggunakan password baru
+→ validasi P12 menggunakan passphrase baru
 → success
 ```
 
-Password PFX:
+Passphrase:
 
 - tidak disimpan di database;
 - tidak disimpan pada audit log;
@@ -402,7 +402,7 @@ Audit tidak boleh menyimpan:
 
 - password;
 - OTP;
-- PFX Password;
+- Passphrase;
 - private key;
 - PFX/P12;
 - service token;
@@ -424,7 +424,7 @@ Data yang dapat ditampilkan/diperbarui mengikuti kebutuhan aplikasi, termasuk:
 - Organization
 - OU
 
-Fitur Ubah Password PFX tersedia di bagian Kelola Akun untuk User.
+Fitur Ubah Passphrase tersedia di bagian Kelola Akun untuk User.
 
 ---
 
@@ -563,7 +563,7 @@ Aturan penting:
 - Satu ACTIVE certificate per user.
 - Certificate terkait user.
 - Audit actor menggunakan relasi yang tetap mempertahankan audit ketika user dihapus.
-- Tidak menyimpan PFX Password/private key/PFX sebagai data aplikasi.
+- Tidak menyimpan Passphrase/private key/PFX sebagai data aplikasi.
 
 Detail schema dan constraint ada pada `DATABASE.md`.
 
@@ -587,9 +587,9 @@ PKI_TIMEOUT
 
 Tidak boleh hardcode secret di source code.
 
-### PFX Password
+### Passphrase
 
-PFX Password hanya digunakan selama proses yang membutuhkan credential tersebut.
+Passphrase hanya digunakan selama proses yang membutuhkan credential tersebut. Default credential (seperti login password / passphrase sertifikat provisioning atau regenerate) menggunakan `Mkri006!`.
 
 Tidak boleh:
 

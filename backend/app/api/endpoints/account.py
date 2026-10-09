@@ -125,7 +125,7 @@ def change_account_pfx_password(
     db.add(audit)
     db.commit()
     
-    return {"success": True, "message": "Password PFX berhasil diubah"}
+    return {"success": True, "message": "Passphrase berhasil diubah"}
 
 @router.post("/password", response_model=dict)
 def change_account_login_password(

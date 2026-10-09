@@ -2,7 +2,7 @@
 
 ## 1. Tujuan
 
-Dokumen ini mendefinisikan arsitektur teknis Digital Signature Platform untuk mengelola user, provisioning sertifikat melalui PKI engine yang sudah tersedia, perubahan Password PFX, autentikasi, audit, dan integrasi API.
+Dokumen ini mendefinisikan arsitektur teknis Digital Signature Platform untuk mengelola user, provisioning sertifikat melalui PKI engine yang sudah tersedia, perubahan Passphrase, autentikasi, audit, dan integrasi API.
 
 Platform berfungsi sebagai layer aplikasi dan orkestrasi. Proses kriptografi dan penerbitan sertifikat tetap menggunakan PKI engine yang sudah tersedia dan tidak ditulis ulang pada Phase 1.
 
@@ -24,7 +24,7 @@ Arsitektur Phase 1 terdiri dari:
 
 3. **PostgreSQL**
    - Menyimpan data user, metadata sertifikat, dan audit log.
-   - Tidak menyimpan private key, PFX, Password PFX, atau credential sensitif.
+   - Tidak menyimpan private key, PFX, Passphrase, atau credential sensitif.
 
 4. **PKI Service**
    - Service internal yang menjadi adapter/orchestrator terhadap PKI engine.
@@ -93,7 +93,7 @@ Frontend bertanggung jawab atas:
 
 Frontend tidak bertanggung jawab atas:
 - penerbitan sertifikat;
-- penyimpanan Password PFX;
+- penyimpanan Passphrase;
 - eksekusi script;
 - validasi keamanan akhir;
 - pembuatan audit log secara langsung.
@@ -154,9 +154,9 @@ Validasi utama:
 - NIK belum digunakan;
 - email valid dan unik;
 - field wajib terisi;
-- Password PFX tersedia.
+- Passphrase tersedia.
 
-Password PFX hanya diteruskan untuk proses provisioning dan tidak disimpan ke database, audit log, atau response setelah proses selesai.
+Passphrase hanya diteruskan untuk proses provisioning dan tidak disimpan ke database, audit log, atau response setelah proses selesai.
 
 ### Bulk
 
@@ -177,11 +177,11 @@ Frontend
 
 Semua row harus divalidasi sebelum proses generation dimulai.
 
-Platform tidak bergantung pada default Password PFX dari script lama.
+Platform tidak bergantung pada default credential dari script lama, melainkan menggunakan default credential baru `Mkri006!`.
 
 ## 6. Regenerate Certificate
 
-Regenerate menghasilkan sertifikat baru untuk user yang sudah ada.
+Regenerate menghasilkan sertifikat baru untuk user yang sudah ada dengan default passphrase `Mkri006!`.
 
 Aturan:
 1. Sertifikat lama tetap `ACTIVE` selama proses baru belum berhasil.
@@ -210,9 +210,9 @@ Generate certificate
                     old REPLACED
 ```
 
-## 7. Ubah Password PFX
+## 7. Ubah Passphrase
 
-Perubahan Password PFX tidak menerbitkan sertifikat baru.
+Perubahan Passphrase tidak menerbitkan sertifikat baru.
 
 Alurnya:
 
@@ -221,7 +221,7 @@ Frontend
   -> Platform API
   -> PKI Service
   -> change_p12_passphrase.sh
-  -> validasi P12 dengan password baru
+  -> validasi P12 dengan passphrase baru
   -> success
 ```
 
@@ -232,9 +232,9 @@ Perubahan ini tidak mengubah:
 - expires_at;
 - certificate status.
 
-Yang berubah hanya password pada PFX/P12.
+Yang berubah hanya passphrase pada PFX/P12.
 
-Password akun dapat digunakan untuk konfirmasi identitas sesuai kebutuhan aplikasi, tetapi password akun dan Password PFX tetap tidak disimpan sebagai plaintext.
+Password akun dapat digunakan untuk konfirmasi identitas sesuai kebutuhan aplikasi, tetapi password akun dan Passphrase tetap tidak disimpan sebagai plaintext.
 
 ## 8. Authentication
 
@@ -285,13 +285,13 @@ User hanya mengakses data dan proses miliknya sendiri sesuai fitur yang tersedia
 
 Hal yang tidak boleh keluar dari boundary internal:
 - private key;
-- PFX/P12 password;
+- PFX/P12 passphrase;
 - CA private key;
 - CA password;
 - service token;
 - credential PKI lainnya.
 
-Password PFX:
+Passphrase:
 - tidak disimpan di PostgreSQL;
 - tidak disimpan di audit log;
 - tidak dikirim kembali ke frontend setelah proses;
@@ -424,7 +424,7 @@ Fokus Phase 1:
 - Generate User bulk;
 - certificate metadata;
 - regenerate;
-- Ubah Password PFX;
+- Ubah Passphrase;
 - Audit Log;
 - account management;
 - API platform;
@@ -466,7 +466,7 @@ Phase 2 tidak mengubah fungsi provisioning sertifikat pada Phase 1.
 3. **PKI Service menjadi satu-satunya adapter ke PKI engine.**
 4. **Database hanya menyimpan metadata, bukan material kriptografi sensitif.**
 5. **Backend menjadi sumber kebenaran untuk authorization dan certificate state.**
-6. **Password PFX tidak pernah dipersistenkan sebagai plaintext.**
+6. **Passphrase tidak pernah dipersistenkan sebagai plaintext.**
 7. **Certificate lama tidak diganti sebelum certificate baru berhasil divalidasi.**
 8. **Phase 1 fokus pada provisioning dan management, bukan PDF signing.**
 9. **Arsitektur dibuat sederhana agar mudah dikembangkan tanpa overengineering.**

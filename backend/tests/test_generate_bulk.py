@@ -174,3 +174,54 @@ Bulk User 2,{nik2},bulk2_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass12
         assert data["data"]["total"] == 2
         assert data["data"]["success"] == 2
         assert data["data"]["failed"] == 0
+
+
+def test_regenerate_certificate_uses_default_passphrase(client: TestClient, auth_headers: dict, seed_users: dict):
+    target_user = seed_users["user"]
+    mock_stage_res = {
+        "staging_token": "token-xyz",
+        "target_user_dir": "/path/dir",
+        "target_archive_p12": "/path/archive.p12",
+        "metadata": {
+            "serial_number": "SER-REGEN-123",
+            "subject": f"CN={target_user.name}",
+            "issuer": "Intermediate CA",
+            "fingerprint_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "certificate_path": "/path/cert.crt",
+            "p12_reference": "/path/cert.p12",
+            "issued_at": "2026-10-01T00:00:00Z",
+            "expires_at": "2028-10-01T00:00:00Z",
+        }
+    }
+
+    with patch("app.api.endpoints.users.pki_client.regenerate_stage", return_value=mock_stage_res) as mock_stage, \
+         patch("app.api.endpoints.users.pki_client.regenerate_commit", return_value={"status": "SUCCESS"}):
+        res = client.post(f"/api/v1/users/{target_user.id}/certificates/regenerate", json={}, headers=auth_headers["admin"])
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        assert data["data"]["new_certificate"]["serial_number"] == "SER-REGEN-123"
+
+        # Verify that default passphrase Mkri006! was used
+        call_args = mock_stage.call_args[0][0]
+        assert call_args["pfx_password"] == "Mkri006!"
+
+        # Verify no secret leak in response text
+        assert "Mkri006!" not in res.text
+        assert "12345678" not in res.text
+
+
+def test_change_user_pfx_passphrase(client: TestClient, auth_headers: dict, seed_users: dict):
+    target_user = seed_users["user"]
+    with patch("app.api.endpoints.users.pki_client.change_p12_passphrase_admin", return_value={"status": "SUCCESS"}):
+        res = client.post(
+            f"/api/v1/users/{target_user.id}/pfx-password",
+            json={"new_password": "NewSecretPass123!", "confirm_password": "NewSecretPass123!"},
+            headers=auth_headers["admin"]
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        assert data["message"] == "Passphrase berhasil diubah"
+        assert "NewSecretPass123!" not in res.text
+

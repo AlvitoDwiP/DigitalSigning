@@ -13,7 +13,7 @@ Phase 1 berfokus pada:
 - bulk Generate User;
 - certificate management;
 - regenerate;
-- Ubah Password PFX;
+- Ubah Passphrase;
 - audit;
 - API.
 
@@ -183,7 +183,7 @@ Urutan implementasi yang direkomendasikan:
 8. Bulk Generate
 9. Certificate management
 10. Regenerate
-11. Ubah Password PFX
+11. Ubah Passphrase
 12. Dashboard
 13. Audit Log
 14. Frontend integration
@@ -253,7 +253,7 @@ Regenerate tidak mengubah certificate lama sampai certificate baru berhasil dibu
 
 Jangan menyimpan:
 
-- PFX Password;
+- Passphrase;
 - private key;
 - PFX/P12;
 - CA password;
@@ -363,7 +363,7 @@ Existing `sign-api(well3)` dapat digunakan sebagai signing engine pada Phase 2 s
 1. Jangan membuat PKI engine baru jika existing engine masih digunakan.
 2. Jangan menjalankan Bash PKI langsung dari Platform API.
 3. Gunakan PKI Service sebagai adapter.
-4. Jangan menyimpan Password PFX.
+4. Jangan menyimpan Passphrase.
 5. Jangan menyimpan private key pada database.
 6. Backend menjadi sumber kebenaran authorization.
 7. Frontend tidak menjadi security boundary.

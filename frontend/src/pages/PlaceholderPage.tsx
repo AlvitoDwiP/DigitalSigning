@@ -12,6 +12,7 @@ interface PlaceholderPageProps {
   subtitle?: string;
   iconName?: string;
   isReserved?: boolean;
+  roleAccess?: string;
 }
 
 export function PlaceholderPage({
@@ -19,6 +20,7 @@ export function PlaceholderPage({
   subtitle = 'Fitur ini akan diimplementasikan pada tahap frontend berikutnya.',
   iconName,
   isReserved = false,
+  roleAccess = 'ADMIN, USER',
 }: PlaceholderPageProps) {
   const getIcon = () => {
     switch (iconName) {
@@ -67,7 +69,7 @@ export function PlaceholderPage({
           </div>
           <div className="detail-item">
             <span className="detail-label">Role Akses</span>
-            <span className="detail-value">ADMIN</span>
+            <span className="detail-value">{roleAccess}</span>
           </div>
         </div>
       </div>

@@ -13,7 +13,7 @@ DEFAULT_OU="${DEFAULT_OU:-TTE}"
 DEFAULT_CN="${DEFAULT_CN:-Nama Penandatangan}"
 DEFAULT_EMAIL="${DEFAULT_EMAIL:-penandatangan@univ-b.ac.id}"
 DEFAULT_DAYS="${DEFAULT_DAYS:-730}"
-DEFAULT_PFX_PASS="${DEFAULT_PFX_PASS:-12345678}"
+DEFAULT_PFX_PASS="${DEFAULT_PFX_PASS:-Mkri006!}"
 # Hardcode password Intermediate CA (bisa override via ENV INTER_CA_PASS)
 INTER_CA_PASS="${INTER_CA_PASS:-InterPass!ChangeMe123}"
 # =======================================================================

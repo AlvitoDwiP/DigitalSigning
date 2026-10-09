@@ -2,14 +2,20 @@ import { useState } from 'react';
 import { IconSearch, IconMenu } from '../icons/Icons';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { StatusChip } from '../ui/StatusChip';
+import { getAuthUser } from '../../services/api';
 
 interface TopbarProps {
   onOpenMobileMenu?: () => void;
   onSearch?: (query: string) => void;
+  onNavigate?: (path: string) => void;
 }
 
-export function Topbar({ onOpenMobileMenu, onSearch }: TopbarProps) {
+export function Topbar({ onOpenMobileMenu, onSearch, onNavigate }: TopbarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const authUser = getAuthUser();
+  const userName = authUser?.name || 'Pengguna Platform';
+  const userRole = authUser?.role || 'USER';
+  const initial = userName.trim().charAt(0).toUpperCase() || 'U';
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -23,6 +29,9 @@ export function Topbar({ onOpenMobileMenu, onSearch }: TopbarProps) {
     e.preventDefault();
     if (onSearch) {
       onSearch(searchQuery);
+    }
+    if (onNavigate && (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN')) {
+      onNavigate('/users');
     }
   };
 
@@ -62,14 +71,26 @@ export function Topbar({ onOpenMobileMenu, onSearch }: TopbarProps) {
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* Admin Profile Area */}
-        <div className="topbar-profile" tabIndex={0} aria-label="Profil Pengguna: Admin Platform">
+        {/* Profile Area */}
+        <div
+          className="topbar-profile"
+          tabIndex={0}
+          role="button"
+          onClick={() => onNavigate && onNavigate('/account')}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && onNavigate) {
+              e.preventDefault();
+              onNavigate('/account');
+            }
+          }}
+          aria-label={`Profil Pengguna: ${userName}, Role: ${userRole}. Klik untuk Kelola Akun.`}
+        >
           <div className="profile-avatar" aria-hidden="true">
-            <span>A</span>
+            <span>{initial}</span>
           </div>
           <div className="profile-info">
-            <span className="profile-name">Admin Platform</span>
-            <StatusChip status="ADMIN" label="ADMIN" className="profile-role-badge" />
+            <span className="profile-name">{userName}</span>
+            <StatusChip status={userRole} label={userRole} className="profile-role-badge" />
           </div>
         </div>
       </div>

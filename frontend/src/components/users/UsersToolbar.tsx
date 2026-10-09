@@ -36,8 +36,8 @@ export function UsersToolbar({
       onSortChange('name', 'desc');
     } else if (val === 'nearest_expiry_asc') {
       onSortChange('nearest_expiry', 'asc');
-    } else if (val === 'created_at_desc') {
-      onSortChange('created_at', 'desc');
+    } else if (val === 'nearest_expiry_desc') {
+      onSortChange('nearest_expiry', 'desc');
     }
   };
 
@@ -121,7 +121,6 @@ export function UsersToolbar({
               onChange={handleSortSelectChange}
               disabled={disabled}
             >
-              <option value="created_at_desc">Terbaru Dibuat</option>
               <option value="name_asc">Nama (A-Z)</option>
               <option value="name_desc">Nama (Z-A)</option>
               <option value="nearest_expiry_asc">Terdekat Berakhir</option>

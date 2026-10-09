@@ -38,7 +38,7 @@ users
 
 Data berikut **tidak boleh disimpan** di database:
 
-- PFX Password
+- Passphrase
 - Private Key
 - PFX/P12 binary
 - OTP
@@ -46,9 +46,9 @@ Data berikut **tidak boleh disimpan** di database:
 - API key
 - CA password
 
-Password login hanya disimpan dalam bentuk `password_hash`.
+Password login hanya disimpan dalam bentuk `password_hash`. Default login password dan passphrase yang digunakan dalam alur provisioning/regenerate adalah `Mkri006!`.
 
-PFX Password hanya digunakan selama proses PKI dan tidak dikembalikan melalui response API maupun audit log.
+Passphrase hanya digunakan selama proses PKI dan tidak dikembalikan melalui response API maupun audit log.
 
 ---
 
@@ -276,7 +276,7 @@ PFX_PASSWORD_CHANGED
 ```
 
 Audit log tidak boleh menyimpan:
-- PFX password
+- Passphrase
 - Login password
 - Private key
 - P12/PFX content
@@ -456,10 +456,10 @@ Validasi minimal:
 - NIK tidak duplikat;
 - email valid;
 - email tidak duplikat;
-- PFX Password tersedia;
+- Passphrase tersedia;
 - data wajib lengkap.
 
-Password PFX tidak ditampilkan pada preview CSV.
+Passphrase tidak ditampilkan pada preview CSV.
 
 ---
 
@@ -472,7 +472,7 @@ Certificate lama
       ↓
 Tetap ACTIVE
       ↓
-Generate certificate baru
+Generate certificate baru (default passphrase: Mkri006!)
       ↓
 Validasi certificate baru
       ↓
@@ -492,9 +492,9 @@ Certificate lama tetap ACTIVE
 
 ---
 
-## 19. Ubah Password PFX
+## 19. Ubah Passphrase
 
-Ubah Password PFX **tidak membuat certificate baru**.
+Ubah Passphrase **tidak membuat certificate baru**.
 
 Tidak ada insert baru ke tabel `certificates`.
 
@@ -516,7 +516,7 @@ Audit:
 PFX_PASSWORD_CHANGED
 ```
 
-Password baru tidak disimpan.
+Passphrase baru tidak disimpan.
 
 ---
 
@@ -673,7 +673,7 @@ Belum termasuk:
 - tabel signing;
 - tabel OTP;
 - tabel roles/permissions;
-- tabel PFX password;
+- tabel passphrase;
 - tabel private key;
 - tabel file upload.
 

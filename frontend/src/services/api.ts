@@ -70,9 +70,12 @@ export async function requestApi<T>(
   const token = getAuthToken();
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
+
+  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -95,7 +98,7 @@ export async function requestApi<T>(
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorMsg = json?.detail || json?.message || `HTTP Error ${response.status}`;
+    const errorMsg = json?.error?.message || json?.detail || json?.message || `HTTP Error ${response.status}`;
     throw new Error(errorMsg);
   }
 

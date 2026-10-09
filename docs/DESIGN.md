@@ -77,9 +77,9 @@ Aturan pakai: merah bukan hiasan. Merah dipakai untuk sidebar, tombol utama, dan
   4. **Aktivitas Terbaru**: kartu lebar di bawah, hanya ada di Dashboard, enam aktivitas dengan lencana ikon berwarna menurut jenis tindakan.
 - Dua kartu expiry sejajar dan setinggi sama di desktop, bertumpuk satu kolom di HP.
 - **Pengguna**: daftar dengan pencarian, filter status pengguna, filter sertifikat, dan urutan (nama atau sertifikat paling dekat berakhir). Tidak ada tombol "Tambah pengguna". Aksi baris: Detail dan Hapus.
-- **Detail Pengguna** (halaman, bukan dialog): informasi pengguna, sertifikat aktif (Regenerate, Ubah PFX, Lihat detail, Hapus sertifikat), Riwayat sertifikat (ACTIVE, REPLACED, EXPIRED), dan Riwayat regenerate (termasuk percobaan gagal).
+- **Detail Pengguna** (halaman, bukan dialog): informasi pengguna, sertifikat aktif (Regenerate, Ubah Passphrase, Lihat detail, Hapus sertifikat), Riwayat sertifikat (ACTIVE, REPLACED, EXPIRED), dan Riwayat regenerate (termasuk percobaan gagal).
 - **Generate** berarti Generate User: tab "Generate 1 User" dan "Generate Bulk User". Generate User membuat user sekaligus melakukan provisioning sertifikat melalui PKI engine. Format CSV platform: `name,nik,email,organization,ou,password,pfx_pass`.
-- **Ubah PFX** berbeda dari Regenerate: tidak menerbitkan sertifikat baru, serial, masa berlaku, dan status tetap. Password tidak disimpan, tidak ditampilkan, tidak dicatat.
+- **Ubah Passphrase** berbeda dari Regenerate: tidak menerbitkan sertifikat baru, serial, masa berlaku, dan status tetap. Passphrase tidak disimpan, tidak ditampilkan, tidak dicatat.
 - **Hapus**: Delete User menghapus data operasional pengguna dan sertifikatnya, Audit Log tetap. Delete Certificate (audit/backend lifecycle only) pada sertifikat non-ACTIVE menghapus berkas operasional tetapi catatannya tetap tampil di riwayat. Pada sertifikat ACTIVE, sertifikat dan berkasnya dihapus. Keduanya tercatat di Audit Log.
 - Tidak ada KPI di luar tiga statistik utama.
 - Empty state: statistik tetap tampil dengan angka 0, kartu expiry menampilkan "Belum ada sertifikat ACTIVE" dengan tombol Buka Generate. Error: pesan "Halaman gagal dimuat" dengan tombol Muat ulang.
@@ -118,7 +118,7 @@ Hanya tersedia untuk Super Admin.
 - **Lencana ikon bulat**: 44px (40px di daftar aktivitas), warna sesuai makna aksen, ikon digambar sendiri dua nada. Bukan set Lucide.
 - **Tabel**: kolom dipilih dari keputusan admin, tanpa menu tiga titik. Aksi baris berupa tombol teks.
 - **Dialog**: elemen `dialog` bawaan, bisa ditutup dengan Escape, fokus dikembalikan otomatis.
-- **Langkah proses**: daftar empat langkah dengan status teks, bukan hanya warna. Sertifikat: Validasi data, Menjalankan PKI Service, Validasi output, Menyimpan metadata. Ubah PFX: Validasi data, Memperbarui PFX, Validasi hasil, Menyimpan metadata.
+- **Langkah proses**: daftar empat langkah dengan status teks, bukan hanya warna. Sertifikat: Validasi data, Menjalankan PKI Service, Validasi output, Menyimpan metadata. Ubah Passphrase: Validasi data, Memperbarui Passphrase, Validasi hasil, Menyimpan metadata.
 - **Toast**: area `aria-live`, hilang sendiri.
 
 ## Tulisan
@@ -127,14 +127,14 @@ Hanya tersedia untuk Super Admin.
 - Tanpa em dash, tanpa emoji, tanpa kata pemasaran.
 - Galat menyebut apa yang salah dan langkah berikutnya.
 - Empty state menyebut penyebab dan satu aksi untuk mengisinya.
-- Penamaan aksi di Aktivitas Terbaru dan Audit Log: Generate User, Generate Bulk User, Generate Certificate, Regenerate Certificate, Ubah PFX, Delete User, Delete Certificate (audit/backend lifecycle only).
+- Penamaan aksi di Aktivitas Terbaru dan Audit Log: Generate User, Generate Bulk User, Generate Certificate, Regenerate Certificate, Ubah Passphrase, Delete User, Delete Certificate (audit/backend lifecycle only).
 
 ## Aturan konten dan keamanan UI
 
 - Tidak ada angka, testimoni, atau klaim keamanan karangan. Data contoh wajib berlabel "Data contoh" dan bisa dikosongkan.
-- Password PFX: hanya input bertipe password, dikosongkan setelah proses, tidak pernah ditampilkan, disimpan, atau dicatat di audit atau log.
+- Passphrase: hanya input bertipe password, dikosongkan setelah proses, tidak pernah ditampilkan, disimpan, atau dicatat di audit atau log.
 - NIK dimasker (empat digit awal dan akhir) di semua daftar dan pratinjau.
-- Private key dan password tidak pernah muncul di UI.
+- Private key, password, dan passphrase tidak pernah muncul di UI. Default credential baru platform menggunakan `Mkri006!`.
 - Path berkas tidak pernah berasal dari input frontend.
 - Hapus selalu lewat dialog konfirmasi yang menyebut dampaknya.
 - Regenerate: sertifikat lama baru menjadi REPLACED setelah yang baru berhasil dibuat dan divalidasi. Jika gagal, sertifikat lama tetap ACTIVE.
@@ -157,7 +157,7 @@ Setiap tampilan data punya empty, loading, dan error:
 
 ## Catatan implementasi
 
-- Prototipe ini satu berkas HTML tanpa build. Penerbitan sertifikat dan Ubah PFX disimulasikan, bentuk finalnya mengikuti API backend yang tersedia.
+- Prototipe ini satu berkas HTML tanpa build. Penerbitan sertifikat dan Ubah Passphrase disimulasikan, bentuk finalnya mengikuti API backend yang tersedia.
 - Target produksi sesuai PRD: React + TypeScript, FastAPI, PostgreSQL. Token di atas dipindahkan ke variabel CSS atau konfigurasi tema.
 - Placeholder yang harus diganti: logo "DS", avatar "A", dan data contoh.
 - Role Super Admin dan User tidak diubah dan tidak ditampilkan di prototipe ini.

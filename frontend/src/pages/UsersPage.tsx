@@ -22,8 +22,8 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [userStatus, setUserStatus] = useState('');
   const [certificateStatus, setCertificateStatus] = useState('');
-  const [sortField, setSortField] = useState(initialSort || 'created_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialOrder || 'desc');
+  const [sortField, setSortField] = useState(initialSort || 'name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialOrder || 'asc');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -130,8 +130,8 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
     setDebouncedSearch('');
     setUserStatus('');
     setCertificateStatus('');
-    setSortField('created_at');
-    setSortOrder('desc');
+    setSortField('name');
+    setSortOrder('asc');
     setCurrentPage(1);
   };
 
@@ -181,7 +181,7 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
     }
   };
 
-  const isFiltered = Boolean(debouncedSearch || userStatus || certificateStatus || sortField !== 'created_at');
+  const isFiltered = Boolean(debouncedSearch || userStatus || certificateStatus || sortField !== 'name' || sortOrder !== 'asc');
 
   return (
     <div className="users-page-container">

@@ -33,6 +33,7 @@ export function AppShell({
       <div className="app-main-wrapper">
         <Topbar
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          onNavigate={onNavigate}
           onSearch={(_query) => {
             // UI search query handler placeholder
           }}
