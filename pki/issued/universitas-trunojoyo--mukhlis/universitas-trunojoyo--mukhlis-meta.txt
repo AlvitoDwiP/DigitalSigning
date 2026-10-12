@@ -1,9 +1,0 @@
-Person       : Mukhlis
-Email        : mukhlis@trunojoyo.ac.id
-NIK          : 3526012810750002
-Organisation : Universitas Trunojoyo
-Org Unit     : Universitas Trunojoyo
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-trunojoyo--mukhlis
-Files        : universitas-trunojoyo--mukhlis.key | universitas-trunojoyo--mukhlis.csr | universitas-trunojoyo--mukhlis.crt | universitas-trunojoyo--mukhlis.pfx | 3526012810750002.p12
-IssuedAt-UTC : 2026-02-05T00:24:40Z

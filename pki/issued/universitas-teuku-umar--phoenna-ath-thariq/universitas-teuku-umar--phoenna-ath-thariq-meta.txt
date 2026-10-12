@@ -1,9 +1,0 @@
-Person       : Phoenna Ath Thariq
-Email        : phoennaaththariq@utu.ac.id
-NIK          : 1106120302920002
-Organisation : Universitas Teuku Umar
-Org Unit     : Universitas Teuku Umar
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-teuku-umar--phoenna-ath-thariq
-Files        : universitas-teuku-umar--phoenna-ath-thariq.key | universitas-teuku-umar--phoenna-ath-thariq.csr | universitas-teuku-umar--phoenna-ath-thariq.crt | universitas-teuku-umar--phoenna-ath-thariq.pfx | 1106120302920002.p12
-IssuedAt-UTC : 2026-01-27T07:10:54Z

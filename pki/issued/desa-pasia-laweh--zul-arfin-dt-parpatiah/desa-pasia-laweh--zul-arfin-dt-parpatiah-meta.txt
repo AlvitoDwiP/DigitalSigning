@@ -1,9 +1,0 @@
-Person       : Zul Arfin DT. Parpatiah
-Email        : zularifin62@gmail.com
-NIK          : 1306101007760001
-Organisation : Desa Pasia Laweh
-Org Unit     : Desa Pasia Laweh
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/desa-pasia-laweh--zul-arfin-dt-parpatiah
-Files        : desa-pasia-laweh--zul-arfin-dt-parpatiah.key | desa-pasia-laweh--zul-arfin-dt-parpatiah.csr | desa-pasia-laweh--zul-arfin-dt-parpatiah.crt | desa-pasia-laweh--zul-arfin-dt-parpatiah.pfx | 1306101007760001.p12
-IssuedAt-UTC : 2026-02-04T01:23:09Z

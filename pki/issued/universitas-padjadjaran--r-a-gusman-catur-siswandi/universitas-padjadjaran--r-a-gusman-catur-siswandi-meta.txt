@@ -1,9 +1,0 @@
-Person       : R.A. Gusman Catur Siswandi
-Email        : gusman@unpad.ac.id
-NIK          : 3273212208750001
-Organisation : Universitas Padjadjaran
-Org Unit     : Universitas Padjadjaran
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-padjadjaran--r-a-gusman-catur-siswandi
-Files        : universitas-padjadjaran--r-a-gusman-catur-siswandi.key | universitas-padjadjaran--r-a-gusman-catur-siswandi.csr | universitas-padjadjaran--r-a-gusman-catur-siswandi.crt | universitas-padjadjaran--r-a-gusman-catur-siswandi.pfx | 3273212208750001.p12
-IssuedAt-UTC : 2026-02-02T08:30:44Z

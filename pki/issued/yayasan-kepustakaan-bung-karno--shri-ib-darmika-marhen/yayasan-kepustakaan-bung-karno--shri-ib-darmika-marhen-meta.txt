@@ -1,9 +1,0 @@
-Person       : Shri IB Darmika Marhen
-Email        : yayasankepustakaanbk@gmail.com
-NIK          : 5171021607730004
-Organisation : Yayasan Kepustakaan Bung Karno
-Org Unit     : Yayasan Kepustakaan Bung Karno
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/yayasan-kepustakaan-bung-karno--shri-ib-darmika-marhen
-Files        : yayasan-kepustakaan-bung-karno--shri-ib-darmika-marhen.key | yayasan-kepustakaan-bung-karno--shri-ib-darmika-marhen.csr | yayasan-kepustakaan-bung-karno--shri-ib-darmika-marhen.crt | yayasan-kepustakaan-bung-karno--shri-ib-darmika-marhen.pfx | 5171021607730004.p12
-IssuedAt-UTC : 2026-02-24T08:01:38Z

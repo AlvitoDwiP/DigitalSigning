@@ -1,9 +1,0 @@
-Person       : Saivol Virdaus
-Email        : saivol@uniska-kediri.ac.id
-NIK          : 3312032808880001
-Organisation : Universitas Islam Kadiri
-Org Unit     : Universitas Islam Kadiri
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-islam-kadiri--saivol-virdaus
-Files        : universitas-islam-kadiri--saivol-virdaus.key | universitas-islam-kadiri--saivol-virdaus.csr | universitas-islam-kadiri--saivol-virdaus.crt | universitas-islam-kadiri--saivol-virdaus.pfx | 3312032808880001.p12
-IssuedAt-UTC : 2026-01-27T04:51:10Z

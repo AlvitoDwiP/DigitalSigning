@@ -1,9 +1,0 @@
-Person       : Muhammad Musiyam
-Email        : musiyam@umkt.ac.id
-NIK          : 347107260262001
-Organisation : Universitas Muhammadiyah Kalimantan Timur
-Org Unit     : Universitas Muhammadiyah Kalimantan Timur
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-muhammadiyah-kalimantan-timur--muhammad-musiyam
-Files        : universitas-muhammadiyah-kalimantan-timur--muhammad-musiyam.key | universitas-muhammadiyah-kalimantan-timur--muhammad-musiyam.csr | universitas-muhammadiyah-kalimantan-timur--muhammad-musiyam.crt | universitas-muhammadiyah-kalimantan-timur--muhammad-musiyam.pfx | 347107260262001.p12
-IssuedAt-UTC : 2026-07-21T08:49:51Z

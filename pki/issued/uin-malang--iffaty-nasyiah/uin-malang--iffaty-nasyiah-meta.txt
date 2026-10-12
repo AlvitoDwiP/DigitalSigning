@@ -1,9 +1,0 @@
-Person       : Iffaty Nasyiah
-Email        : iffaty.nasyiah@syariah.uin-malang.ac.id
-NIK          : 3578224806760003
-Organisation : UIN Malang
-Org Unit     : UIN Malang
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/uin-malang--iffaty-nasyiah
-Files        : uin-malang--iffaty-nasyiah.key | uin-malang--iffaty-nasyiah.csr | uin-malang--iffaty-nasyiah.crt | uin-malang--iffaty-nasyiah.pfx | 3578224806760003.p12
-IssuedAt-UTC : 2026-02-02T08:30:32Z

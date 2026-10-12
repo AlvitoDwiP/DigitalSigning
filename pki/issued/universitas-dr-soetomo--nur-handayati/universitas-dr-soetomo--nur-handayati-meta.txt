@@ -1,9 +1,0 @@
-Person       : Nur Handayati
-Email        : subekti@unitomo.ac.id
-NIK          : 3515176808710002
-Organisation : Universitas Dr. Soetomo
-Org Unit     : Universitas Dr. Soetomo
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-dr-soetomo--nur-handayati
-Files        : universitas-dr-soetomo--nur-handayati.key | universitas-dr-soetomo--nur-handayati.csr | universitas-dr-soetomo--nur-handayati.crt | universitas-dr-soetomo--nur-handayati.pfx | 3515176808710002.p12
-IssuedAt-UTC : 2026-01-28T02:15:10Z

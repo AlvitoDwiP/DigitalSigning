@@ -1,9 +1,0 @@
-Person       : Nursidah K. Bantilan
-Email        : nursidah.bantilan@mkri.id
-NIK          : 7204076208450001
-Organisation : Universitas Madako Tolitoli
-Org Unit     : Universitas Madako Tolitoli
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-madako-tolitoli--nursidah-k-bantilan
-Files        : universitas-madako-tolitoli--nursidah-k-bantilan.key | universitas-madako-tolitoli--nursidah-k-bantilan.csr | universitas-madako-tolitoli--nursidah-k-bantilan.crt | universitas-madako-tolitoli--nursidah-k-bantilan.pfx | 7204076208450001.p12
-IssuedAt-UTC : 2026-01-22T06:48:03Z

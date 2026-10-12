@@ -1,9 +1,0 @@
-Person       : Bruce Anzward
-Email        : bruce.anzward@uniba-bpn.ac.id
-NIK          : 6471051409720003
-Organisation : Universitas Balikpapan
-Org Unit     : Universitas Balikpapan
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-balikpapan--bruce-anzward
-Files        : universitas-balikpapan--bruce-anzward.key | universitas-balikpapan--bruce-anzward.csr | universitas-balikpapan--bruce-anzward.crt | universitas-balikpapan--bruce-anzward.pfx | 6471051409720003.p12
-IssuedAt-UTC : 2026-02-02T08:30:25Z

@@ -7,9 +7,14 @@ set +x
 set -Eeuo pipefail
 umask 077
 
-ISSUED_ROOT="${ISSUED_ROOT:-/home/sysadmin/pki/issued}"
-P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-/home/sysadmin/sign-api(well3)/p12}"
-CHAIN_PATH="${CHAIN_PATH:-/home/sysadmin/pki/intermediate/certs/ca-chain.crt}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_H="$(cd "$SCRIPT_DIR/../.." && pwd)"
+H="${H:-$DEFAULT_H}"
+
+ISSUED_ROOT="${ISSUED_ROOT:-$H/pki/issued}"
+P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api(well3)/p12}"
+CHAIN_PATH="${CHAIN_PATH:-$H/pki/intermediate/certs/ca-chain.crt}"
+
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 

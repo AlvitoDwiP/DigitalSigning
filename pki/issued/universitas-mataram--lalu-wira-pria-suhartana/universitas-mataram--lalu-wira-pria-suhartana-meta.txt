@@ -1,9 +1,0 @@
-Person       : Lalu Wira Pria Suhartana
-Email        : laluwira@unram.ac.id
-NIK          : 5271052406730002
-Organisation : Universitas Mataram
-Org Unit     : Universitas Mataram
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-mataram--lalu-wira-pria-suhartana
-Files        : universitas-mataram--lalu-wira-pria-suhartana.key | universitas-mataram--lalu-wira-pria-suhartana.csr | universitas-mataram--lalu-wira-pria-suhartana.crt | universitas-mataram--lalu-wira-pria-suhartana.pfx | 5271052406730002.p12
-IssuedAt-UTC : 2026-01-27T08:18:00Z

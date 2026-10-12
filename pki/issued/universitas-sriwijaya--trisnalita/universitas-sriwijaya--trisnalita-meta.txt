@@ -1,9 +1,0 @@
-Person       : Trisnalita
-Email        : trisnalita@fh.unsri.ac.id
-NIK          : 1671017112690020
-Organisation : Universitas Sriwijaya
-Org Unit     : Universitas Sriwijaya
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-sriwijaya--trisnalita
-Files        : universitas-sriwijaya--trisnalita.key | universitas-sriwijaya--trisnalita.csr | universitas-sriwijaya--trisnalita.crt | universitas-sriwijaya--trisnalita.pfx | 1671017112690020.p12
-IssuedAt-UTC : 2026-02-02T07:21:44Z

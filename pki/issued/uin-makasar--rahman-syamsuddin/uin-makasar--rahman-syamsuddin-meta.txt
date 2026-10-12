@@ -1,9 +1,0 @@
-Person       : Rahman Syamsuddin
-Email        : rahman.syamsuddin@uin-alauddin.ac.id
-NIK          : 7371110712820007
-Organisation : UIN Makasar
-Org Unit     : UIN Makasar
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/uin-makasar--rahman-syamsuddin
-Files        : uin-makasar--rahman-syamsuddin.key | uin-makasar--rahman-syamsuddin.csr | uin-makasar--rahman-syamsuddin.crt | uin-makasar--rahman-syamsuddin.pfx | 7371110712820007.p12
-IssuedAt-UTC : 2026-02-02T08:30:31Z

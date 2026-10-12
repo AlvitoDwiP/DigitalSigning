@@ -1,9 +1,0 @@
-Person       : Ilyas
-Email        : ilyas_risa@usk.ac.id
-NIK          : 1171020504650001
-Organisation : Universitas Syiah Kuala
-Org Unit     : Universitas Syiah Kuala
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-syiah-kuala--ilyas
-Files        : universitas-syiah-kuala--ilyas.key | universitas-syiah-kuala--ilyas.csr | universitas-syiah-kuala--ilyas.crt | universitas-syiah-kuala--ilyas.pfx | 1171020504650001.p12
-IssuedAt-UTC : 2026-02-05T09:18:48Z

@@ -1,9 +1,0 @@
-Person       : Rosmini
-Email        : rosmini@fh.unmul.ac.id
-NIK          : 6472056506720001
-Organisation : Universitas Mulawarman
-Org Unit     : Universitas Mulawarman
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-mulawarman--rosmini
-Files        : universitas-mulawarman--rosmini.key | universitas-mulawarman--rosmini.csr | universitas-mulawarman--rosmini.crt | universitas-mulawarman--rosmini.pfx | 6472056506720001.p12
-IssuedAt-UTC : 2026-02-02T07:25:06Z

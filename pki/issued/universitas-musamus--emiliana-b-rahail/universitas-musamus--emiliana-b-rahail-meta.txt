@@ -1,9 +1,0 @@
-Person       : Emiliana B. Rahail
-Email        : rahail@unmus.ac.id
-NIK          : 9101016110700001
-Organisation : Universitas Musamus
-Org Unit     : Universitas Musamus
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-musamus--emiliana-b-rahail
-Files        : universitas-musamus--emiliana-b-rahail.key | universitas-musamus--emiliana-b-rahail.csr | universitas-musamus--emiliana-b-rahail.crt | universitas-musamus--emiliana-b-rahail.pfx | 9101016110700001.p12
-IssuedAt-UTC : 2026-02-02T08:03:38Z

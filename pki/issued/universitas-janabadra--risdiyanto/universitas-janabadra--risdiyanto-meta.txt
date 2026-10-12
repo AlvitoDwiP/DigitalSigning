@@ -1,9 +1,0 @@
-Person       : Risdiyanto
-Email        : risdiyanto@janabadra.ac.id
-NIK          : 3471071003740001
-Organisation : Universitas Janabadra
-Org Unit     : Universitas Janabadra
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-janabadra--risdiyanto
-Files        : universitas-janabadra--risdiyanto.key | universitas-janabadra--risdiyanto.csr | universitas-janabadra--risdiyanto.crt | universitas-janabadra--risdiyanto.pfx | 3471071003740001.p12
-IssuedAt-UTC : 2026-06-10T03:04:42Z

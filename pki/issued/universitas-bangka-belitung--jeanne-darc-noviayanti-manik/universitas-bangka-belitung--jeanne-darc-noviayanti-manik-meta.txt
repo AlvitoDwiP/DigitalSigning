@@ -1,9 +1,0 @@
-Person       : Jeanne Darc Noviayanti Manik
-Email        : novi_palembang@yahoo.com
-NIK          : 1671044511730003
-Organisation : Universitas Bangka Belitung
-Org Unit     : Universitas Bangka Belitung
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-bangka-belitung--jeanne-darc-noviayanti-manik
-Files        : universitas-bangka-belitung--jeanne-darc-noviayanti-manik.key | universitas-bangka-belitung--jeanne-darc-noviayanti-manik.csr | universitas-bangka-belitung--jeanne-darc-noviayanti-manik.crt | universitas-bangka-belitung--jeanne-darc-noviayanti-manik.pfx | 1671044511730003.p12
-IssuedAt-UTC : 2026-01-28T02:12:37Z

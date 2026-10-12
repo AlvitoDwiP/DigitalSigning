@@ -1,9 +1,0 @@
-Person       : Marthinus Mambaya
-Email        : marthinusmambaya699@gmail.com
-NIK          : 3374070203660002
-Organisation : Universitas Cenderawasih
-Org Unit     : Universitas Cenderawasih
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-cenderawasih--marthinus-mambaya
-Files        : universitas-cenderawasih--marthinus-mambaya.key | universitas-cenderawasih--marthinus-mambaya.csr | universitas-cenderawasih--marthinus-mambaya.crt | universitas-cenderawasih--marthinus-mambaya.pfx | 3374070203660002.p12
-IssuedAt-UTC : 2026-02-04T06:24:49Z

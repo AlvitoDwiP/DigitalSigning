@@ -1,9 +1,0 @@
-Person       : Christiani Prasetiasari
-Email        : christiani.prasetyasari@univbatam.ac.id
-NIK          : 3175096612790004
-Organisation : Universitas Batam
-Org Unit     : Universitas Batam
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-batam--christiani-prasetiasari
-Files        : universitas-batam--christiani-prasetiasari.key | universitas-batam--christiani-prasetiasari.csr | universitas-batam--christiani-prasetiasari.crt | universitas-batam--christiani-prasetiasari.pfx | 3175096612790004.p12
-IssuedAt-UTC : 2026-02-02T08:30:28Z

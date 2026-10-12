@@ -1,9 +1,0 @@
-Person       : I Gusti Putu Diva Awatara
-Email        : igp_divaawatara@stie-aub.ac.id
-NIK          : 3372042511740001
-Organisation : Universitas Dharma AUB Surakarta
-Org Unit     : Universitas Dharma AUB Surakarta
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-dharma-aub-surakarta--i-gusti-putu-diva-awatara
-Files        : universitas-dharma-aub-surakarta--i-gusti-putu-diva-awatara.key | universitas-dharma-aub-surakarta--i-gusti-putu-diva-awatara.csr | universitas-dharma-aub-surakarta--i-gusti-putu-diva-awatara.crt | universitas-dharma-aub-surakarta--i-gusti-putu-diva-awatara.pfx | 3372042511740001.p12
-IssuedAt-UTC : 2026-09-11T06:15:08Z

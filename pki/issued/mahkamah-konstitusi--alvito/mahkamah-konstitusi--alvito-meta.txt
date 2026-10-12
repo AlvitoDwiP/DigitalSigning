@@ -1,9 +1,0 @@
-Person       : Alvito
-Email        : alvito@gmail.com
-NIK          : 2222333344445555
-Organisation : Mahkamah Konstitusi
-Org Unit     : PUSTIK
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/mahkamah-konstitusi--alvito
-Files        : mahkamah-konstitusi--alvito.key | mahkamah-konstitusi--alvito.csr | mahkamah-konstitusi--alvito.crt | mahkamah-konstitusi--alvito.pfx | 2222333344445555.p12
-IssuedAt-UTC : 2026-10-02T01:20:27Z

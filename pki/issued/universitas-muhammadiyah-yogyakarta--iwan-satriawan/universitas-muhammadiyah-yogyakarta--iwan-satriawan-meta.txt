@@ -1,9 +1,0 @@
-Person       : Iwan Satriawan
-Email        : iwansatriawan@umy.ac.id
-NIK          : 3404020607700005
-Organisation : Universitas Muhammadiyah Yogyakarta
-Org Unit     : Universitas Muhammadiyah Yogyakarta
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-muhammadiyah-yogyakarta--iwan-satriawan
-Files        : universitas-muhammadiyah-yogyakarta--iwan-satriawan.key | universitas-muhammadiyah-yogyakarta--iwan-satriawan.csr | universitas-muhammadiyah-yogyakarta--iwan-satriawan.crt | universitas-muhammadiyah-yogyakarta--iwan-satriawan.pfx | 3404020607700005.p12
-IssuedAt-UTC : 2026-01-22T05:55:32Z

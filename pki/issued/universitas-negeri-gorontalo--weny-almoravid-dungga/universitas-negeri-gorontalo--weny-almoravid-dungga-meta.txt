@@ -1,9 +1,0 @@
-Person       : Weny Almoravid Dungga
-Email        : wenyAD@ung.ac.id
-NIK          : 7571052205680003
-Organisation : Universitas Negeri Gorontalo
-Org Unit     : Universitas Negeri Gorontalo
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-negeri-gorontalo--weny-almoravid-dungga
-Files        : universitas-negeri-gorontalo--weny-almoravid-dungga.key | universitas-negeri-gorontalo--weny-almoravid-dungga.csr | universitas-negeri-gorontalo--weny-almoravid-dungga.crt | universitas-negeri-gorontalo--weny-almoravid-dungga.pfx | 7571052205680003.p12
-IssuedAt-UTC : 2026-02-02T08:30:43Z

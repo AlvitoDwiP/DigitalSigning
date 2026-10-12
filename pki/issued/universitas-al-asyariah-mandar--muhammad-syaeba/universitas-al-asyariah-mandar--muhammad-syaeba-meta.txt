@@ -1,9 +1,0 @@
-Person       : Muhammad Syaeba
-Email        : syaeban@gmail.com
-NIK          : 7604040710770005
-Organisation : Universitas Al Asyariah Mandar
-Org Unit     : Universitas Al Asyariah Mandar
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-al-asyariah-mandar--muhammad-syaeba
-Files        : universitas-al-asyariah-mandar--muhammad-syaeba.key | universitas-al-asyariah-mandar--muhammad-syaeba.csr | universitas-al-asyariah-mandar--muhammad-syaeba.crt | universitas-al-asyariah-mandar--muhammad-syaeba.pfx | 7604040710770005.p12
-IssuedAt-UTC : 2026-08-31T06:33:50Z

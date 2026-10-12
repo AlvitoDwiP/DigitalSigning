@@ -1,9 +1,0 @@
-Person       : Buyung Romadhoni
-Email        : b.dhoni@gmail.com
-NIK          : 7371112808780012
-Organisation : Kampung Adat Gallesong
-Org Unit     : Kampung Adat Gallesong
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/kampung-adat-gallesong--buyung-romadhoni
-Files        : kampung-adat-gallesong--buyung-romadhoni.key | kampung-adat-gallesong--buyung-romadhoni.csr | kampung-adat-gallesong--buyung-romadhoni.crt | kampung-adat-gallesong--buyung-romadhoni.pfx | 7371112808780012.p12
-IssuedAt-UTC : 2026-02-02T07:18:09Z

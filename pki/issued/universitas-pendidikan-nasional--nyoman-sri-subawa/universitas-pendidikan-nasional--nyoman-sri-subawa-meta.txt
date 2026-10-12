@@ -1,9 +1,0 @@
-Person       : Nyoman Sri Subawa
-Email        : info@undiknas.ac.id
-NIK          : 5171012808700007
-Organisation : Universitas Pendidikan Nasional
-Org Unit     : Universitas Pendidikan Nasional
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-pendidikan-nasional--nyoman-sri-subawa
-Files        : universitas-pendidikan-nasional--nyoman-sri-subawa.key | universitas-pendidikan-nasional--nyoman-sri-subawa.csr | universitas-pendidikan-nasional--nyoman-sri-subawa.crt | universitas-pendidikan-nasional--nyoman-sri-subawa.pfx | 5171012808700007.p12
-IssuedAt-UTC : 2026-04-07T02:07:48Z

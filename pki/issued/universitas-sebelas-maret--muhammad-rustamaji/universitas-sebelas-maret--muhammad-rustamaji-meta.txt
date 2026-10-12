@@ -1,9 +1,0 @@
-Person       : Muhammad Rustamaji
-Email        : muhammad.rustamaji@mkri.id
-NIK          : 3313120810820003
-Organisation : Universitas Sebelas Maret
-Org Unit     : Universitas Sebelas Maret
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-sebelas-maret--muhammad-rustamaji
-Files        : universitas-sebelas-maret--muhammad-rustamaji.key | universitas-sebelas-maret--muhammad-rustamaji.csr | universitas-sebelas-maret--muhammad-rustamaji.crt | universitas-sebelas-maret--muhammad-rustamaji.pfx | 3313120810820003.p12
-IssuedAt-UTC : 2026-02-02T08:30:46Z

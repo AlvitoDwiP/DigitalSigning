@@ -59,11 +59,16 @@ private/
 
 # Issued User Certificates & Folders
 pki/issued/
+pki/issued/.staging_*
 pki/bk.issued/
 pki/uploads/
 pki/p12/
 sign-api(well3)/p12/
 sign-api(well3)/bk.p12/
+archive/pki-legacy/issued-prelaunch/
+*-meta.txt
+
+
 
 # Kecualikan sertifikat CA Publik (Root & Intermediate CA certs aman dipush)
 !pki/root/certs/root-ca.crt

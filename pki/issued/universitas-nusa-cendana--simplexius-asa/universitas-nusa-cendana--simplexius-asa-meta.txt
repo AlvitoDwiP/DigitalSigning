@@ -1,9 +1,0 @@
-Person       : Simplexius Asa
-Email        : simplexius.asa@mkri.id
-NIK          : 5371030706660003
-Organisation : Universitas Nusa Cendana
-Org Unit     : Universitas Nusa Cendana
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-nusa-cendana--simplexius-asa
-Files        : universitas-nusa-cendana--simplexius-asa.key | universitas-nusa-cendana--simplexius-asa.csr | universitas-nusa-cendana--simplexius-asa.crt | universitas-nusa-cendana--simplexius-asa.pfx | 5371030706660003.p12
-IssuedAt-UTC : 2026-01-28T02:14:25Z

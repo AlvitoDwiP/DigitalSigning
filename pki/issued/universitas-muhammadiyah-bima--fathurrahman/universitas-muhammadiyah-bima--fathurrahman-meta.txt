@@ -1,9 +1,0 @@
-Person       : Fathurrahman
-Email        : fathurrahmanumbima@gmail.com
-NIK          : 5272011906870009
-Organisation : Universitas Muhammadiyah Bima
-Org Unit     : Universitas Muhammadiyah Bima
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-muhammadiyah-bima--fathurrahman
-Files        : universitas-muhammadiyah-bima--fathurrahman.key | universitas-muhammadiyah-bima--fathurrahman.csr | universitas-muhammadiyah-bima--fathurrahman.crt | universitas-muhammadiyah-bima--fathurrahman.pfx | 5272011906870009.p12
-IssuedAt-UTC : 2026-01-28T02:17:55Z

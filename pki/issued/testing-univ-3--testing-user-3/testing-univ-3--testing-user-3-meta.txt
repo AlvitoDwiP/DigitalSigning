@@ -1,9 +1,0 @@
-Person       : Testing User 3
-Email        : testing@univ3.ac.id
-NIK          : 0811222233334446
-Organisation : Testing Univ 3
-Org Unit     : Testing Univ 3
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/testing-univ-3--testing-user-3
-Files        : testing-univ-3--testing-user-3.key | testing-univ-3--testing-user-3.csr | testing-univ-3--testing-user-3.crt | testing-univ-3--testing-user-3.pfx | 0811222233334446.p12
-IssuedAt-UTC : 2025-12-26T08:29:22Z

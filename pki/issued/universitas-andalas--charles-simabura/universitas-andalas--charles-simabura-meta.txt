@@ -1,9 +1,0 @@
-Person       : Charles Simabura
-Email        : charlessimabur@law.unand.ac.id
-NIK          : 1371020504790001
-Organisation : Universitas Andalas
-Org Unit     : Universitas Andalas
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-andalas--charles-simabura
-Files        : universitas-andalas--charles-simabura.key | universitas-andalas--charles-simabura.csr | universitas-andalas--charles-simabura.crt | universitas-andalas--charles-simabura.pfx | 1371020504790001.p12
-IssuedAt-UTC : 2026-02-02T08:30:23Z

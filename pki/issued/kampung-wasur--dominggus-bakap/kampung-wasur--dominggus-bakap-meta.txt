@@ -1,9 +1,0 @@
-Person       : Dominggus Bakap
-Email        : dominggusbakap@gmail.com
-NIK          : 9101012509800002
-Organisation : Kampung Wasur
-Org Unit     : Kampung Wasur
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/kampung-wasur--dominggus-bakap
-Files        : kampung-wasur--dominggus-bakap.key | kampung-wasur--dominggus-bakap.csr | kampung-wasur--dominggus-bakap.crt | kampung-wasur--dominggus-bakap.pfx | 9101012509800002.p12
-IssuedAt-UTC : 2026-08-17T00:04:55Z

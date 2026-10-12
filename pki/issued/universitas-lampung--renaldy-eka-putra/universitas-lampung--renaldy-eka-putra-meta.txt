@@ -1,9 +1,0 @@
-Person       : Renaldy Eka Putra
-Email        : renaldy@fh.unila.ac.id
-NIK          : 1704120903980001
-Organisation : Universitas Lampung
-Org Unit     : Universitas Lampung
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-lampung--renaldy-eka-putra
-Files        : universitas-lampung--renaldy-eka-putra.key | universitas-lampung--renaldy-eka-putra.csr | universitas-lampung--renaldy-eka-putra.crt | universitas-lampung--renaldy-eka-putra.pfx | 1704120903980001.p12
-IssuedAt-UTC : 2026-04-16T04:34:32Z
