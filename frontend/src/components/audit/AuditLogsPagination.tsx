@@ -16,8 +16,18 @@ export function AuditLogsPagination({
   disabled = false,
 }: AuditLogsPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / limit));
-  const startItem = total === 0 ? 0 : (currentPage - 1) * limit + 1;
-  const endItem = Math.min(total, currentPage * limit);
+
+  // Sembunyikan pagination bila total tidak melebihi satu halaman
+  if (total <= limit) {
+    if (total === 0) return null;
+    return (
+      <div className="users-pagination-container" style={{ justifyContent: 'flex-start' }}>
+        <div className="pagination-info">
+          <span>{total} aktivitas</span>
+        </div>
+      </div>
+    );
+  }
 
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
@@ -25,9 +35,7 @@ export function AuditLogsPagination({
   return (
     <nav className="users-pagination-container" aria-label="Navigasi Halaman Audit Log">
       <div className="pagination-info">
-        <span>
-          Menampilkan <strong>{startItem}</strong> - <strong>{endItem}</strong> dari <strong>{total}</strong> log aktivitas
-        </span>
+        <span>{total} aktivitas</span>
         <span className="pagination-page-indicator">
           (Halaman {currentPage} dari {totalPages})
         </span>

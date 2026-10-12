@@ -1,6 +1,7 @@
 import type { AdminItem } from '../../types/admins';
 import { StatusChip } from '../ui/StatusChip';
 import { maskNik, formatDate } from '../users/UsersTable';
+import { peran, statusAkun } from '../../lib/labels';
 
 interface AdminsTableProps {
   admins: AdminItem[];
@@ -17,9 +18,9 @@ export function AdminsTable({ admins, onRemoveAdmin, disabled = false }: AdminsT
             <th scope="col" className="col-user">Administrator</th>
             <th scope="col" className="col-nik">NIK</th>
             <th scope="col" className="col-email">Email</th>
-            <th scope="col" className="col-role">Role</th>
-            <th scope="col" className="col-user-status">Status Akun</th>
-            <th scope="col" className="col-date">Terdaftar Sejak</th>
+            <th scope="col" className="col-role">Peran</th>
+            <th scope="col" className="col-user-status">Status akun</th>
+            <th scope="col" className="col-date">Bergabung</th>
             <th scope="col" className="col-actions">Aksi</th>
           </tr>
         </thead>
@@ -58,12 +59,18 @@ export function AdminsTable({ admins, onRemoveAdmin, disabled = false }: AdminsT
 
                 {/* Role Chip */}
                 <td className="col-role">
-                  <StatusChip status={admin.role} label={admin.role} />
+                  <StatusChip
+                    status={admin.role}
+                    label={peran[admin.role] || admin.role}
+                  />
                 </td>
 
                 {/* Status Chip */}
                 <td className="col-user-status">
-                  <StatusChip status={admin.status} label={admin.status} />
+                  <StatusChip
+                    status={admin.status}
+                    label={statusAkun[admin.status] || admin.status}
+                  />
                 </td>
 
                 {/* Created Date */}

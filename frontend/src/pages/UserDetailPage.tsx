@@ -130,11 +130,11 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
       } else {
         const msg = typeof res.detail === 'string'
           ? res.detail
-          : (res.detail?.message || res.message || 'Gagal menerbitkan ulang sertifikat.');
+          : (res.detail?.message || res.message || 'Sertifikat gagal diterbitkan. Sertifikat lama masih berlaku. Coba lagi.');
         setRegenerateError(msg);
       }
     } catch (err: any) {
-      setRegenerateError(err.message || 'Gagal menjalankan proses penerbitan ulang sertifikat.');
+      setRegenerateError(err.message || 'Sertifikat gagal diterbitkan. Sertifikat lama masih berlaku. Coba lagi.');
     } finally {
       setIsRegenerating(false);
     }
@@ -166,7 +166,7 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
 
       if (res.success) {
         setIsChangePfxOpen(false);
-        showFeedback('Passphrase berhasil diperbarui.');
+        showFeedback('Passphrase berhasil diubah.');
         await loadData();
       } else {
         const msg = typeof res.detail === 'string'

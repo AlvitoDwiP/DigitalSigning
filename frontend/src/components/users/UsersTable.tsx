@@ -1,5 +1,6 @@
 import type { UserItem } from '../../types/users';
 import { StatusChip } from '../ui/StatusChip';
+import { statusAkun, statusSertifikat } from '../../lib/labels';
 
 interface UsersTableProps {
   users: UserItem[];
@@ -19,17 +20,17 @@ export function maskNik(nik: string): string {
 }
 
 export function formatDate(isoStr: string | null | undefined): string {
-  if (!isoStr) return '-';
+  if (!isoStr) return 'Belum ada';
   try {
     const d = new Date(isoStr);
-    if (isNaN(d.getTime())) return '-';
+    if (isNaN(d.getTime())) return 'Belum ada';
     return d.toLocaleDateString('id-ID', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
   } catch {
-    return '-';
+    return 'Belum ada';
   }
 }
 
@@ -42,10 +43,9 @@ export function UsersTable({ users, onDetail, onDelete }: UsersTableProps) {
             <th scope="col" className="col-user">Pengguna</th>
             <th scope="col" className="col-nik">NIK</th>
             <th scope="col" className="col-email">Email</th>
-            <th scope="col" className="col-role">Role</th>
-            <th scope="col" className="col-user-status">Status Akun</th>
+            <th scope="col" className="col-user-status">Status akun</th>
             <th scope="col" className="col-cert-status">Sertifikat</th>
-            <th scope="col" className="col-expiry">Masa Berlaku</th>
+            <th scope="col" className="col-expiry">Berlaku sampai</th>
             <th scope="col" className="col-actions">Aksi</th>
           </tr>
         </thead>
@@ -83,33 +83,30 @@ export function UsersTable({ users, onDetail, onDelete }: UsersTableProps) {
                   <span className="user-email-text">{user.email}</span>
                 </td>
 
-                {/* Role */}
-                <td className="col-role">
-                  <StatusChip
-                    status={user.role}
-                    label={user.role}
-                    className="user-role-chip"
-                  />
-                </td>
-
                 {/* Status Akun */}
                 <td className="col-user-status">
-                  <StatusChip status={user.status} label={user.status} />
+                  <StatusChip
+                    status={user.status}
+                    label={statusAkun[user.status] || user.status}
+                  />
                 </td>
 
                 {/* Status Sertifikat */}
                 <td className="col-cert-status">
                   {activeCert ? (
-                    <StatusChip status={activeCert.status} label={activeCert.status} />
+                    <StatusChip
+                      status={activeCert.status}
+                      label={statusSertifikat[activeCert.status] || activeCert.status}
+                    />
                   ) : (
-                    <span className="cert-status-none">-</span>
+                    <span className="cert-status-none">Belum ada</span>
                   )}
                 </td>
 
                 {/* Masa Berlaku */}
                 <td className="col-expiry">
                   <span className="cert-expiry-text">
-                    {activeCert ? formatDate(activeCert.expires_at) : '-'}
+                    {activeCert ? formatDate(activeCert.expires_at) : 'Belum ada'}
                   </span>
                 </td>
 

@@ -1,4 +1,5 @@
 import { IconSearch, IconFilter, IconRefresh } from '../icons/Icons';
+import { labelAktivitas, hasilAktivitas } from '../../lib/labels';
 
 interface AuditLogsToolbarProps {
   search: string;
@@ -17,14 +18,14 @@ interface AuditLogsToolbarProps {
 }
 
 export const AUDIT_ACTIONS = [
-  { value: '', label: 'Semua Aksi' },
-  { value: 'USER_CREATED', label: 'USER_CREATED' },
-  { value: 'USER_DELETED', label: 'USER_DELETED' },
-  { value: 'CERTIFICATE_GENERATED', label: 'CERTIFICATE_GENERATED' },
-  { value: 'CERTIFICATE_REGENERATED', label: 'CERTIFICATE_REGENERATED' },
-  { value: 'PFX_PASSWORD_CHANGED', label: 'PFX_PASSWORD_CHANGED' },
-  { value: 'ADMIN_ASSIGNED', label: 'ADMIN_ASSIGNED' },
-  { value: 'ADMIN_REMOVED', label: 'ADMIN_REMOVED' },
+  { value: '', label: 'Semua' },
+  { value: 'USER_CREATED', label: labelAktivitas('USER_CREATED') },
+  { value: 'USER_DELETED', label: labelAktivitas('USER_DELETED') },
+  { value: 'CERTIFICATE_GENERATED', label: labelAktivitas('CERTIFICATE_GENERATED') },
+  { value: 'CERTIFICATE_REGENERATED', label: labelAktivitas('CERTIFICATE_REGENERATED') },
+  { value: 'PFX_PASSWORD_CHANGED', label: labelAktivitas('PFX_PASSWORD_CHANGED') },
+  { value: 'ADMIN_ASSIGNED', label: labelAktivitas('ADMIN_ASSIGNED') },
+  { value: 'ADMIN_REMOVED', label: labelAktivitas('ADMIN_REMOVED') },
 ];
 
 export function AuditLogsToolbar({
@@ -53,11 +54,11 @@ export function AuditLogsToolbar({
           <input
             type="search"
             className="users-search-input"
-            placeholder="Cari aksi, target, atau status..."
+            placeholder="Cari aktivitas"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             disabled={disabled}
-            aria-label="Cari entri audit log"
+            aria-label="Cari entri catatan aktivitas"
           />
         </div>
 
@@ -67,7 +68,7 @@ export function AuditLogsToolbar({
           <div className="filter-select-wrapper">
             <label htmlFor="audit-action-filter" className="filter-label">
               <IconFilter size={14} aria-hidden="true" />
-              <span>Aksi:</span>
+              <span>Jenis aktivitas:</span>
             </label>
             <select
               id="audit-action-filter"
@@ -87,7 +88,7 @@ export function AuditLogsToolbar({
           {/* Status Filter */}
           <div className="filter-select-wrapper">
             <label htmlFor="audit-status-filter" className="filter-label">
-              <span>Status:</span>
+              <span>Hasil:</span>
             </label>
             <select
               id="audit-status-filter"
@@ -96,16 +97,16 @@ export function AuditLogsToolbar({
               onChange={(e) => onStatusChange(e.target.value)}
               disabled={disabled}
             >
-              <option value="">Semua Status</option>
-              <option value="SUCCESS">SUCCESS</option>
-              <option value="FAILED">FAILED</option>
+              <option value="">Semua</option>
+              <option value="SUCCESS">{hasilAktivitas.SUCCESS || 'Berhasil'}</option>
+              <option value="FAILED">{hasilAktivitas.FAILED || 'Gagal'}</option>
             </select>
           </div>
 
           {/* Date Range Start */}
           <div className="filter-select-wrapper date-filter-wrapper">
             <label htmlFor="audit-start-date" className="filter-label">
-              <span>Dari:</span>
+              <span>Dari tanggal:</span>
             </label>
             <input
               type="date"
@@ -121,7 +122,7 @@ export function AuditLogsToolbar({
           {/* Date Range End */}
           <div className="filter-select-wrapper date-filter-wrapper">
             <label htmlFor="audit-end-date" className="filter-label">
-              <span>Sampai:</span>
+              <span>Sampai tanggal:</span>
             </label>
             <input
               type="date"

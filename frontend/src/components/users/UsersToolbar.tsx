@@ -1,5 +1,6 @@
 import React from 'react';
 import { IconSearch, IconFilter, IconSort } from '../icons/Icons';
+import { statusAkun, statusSertifikat } from '../../lib/labels';
 
 interface UsersToolbarProps {
   search: string;
@@ -46,9 +47,6 @@ export function UsersToolbar({
       <div className="users-toolbar">
         {/* Search Bar */}
         <div className="users-search-field">
-          <label htmlFor="users-search-input" className="sr-only">
-            Cari berdasarkan nama, NIK, atau email
-          </label>
           <div className="search-input-wrapper">
             <span className="search-input-icon" aria-hidden="true">
               <IconSearch size={18} />
@@ -57,11 +55,12 @@ export function UsersToolbar({
               id="users-search-input"
               type="search"
               className="users-search-input"
-              placeholder="Cari nama, NIK, atau email..."
+              placeholder="Cari nama, NIK, atau email"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               disabled={disabled}
               autoComplete="off"
+              aria-label="Cari nama, NIK, atau email"
             />
           </div>
         </div>
@@ -72,7 +71,7 @@ export function UsersToolbar({
           <div className="filter-select-wrapper">
             <label htmlFor="user-status-filter" className="filter-label">
               <IconFilter size={14} className="filter-icon" aria-hidden="true" />
-              <span>Status User:</span>
+              <span>Status:</span>
             </label>
             <select
               id="user-status-filter"
@@ -81,9 +80,9 @@ export function UsersToolbar({
               onChange={(e) => onStatusChange(e.target.value)}
               disabled={disabled}
             >
-              <option value="">Semua Status</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
+              <option value="">Semua status</option>
+              <option value="ACTIVE">{statusAkun.ACTIVE || 'Aktif'}</option>
+              <option value="INACTIVE">{statusAkun.INACTIVE || 'Tidak aktif'}</option>
             </select>
           </div>
 
@@ -100,11 +99,11 @@ export function UsersToolbar({
               onChange={(e) => onCertificateStatusChange(e.target.value)}
               disabled={disabled}
             >
-              <option value="">Semua Sertifikat</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="EXPIRED">EXPIRED</option>
-              <option value="REPLACED">REPLACED</option>
-              <option value="REVOKED">REVOKED</option>
+              <option value="">Semua sertifikat</option>
+              <option value="ACTIVE">{statusSertifikat.ACTIVE || 'Aktif'}</option>
+              <option value="EXPIRED">{statusSertifikat.EXPIRED || 'Kedaluwarsa'}</option>
+              <option value="REPLACED">{statusSertifikat.REPLACED || 'Diganti'}</option>
+              <option value="REVOKED">{statusSertifikat.REVOKED || 'Dicabut'}</option>
             </select>
           </div>
 
@@ -121,9 +120,9 @@ export function UsersToolbar({
               onChange={handleSortSelectChange}
               disabled={disabled}
             >
-              <option value="name_asc">Nama (A-Z)</option>
-              <option value="name_desc">Nama (Z-A)</option>
-              <option value="nearest_expiry_asc">Terdekat Berakhir</option>
+              <option value="name_asc">Nama A-Z</option>
+              <option value="name_desc">Nama Z-A</option>
+              <option value="nearest_expiry_asc">Paling cepat berakhir</option>
             </select>
           </div>
         </div>

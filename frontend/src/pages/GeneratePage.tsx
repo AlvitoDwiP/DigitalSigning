@@ -24,9 +24,9 @@ export function GeneratePage({ onNavigate }: GeneratePageProps) {
       {/* Page Header */}
       <header className="page-header">
         <div className="page-header-content">
-          <h1 className="page-title">Generate User</h1>
+          <h1 className="page-title">Buat pengguna baru</h1>
           <p className="page-subtitle">
-            Penerbitan akun pengguna baru sekaligus provisioning pasangan kunci kriptografi dan sertifikat digital X.509 melalui PKI Service.
+            Buat akun pengguna baru beserta sertifikat digitalnya.
           </p>
         </div>
       </header>
@@ -43,7 +43,7 @@ export function GeneratePage({ onNavigate }: GeneratePageProps) {
             onClick={() => setActiveTab('single')}
           >
             <IconGenerate size={18} aria-hidden="true" />
-            <span>Generate 1 User</span>
+            <span>Satu pengguna</span>
           </button>
 
           <button
@@ -54,7 +54,7 @@ export function GeneratePage({ onNavigate }: GeneratePageProps) {
             onClick={() => setActiveTab('bulk')}
           >
             <IconUsers size={18} aria-hidden="true" />
-            <span>Generate Bulk User</span>
+            <span>Banyak sekaligus (CSV)</span>
           </button>
         </div>
 

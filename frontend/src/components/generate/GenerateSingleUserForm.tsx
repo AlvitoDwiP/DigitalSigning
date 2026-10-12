@@ -51,23 +51,23 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
 
     // 4. Organization
     if (!organization.trim()) {
-      errors.organization = 'Instansi / Organisasi wajib diisi.';
+      errors.organization = 'Instansi wajib diisi.';
     }
 
     // 5. OU
     if (!ou.trim()) {
-      errors.ou = 'Unit Organisasi (OU) wajib diisi.';
+      errors.ou = 'Unit kerja wajib diisi.';
     }
 
     // 6. Password Login
     if (!password) {
-      errors.password = 'Password login wajib diisi.';
+      errors.password = 'Kata sandi wajib diisi.';
     } else if (password.length < 8) {
-      errors.password = 'Password login minimal 8 karakter.';
+      errors.password = 'Kata sandi minimal 8 karakter.';
     } else if (!/[A-Z]/.test(password)) {
-      errors.password = 'Password login harus mengandung minimal 1 huruf kapital (A-Z).';
+      errors.password = 'Kata sandi harus mengandung minimal satu huruf kapital.';
     } else if (!/[^a-zA-Z0-9]/.test(password)) {
-      errors.password = 'Password login harus mengandung minimal 1 karakter simbol / non-alphanumeric.';
+      errors.password = 'Kata sandi harus mengandung minimal satu simbol.';
     }
 
     // 7. Passphrase
@@ -79,9 +79,9 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
 
     // 8. Confirm Passphrase
     if (!confirmPfxPassword) {
-      errors.confirmPfxPassword = 'Konfirmasi passphrase wajib diisi.';
+      errors.confirmPfxPassword = 'Ulangi passphrase.';
     } else if (pfxPassword !== confirmPfxPassword) {
-      errors.confirmPfxPassword = 'Konfirmasi passphrase tidak cocok.';
+      errors.confirmPfxPassword = 'Passphrase tidak cocok.';
     }
 
     setFormErrors(errors);
@@ -120,11 +120,11 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
       } else {
         const msg = typeof response.detail === 'string'
           ? response.detail
-          : (response.detail?.message || response.message || 'Gagal menerbitkan akun pengguna dan sertifikat.');
+          : (response.detail?.message || response.message || 'Gagal membuat akun pengguna dan sertifikat.');
         setServerError(msg);
       }
     } catch (err: any) {
-      setServerError(err.message || 'Terjadi kesalahan sistem saat melakukan provisioning sertifikat.');
+      setServerError(err.message || 'Terjadi kesalahan sistem saat membuat sertifikat.');
     } finally {
       setIsSubmitting(false);
     }
@@ -144,10 +144,10 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
       <div className="generate-form-section">
         <div className="form-section-header">
           <h3 className="form-section-title">
-            <span>1. Informasi Identitas & Organisasi</span>
+            <span>Data pengguna</span>
           </h3>
           <p className="form-section-desc">
-            Informasi identitas subjek yang akan dicantumkan pada sertifikat digital X.509 dan akun platform.
+            Data ini akan tercantum di sertifikat.
           </p>
         </div>
 
@@ -157,7 +157,6 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <Input
               id="gen-user-name"
               label="Nama Lengkap"
-              placeholder="Contoh: Budi Santoso"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -173,8 +172,8 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
           <div className="form-col-1">
             <Input
               id="gen-user-nik"
-              label="Nomor Induk Kependudukan (NIK)"
-              placeholder="16 digit angka"
+              label="NIK"
+              helperText="16 digit"
               maxLength={16}
               value={nik}
               onChange={(e) => {
@@ -193,8 +192,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <Input
               id="gen-user-email"
               type="email"
-              label="Alamat Email"
-              placeholder="user@instansi.go.id"
+              label="Email"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -210,8 +208,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
           <div className="form-col-1">
             <Input
               id="gen-user-org"
-              label="Instansi / Organisasi"
-              placeholder="Contoh: Kementerian Komunikasi dan Informatika"
+              label="Instansi"
               value={organization}
               onChange={(e) => {
                 setOrganization(e.target.value);
@@ -227,8 +224,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
           <div className="form-col-1">
             <Input
               id="gen-user-ou"
-              label="Unit Organisasi (OU)"
-              placeholder="Contoh: Direktorat Tata Kelola"
+              label="Unit kerja"
               value={ou}
               onChange={(e) => {
                 setOu(e.target.value);
@@ -247,26 +243,22 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
         <div className="form-section-header">
           <h3 className="form-section-title">
             <IconLock size={16} aria-hidden="true" />
-            <span>2. Password Akun Login</span>
+            <span>Akun login</span>
           </h3>
-          <p className="form-section-desc">
-            Kata sandi yang digunakan pengguna untuk masuk ke dashboard platform.
-          </p>
         </div>
 
         <div className="form-grid">
           <div className="form-col-2">
             <PasswordInput
               id="gen-user-password"
-              label="Password Login"
-              placeholder="Minimal 8 karakter, 1 huruf kapital, 1 simbol"
+              label="Kata sandi"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
                 if (formErrors.password) setFormErrors(prev => ({ ...prev, password: '' }));
               }}
               error={formErrors.password}
-              helperText="Harus terdiri dari minimal 8 karakter, 1 huruf besar (A-Z), dan 1 simbol khusus."
+              helperText="Minimal 8 karakter, ada satu huruf kapital dan satu simbol."
               disabled={isSubmitting}
               required
             />
@@ -274,21 +266,15 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
         </div>
       </div>
 
-      {/* Section 3: PKCS#12 (PFX) Encryption Passphrase */}
+      {/* Section 3: Passphrase */}
       <div className="generate-form-section">
         <div className="form-section-header">
           <h3 className="form-section-title">
             <IconShield size={16} aria-hidden="true" />
-            <span>3. Passphrase Berkas PKCS#12 (PFX)</span>
+            <span>Passphrase</span>
           </h3>
           <p className="form-section-desc">
-            Passphrase enkripsi untuk memproteksi berkas sertifikat dan private key (.p12/.pfx) pada PKI Service.
-          </p>
-        </div>
-
-        <div className="pfx-info-box">
-          <p>
-            Passphrase terpisah dari password login platform dan digunakan khusus untuk memproteksi bundel sertifikat PKCS#12 (.p12/.pfx). Passphrase ini tidak disimpan secara permanen di basis data platform.
+            Dipakai untuk membuka berkas sertifikat pengguna. Berbeda dari kata sandi login.
           </p>
         </div>
 
@@ -297,7 +283,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-pfx-pass"
               label="Passphrase"
-              placeholder="Minimal 8 karakter"
+              helperText="Minimal 8 karakter"
               value={pfxPassword}
               onChange={(e) => {
                 setPfxPassword(e.target.value);
@@ -312,8 +298,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
           <div className="form-col-1">
             <PasswordInput
               id="gen-user-confirm-pfx-pass"
-              label="Konfirmasi Passphrase"
-              placeholder="Ketik ulang passphrase"
+              label="Ulangi passphrase"
               value={confirmPfxPassword}
               onChange={(e) => {
                 setConfirmPfxPassword(e.target.value);
@@ -325,6 +310,9 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             />
           </div>
         </div>
+        <p className="text-muted text-xs" style={{ marginTop: '8px' }}>
+          Tidak disimpan oleh sistem, jadi catat dengan aman.
+        </p>
       </div>
 
       {/* Submit Action */}
@@ -334,7 +322,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
           className="btn btn-primary btn-generate-submit"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Memproses Provisioning...' : 'Terbitkan Pengguna & Sertifikat'}
+          {isSubmitting ? 'Memproses...' : 'Buat pengguna dan sertifikat'}
         </button>
       </div>
     </form>

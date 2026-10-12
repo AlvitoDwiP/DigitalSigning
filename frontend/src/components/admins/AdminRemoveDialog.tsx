@@ -110,14 +110,14 @@ export function AdminRemoveDialog({
               <span className="delete-target-value font-mono">{maskNik(admin.nik)}</span>
             </div>
             <div className="delete-target-row">
-              <span className="delete-target-label">Perubahan Role</span>
-              <span className="delete-target-value">ADMIN → USER</span>
+              <span className="delete-target-label">Perubahan peran</span>
+              <span className="delete-target-value">Admin → Pengguna</span>
             </div>
           </div>
 
           <div className="delete-warning-box">
             <p>
-              Tindakan ini <strong>tidak menghapus akun atau sertifikat pengguna</strong>. Akun ini hanya akan diturunkan statusnya menjadi peran <strong>USER</strong> dan tidak lagi dapat mengakses portal administrasi.
+              Tindakan ini <strong>tidak menghapus akun atau sertifikat pengguna</strong>. Akun ini hanya akan diturunkan statusnya menjadi peran <strong>Pengguna</strong> dan tidak lagi dapat mengakses portal administrasi.
             </p>
           </div>
 

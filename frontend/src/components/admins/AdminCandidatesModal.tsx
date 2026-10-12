@@ -3,6 +3,7 @@ import type { AdminItem } from '../../types/admins';
 import { fetchAdminCandidates } from '../../services/admins';
 import { maskNik } from '../users/UsersTable';
 import { StatusChip } from '../ui/StatusChip';
+import { statusAkun } from '../../lib/labels';
 import {
   IconClose,
   IconSearch,
@@ -117,7 +118,7 @@ export function AdminCandidatesModal({
                 Pilih Kandidat Administrator
               </h2>
               <p className="dialog-subtitle">
-                Daftar pengguna aktif yang memenuhi syarat untuk dijadikan Administrator (Role: USER).
+                Daftar pengguna aktif yang memenuhi syarat untuk dijadikan Administrator.
               </p>
             </div>
           </div>
@@ -181,7 +182,7 @@ export function AdminCandidatesModal({
               <p className="empty-text">
                 {searchQuery
                   ? 'Tidak ada kandidat yang cocok dengan pencarian.'
-                  : 'Tidak ada pengguna dengan role USER yang aktif untuk dijadikan Administrator.'}
+                  : 'Tidak ada pengguna aktif untuk dijadikan Administrator.'}
               </p>
             </div>
           ) : (
@@ -220,7 +221,10 @@ export function AdminCandidatesModal({
                         <td className="font-mono">{maskNik(candidate.nik)}</td>
                         <td>{candidate.email}</td>
                         <td>
-                          <StatusChip status={candidate.status} label={candidate.status} />
+                          <StatusChip
+                            status={candidate.status}
+                            label={statusAkun[candidate.status] || candidate.status}
+                          />
                         </td>
                         <td className="text-right">
                           <button

@@ -9,7 +9,6 @@ import {
   IconUser,
   IconClose,
 } from '../icons/Icons';
-import { StatusChip } from '../ui/StatusChip';
 import { getAuthUser } from '../../services/api';
 
 export interface NavItem {
@@ -203,22 +202,22 @@ export function Sidebar({
                     type="button"
                     className={`nav-link ${isActive ? 'nav-link-active' : ''} ${item.isReserved ? 'nav-link-reserved' : ''}`}
                     onClick={() => {
+                      if (item.isReserved) return;
                       onNavigate(item.path);
                       if (onCloseMobile) onCloseMobile();
                     }}
+                    disabled={item.isReserved}
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <span className="nav-icon-wrapper" aria-hidden="true">
                       <Icon size={20} />
                     </span>
-                    <span className="nav-label">{item.label}</span>
-                    {item.isReserved && item.reservedBadge && (
-                      <StatusChip
-                        status="RESERVED"
-                        label={item.reservedBadge}
-                        className="nav-reserved-badge"
-                      />
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, textAlign: 'left' }}>
+                      <span className="nav-label">{item.label}</span>
+                      {item.isReserved && (
+                        <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)', lineHeight: 1.2 }}>Segera</span>
+                      )}
+                    </div>
                   </button>
                 </li>
               );
@@ -243,7 +242,6 @@ export function Sidebar({
               <span>Keluar</span>
             </button>
           )}
-          <div className="sidebar-version-tag">v1.0 • Phase 1</div>
         </div>
       </aside>
     </>

@@ -3,64 +3,50 @@ import {
   IconUsers,
   IconShield,
   IconAlertTriangle,
-  IconAudit
+  IconAudit,
+  IconArrowRight,
 } from '../icons/Icons';
 import { StatusChip } from '../ui/StatusChip';
+import { Button } from '../ui/Button';
 import type { RecentActivity } from '../../types/dashboard';
+import { labelAktivitas, jenisTarget } from '../../lib/labels';
 
 interface RecentActivitiesCardProps {
   activities: RecentActivity[];
+  onViewAll?: () => void;
 }
 
-function getActionInfo(action: string) {
+function getActionMeta(action: string) {
   const norm = action.toUpperCase();
 
-  if (norm.includes('BULK')) {
+  if (norm.includes('DELETE') || norm.includes('HAPUS')) {
     return {
-      title: 'Generate Bulk User',
-      icon: IconUsers,
-      badgeClass: 'badge-blue',
-      desc: 'Penerbitan massal sertifikat pengguna via CSV',
-    };
-  }
-  if (norm.includes('GENERATE_USER') || norm.includes('GENERATE_CERTIFICATE') || norm.includes('GENERATE')) {
-    return {
-      title: 'Generate User & Sertifikat',
-      icon: IconGenerate,
-      badgeClass: 'badge-blue',
-      desc: 'Penerbitan user baru dan sertifikat digital',
+      icon: IconAlertTriangle,
+      badgeClass: 'badge-red',
     };
   }
   if (norm.includes('REGENERATE')) {
     return {
-      title: 'Regenerate Certificate',
       icon: IconShield,
       badgeClass: 'badge-amber',
-      desc: 'Pembaruan masa berlaku sertifikat digital',
     };
   }
-  if (norm.includes('PFX') || norm.includes('PASSWORD') || norm.includes('PASSPHRASE')) {
+  if (norm.includes('USER')) {
     return {
-      title: 'Ubah Passphrase',
-      icon: IconShield,
+      icon: IconUsers,
       badgeClass: 'badge-blue',
-      desc: 'Pembaruan passphrase proteksi berkas PFX',
     };
   }
-  if (norm.includes('DELETE') || norm.includes('HAPUS')) {
+  if (norm.includes('CERTIFICATE') || norm.includes('PFX') || norm.includes('PASSWORD')) {
     return {
-      title: 'Hapus Entitas / Pengguna',
-      icon: IconAlertTriangle,
-      badgeClass: 'badge-red',
-      desc: 'Penghapusan data pengguna dan sertifikat',
+      icon: IconGenerate,
+      badgeClass: 'badge-blue',
     };
   }
 
   return {
-    title: action,
     icon: IconAudit,
     badgeClass: 'badge-neutral',
-    desc: 'Aktivitas sistem tercatat di audit trail',
   };
 }
 
@@ -93,16 +79,26 @@ function formatActivityTime(isoString: string): string {
   }
 }
 
-export function RecentActivitiesCard({ activities }: RecentActivitiesCardProps) {
+export function RecentActivitiesCard({ activities, onViewAll }: RecentActivitiesCardProps) {
   const displayedActivities = activities.slice(0, 6);
 
   return (
     <div className="card activities-card">
       <div className="card-header-row">
         <div>
-          <h2 className="card-heading">Aktivitas Terbaru</h2>
-          <p className="card-subheading">Enam riwayat operasional terakhir yang tercatat dalam audit trail</p>
+          <h2 className="card-heading">Aktivitas terbaru</h2>
         </div>
+        {onViewAll && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onViewAll}
+            icon={<IconArrowRight size={16} />}
+            aria-label="Lihat seluruh riwayat aktivitas"
+          >
+            Lihat semua
+          </Button>
+        )}
       </div>
 
       {displayedActivities.length === 0 ? (
@@ -116,33 +112,31 @@ export function RecentActivitiesCard({ activities }: RecentActivitiesCardProps) 
       ) : (
         <ul className="activity-list">
           {displayedActivities.map((act) => {
-            const actionInfo = getActionInfo(act.action);
-            const Icon = actionInfo.icon;
-            const isSuccess = act.status === 'SUCCESS';
+            const meta = getActionMeta(act.action);
+            const Icon = meta.icon;
+            const title = labelAktivitas(act.action);
+            const isFailed = act.status === 'FAILED';
+            const targetLabel = jenisTarget[act.target_type] || act.target_type;
 
             return (
               <li key={act.id} className="activity-item">
-                <div className={`activity-icon-badge ${actionInfo.badgeClass}`} aria-hidden="true">
+                <div className={`activity-icon-badge ${meta.badgeClass}`} aria-hidden="true">
                   <Icon size={20} />
                 </div>
 
                 <div className="activity-content">
                   <div className="activity-title-row">
-                    <span className="activity-title">{actionInfo.title}</span>
+                    <span className="activity-title">{title}</span>
                     <span className="activity-time">{formatActivityTime(act.created_at)}</span>
                   </div>
                   <div className="activity-target-row">
-                    <span className="activity-target-type">
-                      {act.target_type}: <code className="target-id">{act.target_id || '-'}</code>
-                    </span>
+                    <span className="activity-target-type">{targetLabel}</span>
                   </div>
                 </div>
 
                 <div className="activity-status-col">
-                  {isSuccess ? (
-                    <StatusChip status="SUCCESS" label="SUCCESS" />
-                  ) : (
-                    <StatusChip status="FAILED" label="FAILED" />
+                  {isFailed && (
+                    <StatusChip status="FAILED" label="Gagal" />
                   )}
                 </div>
               </li>

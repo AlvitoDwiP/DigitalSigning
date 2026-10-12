@@ -2,6 +2,7 @@ import type { UserDetailData } from '../../../types/users';
 import { maskNik, formatDate } from '../UsersTable';
 import { StatusChip } from '../../ui/StatusChip';
 import { IconUser, IconTrash } from '../../icons/Icons';
+import { statusAkun, peran } from '../../../lib/labels';
 
 interface UserInfoCardProps {
   user: UserDetailData;
@@ -23,11 +24,13 @@ export function UserInfoCard({ user, onDeleteUser }: UserInfoCardProps) {
               <h2 id="user-info-title" className="user-profile-name">
                 {user.name}
               </h2>
-              <StatusChip status={user.role} label={user.role} className="user-role-badge" />
-              <StatusChip status={user.status} label={user.status} />
+              <StatusChip
+                status={user.status}
+                label={statusAkun[user.status] || 'Aktif'}
+              />
             </div>
             <span className="user-profile-meta">
-              Terdaftar sejak {formatDate(user.created_at)}
+              Bergabung {formatDate(user.created_at)}
             </span>
           </div>
         </div>
@@ -40,7 +43,7 @@ export function UserInfoCard({ user, onDeleteUser }: UserInfoCardProps) {
             aria-label={`Hapus akun pengguna ${user.name}`}
           >
             <IconTrash size={16} aria-hidden="true" />
-            <span>Hapus Pengguna</span>
+            <span>Hapus pengguna</span>
           </button>
         </div>
       </div>
@@ -48,37 +51,37 @@ export function UserInfoCard({ user, onDeleteUser }: UserInfoCardProps) {
       <div className="detail-card-body">
         <h3 className="section-subheading">
           <IconUser size={16} aria-hidden="true" />
-          <span>Informasi Identitas & Akun</span>
+          <span>Data pengguna</span>
         </h3>
         <dl className="user-details-grid">
           <div className="user-detail-item">
-            <dt className="user-detail-label">Nomor Induk Kependudukan (NIK)</dt>
+            <dt className="user-detail-label">NIK</dt>
             <dd className="user-detail-value font-mono">{maskNik(user.nik)}</dd>
           </div>
 
           <div className="user-detail-item">
-            <dt className="user-detail-label">Alamat Email</dt>
+            <dt className="user-detail-label">Email</dt>
             <dd className="user-detail-value">{user.email}</dd>
           </div>
 
           <div className="user-detail-item">
-            <dt className="user-detail-label">Instansi / Organisasi</dt>
+            <dt className="user-detail-label">Instansi</dt>
             <dd className="user-detail-value">{user.organization || '-'}</dd>
           </div>
 
           <div className="user-detail-item">
-            <dt className="user-detail-label">Unit Organisasi (OU)</dt>
+            <dt className="user-detail-label">Unit kerja</dt>
             <dd className="user-detail-value">{user.ou || '-'}</dd>
           </div>
 
           <div className="user-detail-item">
-            <dt className="user-detail-label">Role Akses</dt>
-            <dd className="user-detail-value">{user.role}</dd>
+            <dt className="user-detail-label">Peran</dt>
+            <dd className="user-detail-value">{peran[user.role] || user.role}</dd>
           </div>
 
           <div className="user-detail-item">
-            <dt className="user-detail-label">Status Akun</dt>
-            <dd className="user-detail-value">{user.status}</dd>
+            <dt className="user-detail-label">Status akun</dt>
+            <dd className="user-detail-value">{statusAkun[user.status] || user.status}</dd>
           </div>
         </dl>
       </div>

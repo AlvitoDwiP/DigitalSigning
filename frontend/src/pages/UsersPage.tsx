@@ -190,7 +190,7 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
         <div className="page-header-content">
           <h1 className="page-title">Pengguna</h1>
           <p className="page-subtitle">
-            Daftar akun pengguna, verifikasi NIK, status masa berlaku sertifikat X.509, dan manajemen akun.
+            Kelola akun pengguna dan sertifikatnya.
           </p>
         </div>
       </header>

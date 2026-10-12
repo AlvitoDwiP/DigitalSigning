@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import type { UserItem } from '../../types/users';
-import { maskNik } from './UsersTable';
 import { IconAlertTriangle, IconClose } from '../icons/Icons';
 
 interface UserDeleteDialogProps {
@@ -73,7 +72,7 @@ export function UserDeleteDialog({
               <IconAlertTriangle size={22} />
             </div>
             <h2 id="delete-dialog-title" className="dialog-title">
-              Hapus Pengguna
+              Hapus pengguna?
             </h2>
           </div>
           <button
@@ -90,37 +89,8 @@ export function UserDeleteDialog({
         {/* Body */}
         <div className="dialog-body">
           <p id="delete-dialog-description" className="dialog-main-text">
-            Apakah Anda yakin ingin menghapus akun pengguna <strong>{user.name}</strong>?
+            Hapus <strong>{user.name}</strong>? Akun beserta sertifikatnya akan dihapus dan tidak bisa dikembalikan.
           </p>
-
-          <div className="delete-target-card">
-            <div className="delete-target-row">
-              <span className="delete-target-label">Nama:</span>
-              <span className="delete-target-value">{user.name}</span>
-            </div>
-            <div className="delete-target-row">
-              <span className="delete-target-label">NIK:</span>
-              <span className="delete-target-value font-mono">{maskNik(user.nik)}</span>
-            </div>
-            <div className="delete-target-row">
-              <span className="delete-target-label">Email:</span>
-              <span className="delete-target-value">{user.email}</span>
-            </div>
-            {user.active_certificate && (
-              <div className="delete-target-row">
-                <span className="delete-target-label">Sertifikat:</span>
-                <span className="delete-target-value">
-                  Status {user.active_certificate.status} (Serial: {user.active_certificate.serial_number})
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="delete-warning-box" role="note">
-            <p>
-              Tindakan ini akan menghapus data operasional pengguna dan seluruh berkas sertifikat terkait. Riwayat audit log akan tetap tersimpan sebagai bukti kepatuhan keamanan.
-            </p>
-          </div>
 
           {error && (
             <div className="dialog-error-banner" role="alert">
@@ -145,7 +115,7 @@ export function UserDeleteDialog({
             onClick={onConfirm}
             disabled={isDeleting}
           >
-            {isDeleting ? 'Menghapus...' : 'Hapus Pengguna'}
+            {isDeleting ? 'Menghapus...' : 'Hapus'}
           </button>
         </div>
       </div>

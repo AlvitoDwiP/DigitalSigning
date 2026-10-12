@@ -1,7 +1,7 @@
 import type { UserCertificate } from '../../../types/users';
 import { formatDate } from '../UsersTable';
-import { StatusChip } from '../../ui/StatusChip';
 import { IconCertificate, IconRefresh, IconLock } from '../../icons/Icons';
+import { parseCommonName } from '../../../lib/labels';
 
 interface ActiveCertificateCardProps {
   certificate: UserCertificate | null;
@@ -46,13 +46,13 @@ export function ActiveCertificateCard({
           <div className="card-title-group">
             <IconCertificate size={20} className="card-title-icon" aria-hidden="true" />
             <h2 id="active-cert-title" className="detail-card-title">
-              Sertifikat Digital Aktif
+              Sertifikat aktif
             </h2>
           </div>
         </div>
         <div className="detail-card-body empty-cert-body">
           <div className="empty-cert-notice">
-            <p>Pengguna saat ini tidak memiliki sertifikat X.509 aktif.</p>
+            <p>Pengguna belum memiliki sertifikat aktif.</p>
           </div>
         </div>
       </section>
@@ -62,11 +62,11 @@ export function ActiveCertificateCard({
   const { days, urgency } = calculateExpiryDays(certificate.expires_at);
 
   let remainingDaysBadgeClass = 'expiry-badge-normal';
-  let remainingDaysText = `${days} hari tersisa`;
+  let remainingDaysText = `Sisa ${days} hari`;
 
   if (urgency === 'expired') {
     remainingDaysBadgeClass = 'expiry-badge-critical';
-    remainingDaysText = 'Telah Kedaluwarsa';
+    remainingDaysText = 'Kedaluwarsa';
   } else if (urgency === 'critical') {
     remainingDaysBadgeClass = 'expiry-badge-critical';
   } else if (urgency === 'warning') {
@@ -79,9 +79,8 @@ export function ActiveCertificateCard({
         <div className="card-title-group">
           <IconCertificate size={20} className="card-title-icon" aria-hidden="true" />
           <h2 id="active-cert-title" className="detail-card-title">
-            Sertifikat Digital Aktif
+            Sertifikat aktif
           </h2>
-          <StatusChip status={certificate.status} label={certificate.status} />
           <span className={`expiry-remaining-badge ${remainingDaysBadgeClass}`}>
             {remainingDaysText}
           </span>
@@ -93,20 +92,20 @@ export function ActiveCertificateCard({
             className="btn btn-ghost btn-cert-action"
             onClick={onChangePfx}
             disabled={disabled}
-            aria-label="Ubah passphrase berkas PFX"
+            aria-label="Ubah passphrase berkas sertifikat"
           >
             <IconLock size={16} aria-hidden="true" />
-            <span>Ubah Passphrase</span>
+            <span>Ubah passphrase</span>
           </button>
           <button
             type="button"
             className="btn btn-primary btn-cert-action"
             onClick={onRegenerate}
             disabled={disabled}
-            aria-label="Terbitkan ulang sertifikat digital"
+            aria-label="Terbitkan ulang sertifikat"
           >
             <IconRefresh size={16} aria-hidden="true" />
-            <span>Regenerate Sertifikat</span>
+            <span>Terbitkan ulang</span>
           </button>
         </div>
       </div>
@@ -114,33 +113,42 @@ export function ActiveCertificateCard({
       <div className="detail-card-body">
         <dl className="cert-details-grid">
           <div className="cert-detail-item">
-            <dt className="cert-detail-label">Nomor Seri (Serial Number)</dt>
+            <dt className="cert-detail-label">Nomor sertifikat</dt>
             <dd className="cert-detail-value font-mono">{certificate.serial_number}</dd>
           </div>
 
           <div className="cert-detail-item">
-            <dt className="cert-detail-label">Penerbit Sertifikat (Issuer)</dt>
+            <dt className="cert-detail-label">Diterbitkan oleh</dt>
             <dd className="cert-detail-value">{certificate.issuer}</dd>
           </div>
 
           <div className="cert-detail-item col-span-2">
-            <dt className="cert-detail-label">Subjek Sertifikat (Subject DN)</dt>
-            <dd className="cert-detail-value font-mono text-break">{certificate.subject}</dd>
-          </div>
-
-          <div className="cert-detail-item col-span-2">
-            <dt className="cert-detail-label">Fingerprint (SHA-256)</dt>
-            <dd className="cert-detail-value font-mono text-break">{certificate.fingerprint_sha256}</dd>
+            <dt className="cert-detail-label">Atas nama</dt>
+            <dd className="cert-detail-value font-mono text-break">{parseCommonName(certificate.subject)}</dd>
           </div>
 
           <div className="cert-detail-item">
-            <dt className="cert-detail-label">Tanggal Diterbitkan</dt>
+            <dt className="cert-detail-label">Diterbitkan pada</dt>
             <dd className="cert-detail-value">{formatDate(certificate.issued_at)}</dd>
           </div>
 
           <div className="cert-detail-item">
-            <dt className="cert-detail-label">Masa Berlaku Sampai</dt>
+            <dt className="cert-detail-label">Berlaku sampai</dt>
             <dd className="cert-detail-value">{formatDate(certificate.expires_at)}</dd>
+          </div>
+
+          <div className="cert-detail-item col-span-2" style={{ marginTop: '4px' }}>
+            <details className="technical-details-accordion">
+              <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--text-secondary, #64748b)', padding: '4px 0' }}>
+                Detail teknis
+              </summary>
+              <div style={{ marginTop: '8px', paddingLeft: '8px' }}>
+                <dt className="cert-detail-label">Sidik jari digital</dt>
+                <dd className="cert-detail-value font-mono text-break" style={{ marginTop: '4px' }}>
+                  {certificate.fingerprint_sha256}
+                </dd>
+              </div>
+            </details>
           </div>
         </dl>
       </div>

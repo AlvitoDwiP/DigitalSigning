@@ -14,12 +14,11 @@ export function StatsSection({ statistics }: StatsSectionProps) {
           <div className="stat-icon-badge badge-blue" aria-hidden="true">
             <IconUsers size={22} />
           </div>
-          <span className="stat-label">Total User</span>
+          <span className="stat-label">Total pengguna</span>
         </div>
         <div className="stat-value-wrapper">
           <span className="stat-number tabular-nums">{statistics.total_user.toLocaleString('id-ID')}</span>
         </div>
-        <span className="stat-caption">Pengguna terdaftar di platform</span>
       </div>
 
       {/* 2. Active - Largest/Primary Statistic (Green Accent) */}
@@ -28,12 +27,11 @@ export function StatsSection({ statistics }: StatsSectionProps) {
           <div className="stat-icon-badge badge-green" aria-hidden="true">
             <IconCertificate size={26} />
           </div>
-          <span className="stat-label">Sertifikat Aktif</span>
+          <span className="stat-label">Sertifikat aktif</span>
         </div>
         <div className="stat-value-wrapper">
           <span className="stat-number stat-number-lg tabular-nums">{statistics.active.toLocaleString('id-ID')}</span>
         </div>
-        <span className="stat-caption">Sertifikat berstatus ACTIVE yang valid</span>
       </div>
 
       {/* 3. Expired (Amber Accent) */}
@@ -42,12 +40,11 @@ export function StatsSection({ statistics }: StatsSectionProps) {
           <div className="stat-icon-badge badge-amber" aria-hidden="true">
             <IconAlertTriangle size={22} />
           </div>
-          <span className="stat-label">Expired</span>
+          <span className="stat-label">Sertifikat kedaluwarsa</span>
         </div>
         <div className="stat-value-wrapper">
           <span className="stat-number tabular-nums">{statistics.expired.toLocaleString('id-ID')}</span>
         </div>
-        <span className="stat-caption">Sertifikat telah melewati masa berlaku</span>
       </div>
     </section>
   );

@@ -127,7 +127,7 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
         <div className="page-header-content">
           <h1 className="page-title">Audit Log</h1>
           <p className="page-subtitle">
-            Rekam jejak aktivitas sistem yang bersifat append-only untuk kepatuhan dan keamanan operasional.
+            Catatan semua aktivitas di platform. Catatan ini tidak bisa diubah atau dihapus.
           </p>
         </div>
       </header>

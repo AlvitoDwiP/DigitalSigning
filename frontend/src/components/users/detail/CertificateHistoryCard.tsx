@@ -2,6 +2,7 @@ import type { UserCertificate } from '../../../types/users';
 import { formatDate } from '../UsersTable';
 import { StatusChip } from '../../ui/StatusChip';
 import { IconClock } from '../../icons/Icons';
+import { statusSertifikat } from '../../../lib/labels';
 
 interface CertificateHistoryCardProps {
   history: UserCertificate[] | undefined;
@@ -16,10 +17,10 @@ export function CertificateHistoryCard({ history }: CertificateHistoryCardProps)
         <div className="card-title-group">
           <IconClock size={20} className="card-title-icon" aria-hidden="true" />
           <h2 id="cert-history-title" className="detail-card-title">
-            Riwayat Sertifikat Digital
+            Riwayat sertifikat
           </h2>
           <span className="history-count-badge">
-            {items.length} Sertifikat
+            {items.length} sertifikat
           </span>
         </div>
       </div>
@@ -34,11 +35,11 @@ export function CertificateHistoryCard({ history }: CertificateHistoryCardProps)
             <table className="cert-history-table">
               <thead>
                 <tr>
-                  <th scope="col">Serial Number</th>
+                  <th scope="col">Nomor sertifikat</th>
                   <th scope="col">Status</th>
-                  <th scope="col">Tanggal Diterbitkan</th>
-                  <th scope="col">Masa Berlaku</th>
-                  <th scope="col">Fingerprint (SHA-256)</th>
+                  <th scope="col">Diterbitkan pada</th>
+                  <th scope="col">Berlaku sampai</th>
+                  <th scope="col">Sidik jari digital</th>
                 </tr>
               </thead>
               <tbody>
@@ -46,7 +47,10 @@ export function CertificateHistoryCard({ history }: CertificateHistoryCardProps)
                   <tr key={cert.id} className="history-table-row">
                     <td className="font-mono">{cert.serial_number}</td>
                     <td>
-                      <StatusChip status={cert.status} label={cert.status} />
+                      <StatusChip
+                        status={cert.status}
+                        label={statusSertifikat[cert.status] || cert.status}
+                      />
                     </td>
                     <td>{formatDate(cert.issued_at)}</td>
                     <td>{formatDate(cert.expires_at)}</td>

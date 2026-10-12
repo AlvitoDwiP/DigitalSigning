@@ -49,8 +49,8 @@ export function NearestExpiryCard({
     <div className="card expiry-card nearest-expiry-card">
       <div className="card-header-row">
         <div>
-          <h2 className="card-heading">Sertifikat Paling Dekat Berakhir</h2>
-          <p className="card-subheading">Maksimal 5 sertifikat ACTIVE yang memerlukan perhatian</p>
+          <h2 className="card-heading">Paling cepat berakhir</h2>
+          <p className="card-subheading">5 sertifikat dengan sisa waktu paling sedikit</p>
         </div>
         <Button
           variant="ghost"
@@ -59,7 +59,7 @@ export function NearestExpiryCard({
           icon={<IconArrowRight size={16} />}
           aria-label="Lihat seluruh daftar pengguna"
         >
-          Lihat Pengguna
+          Lihat semua
         </Button>
       </div>
 
@@ -68,8 +68,7 @@ export function NearestExpiryCard({
           <div className="empty-icon-badge" aria-hidden="true">
             <IconCertificate size={24} />
           </div>
-          <p className="empty-title">Tidak ada sertifikat mendekati kadaluarsa</p>
-          <p className="empty-subtitle">Seluruh sertifikat ACTIVE saat ini memiliki masa berlaku aman (&gt; 30 hari).</p>
+          <p className="empty-title">Belum ada sertifikat yang akan berakhir dalam 30 hari.</p>
         </div>
       ) : (
         <ul className="expiry-user-list">

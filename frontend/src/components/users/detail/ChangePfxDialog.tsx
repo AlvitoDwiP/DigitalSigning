@@ -78,11 +78,11 @@ export function ChangePfxDialog({
       return;
     }
     if (newPassword.length < 8) {
-      setValidationError('Passphrase baru harus memiliki panjang minimal 8 karakter.');
+      setValidationError('Passphrase baru minimal 8 karakter.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      setValidationError('Konfirmasi passphrase tidak cocok.');
+      setValidationError('Passphrase tidak cocok.');
       return;
     }
 
@@ -106,7 +106,7 @@ export function ChangePfxDialog({
               <IconLock size={22} />
             </div>
             <h2 id="change-pfx-dialog-title" className="dialog-title">
-              Ubah Passphrase
+              Ubah passphrase
             </h2>
           </div>
           <button
@@ -123,21 +123,19 @@ export function ChangePfxDialog({
         {/* Body */}
         <div className="dialog-body">
           <p id="change-pfx-dialog-description" className="dialog-main-text">
-            Perbarui passphrase pelindung berkas PKCS#12 (PFX) untuk pengguna <strong>{user.name}</strong>.
+            Ganti passphrase untuk membuka berkas sertifikat milik <strong>{user.name}</strong>.
           </p>
 
-          <div className="change-pfx-notice">
-            <p>
-              Tindakan ini hanya mengubah passphrase pembuka berkas PFX/P12. Nomor seri sertifikat, fingerprint, dan masa berlaku sertifikat <strong>tidak berubah</strong>.
-            </p>
-          </div>
+          <p className="dialog-plain-hint text-muted" style={{ margin: '8px 0 16px 0', fontSize: '13px' }}>
+            Hanya passphrase yang berganti. Sertifikat dan masa berlakunya tetap sama.
+          </p>
 
           <div className="pfx-inputs-stack">
             <PasswordInput
               id="new-pfx-password"
               name="new_pfx_password"
-              label="Passphrase Baru"
-              placeholder="Minimal 8 karakter"
+              label="Passphrase baru"
+              helperText="Minimal 8 karakter"
               value={newPassword}
               onChange={(e) => {
                 setNewPassword(e.target.value);
@@ -150,8 +148,7 @@ export function ChangePfxDialog({
             <PasswordInput
               id="confirm-pfx-password"
               name="confirm_pfx_password"
-              label="Konfirmasi Passphrase"
-              placeholder="Ketik ulang passphrase baru"
+              label="Ulangi passphrase baru"
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
@@ -185,7 +182,7 @@ export function ChangePfxDialog({
             className="btn btn-primary dialog-btn-confirm"
             disabled={isProcessing}
           >
-            {isProcessing ? 'Menyimpan...' : 'Simpan Passphrase'}
+            {isProcessing ? 'Menyimpan...' : 'Simpan'}
           </button>
         </div>
       </form>

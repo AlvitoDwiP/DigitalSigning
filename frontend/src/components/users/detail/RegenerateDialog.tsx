@@ -72,7 +72,7 @@ export function RegenerateDialog({
               <IconRefresh size={22} />
             </div>
             <h2 id="regenerate-dialog-title" className="dialog-title">
-              Regenerate Sertifikat Digital
+              Terbitkan ulang sertifikat?
             </h2>
           </div>
           <button
@@ -89,23 +89,8 @@ export function RegenerateDialog({
         {/* Body */}
         <div className="dialog-body">
           <p id="regenerate-dialog-description" className="dialog-main-text">
-            Apakah Anda yakin ingin menerbitkan ulang sertifikat digital X.509 untuk <strong>{user.name}</strong>?
+            Terbitkan sertifikat baru untuk <strong>{user.name}</strong>? Sertifikat lama tetap berlaku sampai yang baru berhasil dibuat, lalu statusnya menjadi Diganti.
           </p>
-
-          <div className="regenerate-explanation-box">
-            <div className="explanation-item">
-              <strong>Penerbitan Baru:</strong>
-              <span>Pasangan kunci kriptografi baru dan sertifikat baru akan digenerate melalui PKI Service.</span>
-            </div>
-            <div className="explanation-item">
-              <strong>Sertifikat Lama:</strong>
-              <span>Setelah sertifikat baru berhasil diterbitkan dan divalidasi, sertifikat lama otomatis berubah status menjadi <strong>REPLACED</strong>.</span>
-            </div>
-            <div className="explanation-item">
-              <strong>Ketahanan Kegagalan:</strong>
-              <span>Jika proses penerbitan gagal, sertifikat lama akan <strong>tetap berstatus ACTIVE</strong> tanpa perubahan.</span>
-            </div>
-          </div>
 
           {error && (
             <div className="dialog-error-banner" role="alert">
@@ -131,7 +116,7 @@ export function RegenerateDialog({
             onClick={onConfirm}
             disabled={isProcessing}
           >
-            {isProcessing ? 'Menerbitkan...' : 'Terbitkan Sertifikat Baru'}
+            {isProcessing ? 'Menerbitkan...' : 'Terbitkan ulang'}
           </button>
         </div>
       </div>

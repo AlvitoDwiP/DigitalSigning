@@ -28,7 +28,7 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
       return;
     }
     if (newPassphrase.length < 8) {
-      setError('Passphrase baru harus memiliki panjang minimal 8 karakter.');
+      setError('Passphrase baru minimal 8 karakter.');
       return;
     }
     if (newPassphrase === oldPassphrase) {
@@ -36,7 +36,7 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
       return;
     }
     if (newPassphrase !== confirmPassphrase) {
-      setError('Konfirmasi passphrase tidak cocok.');
+      setError('Passphrase tidak cocok.');
       return;
     }
 
@@ -54,7 +54,7 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
         setNewPassphrase('');
         setConfirmPassphrase('');
         setError(null);
-        onSuccess('Passphrase berhasil diperbarui.');
+        onSuccess('Passphrase berhasil diubah.');
       } else {
         const msg = typeof res.detail === 'string'
           ? res.detail
@@ -74,28 +74,25 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
         <div className="card-title-group">
           <IconLock size={20} className="card-title-icon" aria-hidden="true" />
           <h2 id="account-passphrase-title" className="detail-card-title">
-            Ubah Passphrase
+            Ubah passphrase
           </h2>
         </div>
       </div>
 
       <div className="detail-card-body">
         <p className="dialog-main-text mb-3">
-          Perbarui passphrase pelindung sertifikat digital Anda.
+          Ganti passphrase untuk membuka berkas sertifikat Anda.
         </p>
 
-        <div className="change-pfx-notice mb-4">
-          <p>
-            Tindakan ini hanya mengubah passphrase pelindung sertifikat. Nomor seri sertifikat, fingerprint, dan masa berlaku sertifikat <strong>tidak berubah</strong>.
-          </p>
-        </div>
+        <p className="text-muted text-xs mb-4">
+          Hanya passphrase yang berganti. Sertifikat dan masa berlakunya tetap sama.
+        </p>
 
         <form onSubmit={handleSubmit} className="account-form-stack">
           <PasswordInput
             id="account-old-pfx-passphrase"
             name="old_passphrase"
-            label="Passphrase Lama"
-            placeholder="Ketik passphrase saat ini"
+            label="Passphrase lama"
             value={oldPassphrase}
             onChange={(e) => {
               setOldPassphrase(e.target.value);
@@ -109,8 +106,8 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
           <PasswordInput
             id="account-new-pfx-passphrase"
             name="new_passphrase"
-            label="Passphrase Baru"
-            placeholder="Minimal 8 karakter"
+            label="Passphrase baru"
+            helperText="Minimal 8 karakter"
             value={newPassphrase}
             onChange={(e) => {
               setNewPassphrase(e.target.value);
@@ -124,8 +121,7 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
           <PasswordInput
             id="account-confirm-pfx-passphrase"
             name="confirm_passphrase"
-            label="Konfirmasi Passphrase"
-            placeholder="Ketik ulang passphrase baru"
+            label="Ulangi passphrase baru"
             value={confirmPassphrase}
             onChange={(e) => {
               setConfirmPassphrase(e.target.value);
@@ -149,7 +145,7 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
               className="btn btn-primary"
               disabled={isProcessing}
             >
-              {isProcessing ? 'Menyimpan...' : 'Perbarui Passphrase'}
+              {isProcessing ? 'Menyimpan...' : 'Simpan'}
             </button>
           </div>
         </form>

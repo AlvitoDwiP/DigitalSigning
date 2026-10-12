@@ -177,9 +177,9 @@ export function validateCsvContent(rawText: string): ClientCsvValidationResult {
     } else if (password.length < 8) {
       errors.push('Password login minimal 8 karakter.');
     } else if (!/[A-Z]/.test(password)) {
-      errors.push('Password login harus memiliki minimal 1 huruf kapital (A-Z).');
+      errors.push('Kata sandi harus memiliki minimal satu huruf kapital.');
     } else if (!/[^a-zA-Z0-9]/.test(password)) {
-      errors.push('Password login harus memiliki minimal 1 simbol / non-alphanumeric.');
+      errors.push('Kata sandi harus memiliki minimal satu simbol.');
     }
 
     // 7. Passphrase

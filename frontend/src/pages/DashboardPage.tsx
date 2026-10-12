@@ -52,7 +52,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       <div className="dashboard-page">
         <div className="page-header">
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Ringkasan operasional sertifikat digital dan pengguna platform</p>
+          <p className="page-subtitle">Ringkasan sertifikat dan pengguna.</p>
         </div>
         <DashboardError
           message={error || 'Data dashboard tidak tersedia.'}
@@ -69,7 +69,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       <div className="page-header-row">
         <div className="page-header">
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Ringkasan operasional sertifikat digital dan pengguna platform</p>
+          <p className="page-subtitle">Ringkasan sertifikat dan pengguna.</p>
         </div>
         <div className="page-header-actions">
           <Button
@@ -99,7 +99,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
       {/* 3. Recent Activities (Max 6 from API) */}
       <section className="dashboard-activities-section" aria-label="Riwayat Aktivitas Terbaru">
-        <RecentActivitiesCard activities={data.recent_activities} />
+        <RecentActivitiesCard
+          activities={data.recent_activities}
+          onViewAll={() => onNavigate('/audit-log')}
+        />
       </section>
     </div>
   );

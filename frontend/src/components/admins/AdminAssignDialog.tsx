@@ -94,7 +94,7 @@ export function AdminAssignDialog({
         {/* Body */}
         <div className="dialog-body">
           <p id="assign-admin-desc" className="dialog-main-text">
-            Apakah Anda yakin ingin menetapkan hak akses <strong>ADMIN</strong> kepada pengguna berikut?
+            Apakah Anda yakin ingin menetapkan hak akses <strong>Admin</strong> kepada pengguna berikut?
           </p>
 
           <div className="delete-target-card">
@@ -111,14 +111,14 @@ export function AdminAssignDialog({
               <span className="delete-target-value font-mono">{maskNik(candidate.nik)}</span>
             </div>
             <div className="delete-target-row">
-              <span className="delete-target-label">Perubahan Role</span>
-              <span className="delete-target-value">USER → ADMIN</span>
+              <span className="delete-target-label">Perubahan peran</span>
+              <span className="delete-target-value">Pengguna → Admin</span>
             </div>
           </div>
 
           <div className="admin-role-notice-box">
             <p>
-              Pengguna ini akan memperoleh hak akses operasional untuk mengelola pengguna, menerbitkan sertifikat, dan melihat audit log. Perubahan role ini akan dicatat ke dalam Audit Log.
+              Pengguna ini akan memperoleh hak akses operasional untuk mengelola pengguna, menerbitkan sertifikat, dan melihat audit log. Perubahan peran ini akan dicatat ke dalam Audit Log.
             </p>
           </div>
 
