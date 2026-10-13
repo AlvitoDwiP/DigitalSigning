@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import uuid
 from pydantic import BaseModel
 from typing import Optional
@@ -55,17 +56,44 @@ def update_account(
     current_user: User = Depends(deps.get_current_user)
 ):
     try:
-        if req.name:
-            current_user.name = req.name
-        if req.email:
-            existing_email = db.query(User).filter(User.email == req.email, User.id != current_user.id).first()
+        target_name = req.name.strip() if req.name is not None else current_user.name
+        target_email = req.email.strip() if req.email is not None else current_user.email
+
+        # Check nama dan email sama
+        if target_name.lower() == target_email.lower():
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "NAME_EMAIL_MATCH", "message": "Nama pengguna dan email tidak boleh sama"}
+            )
+
+        if req.name is not None:
+            clean_name = req.name.strip()
+            if not clean_name:
+                raise HTTPException(status_code=400, detail={"code": "INVALID_NAME", "message": "Nama lengkap tidak boleh kosong"})
+            existing_name = db.query(User).filter(
+                func.lower(User.name) == func.lower(clean_name),
+                User.id != current_user.id
+            ).first()
+            if existing_name:
+                raise HTTPException(status_code=409, detail={"code": "INVALID_NAME", "message": "Nama pengguna sudah digunakan"})
+            current_user.name = clean_name
+
+        if req.email is not None:
+            clean_email = req.email.strip()
+            if not clean_email:
+                raise HTTPException(status_code=400, detail={"code": "INVALID_EMAIL", "message": "Email tidak boleh kosong"})
+            existing_email = db.query(User).filter(
+                func.lower(User.email) == func.lower(clean_email),
+                User.id != current_user.id
+            ).first()
             if existing_email:
                 raise HTTPException(status_code=409, detail={"code": "INVALID_EMAIL", "message": "Email already exists"})
-            current_user.email = req.email
-        if req.organization:
-            current_user.organization = req.organization
-        if req.ou:
-            current_user.ou = req.ou
+            current_user.email = clean_email
+
+        if req.organization is not None:
+            current_user.organization = req.organization.strip()
+        if req.ou is not None:
+            current_user.ou = req.ou.strip()
             
         db.commit()
         db.refresh(current_user)

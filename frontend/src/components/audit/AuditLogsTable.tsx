@@ -1,29 +1,25 @@
-import { useState, Fragment } from 'react';
+import { useState } from 'react';
 import type { AuditLogItem } from '../../types/auditLogs';
-import { StatusChip } from '../ui/StatusChip';
-import { IconClock } from '../icons/Icons';
 import {
   labelAktivitas,
   hasilAktivitas,
   jenisTarget,
   formatWaktuIndonesia,
+  deskripsiAktivitas,
+  formatPelaku,
 } from '../../lib/labels';
 
 interface AuditLogsTableProps {
   logs: AuditLogItem[];
+  onSelectLog?: (log: AuditLogItem) => void;
 }
 
-export function AuditLogsTable({ logs }: AuditLogsTableProps) {
-  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+export function AuditLogsTable({ logs, onSelectLog }: AuditLogsTableProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const toggleRow = (id: string) => {
-    setExpandedLogId(prev => (prev === id ? null : id));
-  };
-
-  const handleCopy = (e: React.MouseEvent, text: string, id: string) => {
+  const handleCopyTargetId = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(id);
     setCopiedId(id);
     setTimeout(() => {
       setCopiedId(null);
@@ -37,94 +33,88 @@ export function AuditLogsTable({ logs }: AuditLogsTableProps) {
           <tr>
             <th scope="col" className="col-time">Waktu</th>
             <th scope="col" className="col-action">Aktivitas</th>
-            <th scope="col" className="col-status">Hasil</th>
             <th scope="col" className="col-target">Terkait</th>
+            <th scope="col" className="col-status">Hasil</th>
             <th scope="col" className="col-actor">Dilakukan oleh</th>
           </tr>
         </thead>
         <tbody>
           {logs.map((log) => {
-            const isExpanded = expandedLogId === log.id;
-            const targetLabel = jenisTarget[log.target_type] || log.target_type;
+            const isCertAction = log.action === 'CERTIFICATE_REGENERATED' || log.action === 'CERTIFICATE_GENERATED';
+            const targetTypeLabel = isCertAction ? 'Pengguna' : (jenisTarget[log.target_type] || log.target_type);
             const statusLabel = hasilAktivitas[log.status] || log.status;
-            const actorDisplay = log.user_id ? log.user_id : 'Tidak tercatat';
+            const isSuccess = log.status === 'SUCCESS';
+            const actorDisplay = formatPelaku(log.actor_name, log.actor_role);
+            const targetDisplay = log.target_name || (log.target_id ? `${targetTypeLabel} (${log.target_id.slice(0, 8)}...)` : targetTypeLabel);
+            const copyId = log.target_id || log.id;
+            const isCopied = copiedId === copyId;
 
             return (
-              <Fragment key={log.id}>
-                <tr
-                  className="users-table-row audit-table-row"
-                  onClick={() => toggleRow(log.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {/* Waktu */}
-                  <td className="col-time">
-                    <div className="audit-time-cell">
-                      <IconClock size={15} className="audit-clock-icon" aria-hidden="true" />
-                      <span>{formatWaktuIndonesia(log.created_at)}</span>
-                    </div>
-                  </td>
+              <tr
+                key={log.id}
+                className="users-table-row audit-table-row"
+                onClick={() => onSelectLog?.(log)}
+                style={{ cursor: 'pointer' }}
+                title="Klik baris untuk melihat rincian aktivitas"
+              >
+                {/* Waktu */}
+                <td className="col-time">
+                  <span className="audit-time-text">{formatWaktuIndonesia(log.created_at)}</span>
+                </td>
 
-                  {/* Aktivitas */}
-                  <td className="col-action">
-                    <div className="audit-action-cell">
-                      <span className="audit-action-main">{labelAktivitas(log.action)}</span>
-                    </div>
-                  </td>
+                {/* Aktivitas */}
+                <td className="col-action">
+                  <div className="audit-activity-cell">
+                    <span className="audit-activity-title font-semibold">
+                      {labelAktivitas(log.action)}
+                    </span>
+                    <span className="audit-activity-desc text-muted text-xs">
+                      {deskripsiAktivitas(log.action, log.status)}
+                    </span>
+                  </div>
+                </td>
 
-                  {/* Hasil */}
-                  <td className="col-status">
-                    <StatusChip status={log.status} label={statusLabel} />
-                  </td>
-
-                  {/* Terkait */}
-                  <td className="col-target">
-                    <span className="text-secondary">{targetLabel}</span>
-                  </td>
-
-                  {/* Dilakukan oleh */}
-                  <td className="col-actor text-muted text-xs">
-                    {actorDisplay}
-                  </td>
-                </tr>
-
-                {/* Expandable Details for ID Target */}
-                {isExpanded && (
-                  <tr className="audit-expand-row">
-                    <td
-                      colSpan={5}
-                      style={{
-                        padding: '10px 16px 14px 16px',
-                        backgroundColor: 'var(--bg-muted, rgba(0, 0, 0, 0.03))',
-                        borderTop: '1px dashed var(--border-color, #e2e8f0)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          fontSize: '12px',
-                        }}
+                {/* Terkait */}
+                <td className="col-target">
+                  <div className="audit-target-two-line">
+                    <span className="audit-target-primary-name">
+                      {targetDisplay}
+                    </span>
+                    <div className="audit-target-sub-line">
+                      <span className="audit-target-type-muted">{targetTypeLabel}</span>
+                      <span className="audit-target-dot">&middot;</span>
+                      <button
+                        type="button"
+                        className={`btn-salin-id ${isCopied ? 'copied' : ''}`}
+                        onClick={(e) => handleCopyTargetId(copyId, e)}
+                        title={`Salin ID: ${copyId}`}
                       >
-                        <span style={{ color: 'var(--text-secondary, #64748b)' }}>ID Target:</span>
-                        <code className="font-mono text-xs" style={{ background: 'var(--bg-card, #fff)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color, #e2e8f0)' }}>
-                          {log.target_id || '-'}
-                        </code>
-                        {log.target_id && (
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            style={{ padding: '2px 8px', fontSize: '11px', height: '24px' }}
-                            onClick={(e) => handleCopy(e, log.target_id!, log.id)}
-                          >
-                            {copiedId === log.id ? 'Tersalin' : 'Salin ID'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
+                        {isCopied ? 'Tersalin' : 'Salin ID'}
+                      </button>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Hasil */}
+                <td className="col-status">
+                  <div className="audit-status-dot-indicator">
+                    <span
+                      className={`audit-status-dot ${isSuccess ? 'dot-success' : 'dot-failed'}`}
+                      aria-hidden="true"
+                    />
+                    <span className="audit-status-text-bold">
+                      {statusLabel}
+                    </span>
+                  </div>
+                </td>
+
+                {/* Dilakukan oleh */}
+                <td className="col-actor">
+                  <span className="audit-actor-text">
+                    {actorDisplay}
+                  </span>
+                </td>
+              </tr>
             );
           })}
         </tbody>

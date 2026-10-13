@@ -19,44 +19,6 @@ interface GenerateBulkUserViewProps {
   onNavigateUsers: () => void;
 }
 
-const CSV_COLUMNS_INFO = [
-  {
-    key: 'name',
-    label: 'Nama Lengkap',
-    desc: 'Nama pemilik sertifikat digital.',
-  },
-  {
-    key: 'nik',
-    label: 'NIK',
-    desc: '16 digit angka kependudukan resmi.',
-  },
-  {
-    key: 'email',
-    label: 'Email',
-    desc: 'Alamat surel aktif pengguna.',
-  },
-  {
-    key: 'organization',
-    label: 'Instansi',
-    desc: 'Nama institusi atau organisasi.',
-  },
-  {
-    key: 'ou',
-    label: 'Unit kerja',
-    desc: 'Sub-unit atau divisi kerja.',
-  },
-  {
-    key: 'password',
-    label: 'Kata sandi',
-    desc: 'Min. 8 karakter, huruf kapital & simbol.',
-  },
-  {
-    key: 'pfx_pass',
-    label: 'Passphrase',
-    desc: 'Min. 8 karakter pengaman sertifikat.',
-  },
-];
-
 export function GenerateBulkUserView({ onNavigateUsers }: GenerateBulkUserViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -223,20 +185,6 @@ export function GenerateBulkUserView({ onNavigateUsers }: GenerateBulkUserViewPr
               )}
             </button>
           </div>
-        </div>
-
-        {/* Structured Column Cards Grid */}
-        <div className="bulk-columns-grid">
-          {CSV_COLUMNS_INFO.map((col, idx) => (
-            <div key={col.key} className="bulk-col-item">
-              <div className="bulk-col-header">
-                <span className="bulk-col-num">{idx + 1}</span>
-                <span className="bulk-col-label">{col.label}</span>
-              </div>
-              <div className="bulk-col-key-tag font-mono">{col.key}</div>
-              <p className="bulk-col-desc">{col.desc}</p>
-            </div>
-          ))}
         </div>
 
         {/* Important Rules Note Box */}

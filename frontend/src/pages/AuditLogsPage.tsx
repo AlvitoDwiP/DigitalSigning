@@ -7,6 +7,8 @@ import { AuditLogsPagination } from '../components/audit/AuditLogsPagination';
 import { AuditLogsSkeleton } from '../components/audit/AuditLogsSkeleton';
 import { AuditLogsEmpty } from '../components/audit/AuditLogsEmpty';
 import { AuditLogsError } from '../components/audit/AuditLogsError';
+import { AuditLogDetailModal } from '../components/audit/AuditLogDetailModal';
+import { IconSearch, IconClose } from '../components/icons/Icons';
 
 interface AuditLogsPageProps {
   onNavigate?: (path: string) => void;
@@ -18,10 +20,11 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
+
+  // Selected log for detail modal
+  const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
 
   // Data states
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
@@ -45,23 +48,10 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
     setError(null);
 
     try {
-      // Format start_date and end_date if present
-      let formattedStart: string | undefined = undefined;
-      let formattedEnd: string | undefined = undefined;
-
-      if (startDate) {
-        formattedStart = `${startDate}T00:00:00Z`;
-      }
-      if (endDate) {
-        formattedEnd = `${endDate}T23:59:59Z`;
-      }
-
       const res = await fetchAuditLogs({
         search: debouncedSearch,
         action: actionFilter || undefined,
         status: statusFilter || undefined,
-        start_date: formattedStart,
-        end_date: formattedEnd,
         page: currentPage,
         limit: pageSize,
       });
@@ -80,7 +70,7 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearch, actionFilter, statusFilter, startDate, endDate, currentPage, pageSize]);
+  }, [debouncedSearch, actionFilter, statusFilter, currentPage, pageSize]);
 
   useEffect(() => {
     loadLogs();
@@ -96,33 +86,19 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
     setCurrentPage(1);
   };
 
-  const handleStartDateChange = (val: string) => {
-    setStartDate(val);
-    setCurrentPage(1);
-  };
-
-  const handleEndDateChange = (val: string) => {
-    setEndDate(val);
-    setCurrentPage(1);
-  };
-
   const handleResetFilters = () => {
     setSearchInput('');
     setDebouncedSearch('');
     setActionFilter('');
     setStatusFilter('');
-    setStartDate('');
-    setEndDate('');
     setCurrentPage(1);
   };
 
-  const isFiltered = Boolean(
-    debouncedSearch || actionFilter || statusFilter || startDate || endDate
-  );
+  const isFiltered = Boolean(debouncedSearch || actionFilter || statusFilter);
 
   return (
     <div className="users-page-container audit-page-container">
-      {/* Page Header */}
+      {/* 1. Judul dan Deskripsi */}
       <header className="page-header">
         <div className="page-header-content">
           <h1 className="page-title">Audit Log</h1>
@@ -132,20 +108,43 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
         </div>
       </header>
 
-      {/* Content Card */}
+      {/* 2. Pencarian (keluar kotak card) */}
+      <div className="audit-search-standalone-wrapper">
+        <div className="audit-search-box">
+          <span className="audit-search-icon" aria-hidden="true">
+            <IconSearch size={18} />
+          </span>
+          <input
+            type="search"
+            className="audit-search-input"
+            placeholder="Cari aktivitas, objek terkait, ID, atau pelaku..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            disabled={isLoading && logs.length === 0}
+            aria-label="Cari entri catatan aktivitas"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              className="audit-search-clear-btn"
+              onClick={() => setSearchInput('')}
+              title="Hapus pencarian"
+              aria-label="Hapus teks pencarian"
+            >
+              <IconClose size={15} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 3. Kotak Card Utama: Filter & Bagan Tabel */}
       <div className="users-content-card">
-        {/* Toolbar */}
+        {/* Filter (Jenis aktivitas dan Hasil) */}
         <AuditLogsToolbar
-          search={searchInput}
-          onSearchChange={setSearchInput}
           action={actionFilter}
           onActionChange={handleActionChange}
           status={statusFilter}
           onStatusChange={handleStatusChange}
-          startDate={startDate}
-          onStartDateChange={handleStartDateChange}
-          endDate={endDate}
-          onEndDateChange={handleEndDateChange}
           onReset={handleResetFilters}
           isFiltered={isFiltered}
           disabled={isLoading && logs.length === 0}
@@ -163,7 +162,10 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
           />
         ) : (
           <>
-            <AuditLogsTable logs={logs} />
+            <AuditLogsTable
+              logs={logs}
+              onSelectLog={(log) => setSelectedLog(log)}
+            />
 
             <AuditLogsPagination
               currentPage={currentPage}
@@ -175,6 +177,14 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
           </>
         )}
       </div>
+
+      {/* Audit Log Detail Modal */}
+      <AuditLogDetailModal
+        log={selectedLog}
+        isOpen={Boolean(selectedLog)}
+        onClose={() => setSelectedLog(null)}
+      />
     </div>
   );
 }
+

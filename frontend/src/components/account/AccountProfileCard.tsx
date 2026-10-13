@@ -97,6 +97,10 @@ export function AccountProfileCard({
       setError('Format email tidak valid.');
       return;
     }
+    if (name.trim().toLowerCase() === email.trim().toLowerCase()) {
+      setError('Nama pengguna dan email tidak boleh sama.');
+      return;
+    }
 
     // Buka pop up validasi konfirmasi
     setIsConfirmOpen(true);

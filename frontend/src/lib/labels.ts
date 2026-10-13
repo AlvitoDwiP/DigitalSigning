@@ -78,3 +78,34 @@ export function formatWaktuIndonesia(isoStr: string | null | undefined): string 
     return '-';
   }
 }
+
+export const deskripsiAktivitasMap: Record<string, string> = {
+  CERTIFICATE_GENERATED: 'Sertifikat berstatus aktif.',
+  CERTIFICATE_REGENERATED: 'Kunci dan sertifikat baru diterbitkan ulang.',
+  CERTIFICATE_DELETED: 'Sertifikat digital dihapus dari sistem.',
+  USER_CREATED: 'Pengguna baru berhasil dibuat.',
+  USER_DELETED: 'Akun pengguna dihapus dari sistem.',
+  PFX_UPDATED: 'Passphrase berkas PFX diperbarui.',
+  PFX_PASSWORD_CHANGED: 'Passphrase berkas PFX diperbarui.',
+  ADMIN_ASSIGNED: 'Peran pengguna ditingkatkan menjadi admin.',
+  ADMIN_REMOVED: 'Hak akses admin pengguna dicabut.',
+  LOGIN: 'Sesi masuk ke platform diverifikasi.',
+  LOGOUT: 'Sesi akun berhasil diakhiri.',
+};
+
+export function deskripsiAktivitas(kode: string, status?: string): string {
+  if (status === 'FAILED') {
+    return 'Aktivitas gagal diproses oleh sistem.';
+  }
+  return deskripsiAktivitasMap[kode] || 'Aktivitas tercatat dalam sistem.';
+}
+
+export function formatPelaku(name?: string | null, role?: string | null): string {
+  const roleLabel = role ? (peran[role] || role) : null;
+  if (!name && !roleLabel) return 'Admin Platform';
+  if (name && roleLabel) {
+    if (name.toLowerCase() === roleLabel.toLowerCase()) return name;
+    return `${name} (${roleLabel})`;
+  }
+  return name || roleLabel || 'Admin Platform';
+}

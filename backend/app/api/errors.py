@@ -25,13 +25,25 @@ def setup_exception_handlers(app: FastAPI):
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         logger.warning(f"Validation error on {request.url.path}: {exc}")
+        first_error_msg = "Input tidak valid"
+        try:
+            errs = exc.errors()
+            if errs and len(errs) > 0:
+                first_msg = errs[0].get("msg", "")
+                if first_msg:
+                    if first_msg.startswith("Value error, "):
+                        first_msg = first_msg[len("Value error, "):]
+                    first_error_msg = first_msg
+        except Exception:
+            pass
+
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
                 "success": False,
                 "error": {
                     "code": "INVALID_INPUT",
-                    "message": "Input tidak valid"
+                    "message": first_error_msg
                 }
             }
         )

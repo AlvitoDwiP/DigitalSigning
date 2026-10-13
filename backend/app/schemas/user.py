@@ -34,7 +34,7 @@ class User(UserInDBBase):
 class UserInDB(UserInDBBase):
     password_hash: str
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 import re
 
 class GenerateUserRequest(BaseModel):
@@ -46,6 +46,13 @@ class GenerateUserRequest(BaseModel):
     password: str
     pfx_password: str
     confirm_pfx_password: str
+
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError('Nama pengguna wajib diisi')
+        return v.strip()
 
     @field_validator('nik')
     @classmethod
@@ -64,6 +71,13 @@ class GenerateUserRequest(BaseModel):
         if not re.search(r'[^a-zA-Z0-9]', v):
             raise ValueError('Password must contain at least one non-alphanumeric character')
         return v
+
+    @model_validator(mode='after')
+    def validate_name_not_email(self):
+        if self.name and self.email:
+            if self.name.strip().lower() == str(self.email).strip().lower():
+                raise ValueError('Nama pengguna dan email tidak boleh sama')
+        return self
 
 class GenerateUserResponseData(BaseModel):
     user: User

@@ -80,8 +80,8 @@ def test_bulk_csv_validate_accepts_7_columns(client: TestClient, auth_headers: d
     num1 = f"{random.randint(100000, 999999):06d}"
     num2 = f"{random.randint(100000, 999999):06d}"
     valid_csv = f"""name,nik,email,organization,ou,password,pfx_pass
-User Satu,9111222233{num1},user1_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
-User Dua,9222333344{num2},user2_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
+User Satu {str_suffix},9111222233{num1},user1_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
+User Dua {str_suffix},9222333344{num2},user2_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
 """
     files = {"file": ("users.csv", io.BytesIO(valid_csv.encode("utf-8")), "text/csv")}
     response = client.post("/api/v1/users/generate-bulk/validate", files=files, headers=auth_headers["admin"])
@@ -129,8 +129,8 @@ def test_bulk_csv_generate_execution(client: TestClient, auth_headers: dict):
     nik2 = f"9444555566{random.randint(100000, 999999):06d}"
 
     csv_content = f"""name,nik,email,organization,ou,password,pfx_pass
-Bulk User 1,{nik1},bulk1_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
-Bulk User 2,{nik2},bulk2_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
+Bulk User 1 {str_suffix},{nik1},bulk1_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
+Bulk User 2 {str_suffix},{nik2},bulk2_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
 """
     mock_pki_bulk_response = {
         "results": [
@@ -139,7 +139,7 @@ Bulk User 2,{nik2},bulk2_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass12
                 "status": "SUCCESS",
                 "metadata": {
                     "serial_number": f"SER-BLK-1-{str_suffix}",
-                    "subject": f"CN=Bulk User 1",
+                    "subject": f"CN=Bulk User 1 {str_suffix}",
                     "issuer": "Intermediate CA",
                     "fingerprint_sha256": f"FINGERPRINTBLK1{str_suffix}00000000000000000000000000000000000000"[:64],
                     "certificate_path": f"/path/{nik1}.crt",
@@ -153,7 +153,7 @@ Bulk User 2,{nik2},bulk2_{str_suffix}@mkri.go.id,MKRI,TTE,Password123!,PfxPass12
                 "status": "SUCCESS",
                 "metadata": {
                     "serial_number": f"SER-BLK-2-{str_suffix}",
-                    "subject": f"CN=Bulk User 2",
+                    "subject": f"CN=Bulk User 2 {str_suffix}",
                     "issuer": "Intermediate CA",
                     "fingerprint_sha256": f"FINGERPRINTBLK2{str_suffix}00000000000000000000000000000000000000"[:64],
                     "certificate_path": f"/path/{nik2}.crt",

@@ -109,6 +109,7 @@ export function validateCsvContent(rawText: string): ClientCsvValidationResult {
   }
 
   const parsedRows: ParsedCsvRow[] = [];
+  const seenNames = new Set<string>();
   const seenNiks = new Set<string>();
   const seenEmails = new Set<string>();
 
@@ -133,32 +134,44 @@ export function validateCsvContent(rawText: string): ClientCsvValidationResult {
     }
 
     const [name, nik, email, organization, ou, password, pfxPass] = cols;
+    const cleanName = name.trim();
+    const cleanNik = nik.trim();
+    const cleanEmail = email.trim();
 
     // 1. Name
-    if (!name) {
+    if (!cleanName) {
       errors.push('Nama lengkap wajib diisi.');
+    } else if (seenNames.has(cleanName.toLowerCase())) {
+      errors.push('Nama lengkap duplikat di dalam berkas CSV.');
+    } else {
+      seenNames.add(cleanName.toLowerCase());
     }
 
     // 2. NIK
-    if (!nik) {
+    if (!cleanNik) {
       errors.push('NIK wajib diisi.');
-    } else if (!/^[0-9]{16}$/.test(nik)) {
+    } else if (!/^[0-9]{16}$/.test(cleanNik)) {
       errors.push('NIK harus tepat 16 digit angka.');
-    } else if (seenNiks.has(nik)) {
+    } else if (seenNiks.has(cleanNik)) {
       errors.push('NIK duplikat di dalam berkas CSV.');
     } else {
-      seenNiks.add(nik);
+      seenNiks.add(cleanNik);
     }
 
     // 3. Email
-    if (!email) {
+    if (!cleanEmail) {
       errors.push('Alamat email wajib diisi.');
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       errors.push('Format alamat email tidak valid.');
-    } else if (seenEmails.has(email.toLowerCase())) {
+    } else if (seenEmails.has(cleanEmail.toLowerCase())) {
       errors.push('Email duplikat di dalam berkas CSV.');
     } else {
-      seenEmails.add(email.toLowerCase());
+      seenEmails.add(cleanEmail.toLowerCase());
+    }
+
+    // Check Nama dan Email tidak boleh sama
+    if (cleanName && cleanEmail && cleanName.toLowerCase() === cleanEmail.toLowerCase()) {
+      errors.push('Nama dan email tidak boleh sama.');
     }
 
     // 4. Organization

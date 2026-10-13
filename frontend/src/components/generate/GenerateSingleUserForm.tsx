@@ -29,7 +29,8 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
     const errors: Record<string, string> = {};
 
     // 1. Nama
-    if (!name.trim()) {
+    const cleanName = name.trim();
+    if (!cleanName) {
       errors.name = 'Nama lengkap wajib diisi.';
     }
 
@@ -47,6 +48,12 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
       errors.email = 'Alamat email wajib diisi.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       errors.email = 'Format alamat email tidak valid.';
+    }
+
+    // Validasi Nama dan Email tidak boleh sama
+    if (cleanName && cleanEmail && cleanName.toLowerCase() === cleanEmail.toLowerCase()) {
+      errors.name = 'Nama pengguna dan email tidak boleh sama.';
+      errors.email = 'Nama pengguna dan email tidak boleh sama.';
     }
 
     // 4. Organization
@@ -124,7 +131,22 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
         setServerError(msg);
       }
     } catch (err: any) {
-      setServerError(err.message || 'Terjadi kesalahan sistem saat membuat sertifikat.');
+      const msg = err.message || 'Terjadi kesalahan sistem saat membuat sertifikat.';
+      setServerError(msg);
+      const lower = msg.toLowerCase();
+      if (lower.includes('nama pengguna dan email tidak boleh sama') || lower.includes('nama dan email tidak boleh sama')) {
+        setFormErrors((prev) => ({
+          ...prev,
+          name: 'Nama pengguna dan email tidak boleh sama.',
+          email: 'Nama pengguna dan email tidak boleh sama.',
+        }));
+      } else if (lower.includes('nama pengguna sudah') || lower.includes('nama sudah terdaftar')) {
+        setFormErrors((prev) => ({ ...prev, name: 'Nama pengguna sudah terdaftar di sistem.' }));
+      } else if (lower.includes('email already exists') || lower.includes('email sudah terdaftar')) {
+        setFormErrors((prev) => ({ ...prev, email: 'Alamat email sudah terdaftar di sistem.' }));
+      } else if (lower.includes('nik already exists') || lower.includes('nik sudah terdaftar')) {
+        setFormErrors((prev) => ({ ...prev, nik: 'NIK sudah terdaftar di sistem.' }));
+      }
     } finally {
       setIsSubmitting(false);
     }

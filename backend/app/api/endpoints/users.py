@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_, asc, desc
+from sqlalchemy import or_, and_, asc, desc, func
 from sqlalchemy.exc import IntegrityError
 import uuid
 from typing import List, Any, Dict, Optional
@@ -69,6 +69,7 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
         )
         
     parsed_rows = []
+    seen_names = set()
     seen_niks = set()
     seen_emails = set()
     
@@ -126,6 +127,10 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
         # Email format
         if email and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
             errors.append("Invalid email format")
+
+        # Name and Email equality check
+        if name and email and name.strip().lower() == email.strip().lower():
+            errors.append("Nama dan email tidak boleh sama")
             
         # Password policy
         if password:
@@ -133,6 +138,13 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
             errors.extend(pwd_errs)
             
         # Duplicate check in CSV
+        if name:
+            name_lower = name.strip().lower()
+            if name_lower in seen_names:
+                errors.append("Duplicate name in CSV")
+            else:
+                seen_names.add(name_lower)
+
         if nik:
             if nik in seen_niks:
                 errors.append("Duplicate NIK in CSV")
@@ -140,20 +152,25 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
                 seen_niks.add(nik)
                 
         if email:
-            email_lower = email.lower()
+            email_lower = email.strip().lower()
             if email_lower in seen_emails:
                 errors.append("Duplicate email in CSV")
             else:
                 seen_emails.add(email_lower)
                 
         # Duplicate check in DB
+        if name and not any("name" in e.lower() or "nama" in e.lower() for e in errors):
+            existing_user_name = db.query(User).filter(func.lower(User.name) == func.lower(name.strip())).first()
+            if existing_user_name:
+                errors.append("Name already exists in database")
+
         if nik and not any("NIK" in e for e in errors):
-            existing_user_nik = db.query(User).filter(User.nik == nik).first()
+            existing_user_nik = db.query(User).filter(User.nik == nik.strip()).first()
             if existing_user_nik:
                 errors.append("NIK already exists in database")
                 
-        if email and not any("email" in e for e in errors):
-            existing_user_email = db.query(User).filter(User.email == email).first()
+        if email and not any("email" in e.lower() for e in errors):
+            existing_user_email = db.query(User).filter(func.lower(User.email) == func.lower(email.strip())).first()
             if existing_user_email:
                 errors.append("Email already exists in database")
                 
@@ -293,12 +310,23 @@ def generate_user(
     if req.pfx_password != req.confirm_pfx_password:
         raise HTTPException(status_code=400, detail={"code": "INVALID_INPUT", "message": "Konfirmasi passphrase tidak cocok"})
         
+    # Check Nama dan Email sama
+    if req.name.strip().lower() == req.email.strip().lower():
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "NAME_EMAIL_MATCH", "message": "Nama pengguna dan email tidak boleh sama"}
+        )
+
     # Pre-validation Database checking
-    existing_nik = db.query(User).filter(User.nik == req.nik).first()
+    existing_name = db.query(User).filter(func.lower(User.name) == func.lower(req.name.strip())).first()
+    if existing_name:
+        raise HTTPException(status_code=409, detail={"code": "INVALID_NAME", "message": "Nama pengguna sudah terdaftar"})
+
+    existing_nik = db.query(User).filter(User.nik == req.nik.strip()).first()
     if existing_nik:
         raise HTTPException(status_code=409, detail={"code": "INVALID_NIK", "message": "NIK already exists"})
         
-    existing_email = db.query(User).filter(User.email == req.email).first()
+    existing_email = db.query(User).filter(func.lower(User.email) == func.lower(req.email.strip())).first()
     if existing_email:
         raise HTTPException(status_code=409, detail={"code": "INVALID_EMAIL", "message": "Email already exists"})
         
@@ -366,8 +394,8 @@ def generate_user(
             id=uuid.uuid4(),
             user_id=current_user.id,
             action="CERTIFICATE_GENERATED",
-            target_type="certificate",
-            target_id=cert_id,
+            target_type="user",
+            target_id=user_id,
             status="SUCCESS"
         )
         db.add(audit_cert)
@@ -573,8 +601,8 @@ async def generate_bulk_users(
                 id=uuid.uuid4(),
                 user_id=current_user.id,
                 action="CERTIFICATE_GENERATED",
-                target_type="certificate",
-                target_id=cert_id,
+                target_type="user",
+                target_id=user_id,
                 status="SUCCESS"
             )
             db.add(audit_cert)
@@ -812,8 +840,8 @@ def regenerate_user_certificate(
             id=uuid.uuid4(),
             user_id=current_user.id,
             action="CERTIFICATE_REGENERATED",
-            target_type="certificate",
-            target_id=active_cert.id,
+            target_type="user",
+            target_id=user.id,
             status="FAILED"
         )
         db.add(audit_fail)
@@ -837,8 +865,8 @@ def regenerate_user_certificate(
                 id=uuid.uuid4(),
                 user_id=current_user.id,
                 action="CERTIFICATE_REGENERATED",
-                target_type="certificate",
-                target_id=active_cert.id,
+                target_type="user",
+                target_id=user.id,
                 status="FAILED"
             )
             db.add(audit_fail)
@@ -883,8 +911,8 @@ def regenerate_user_certificate(
             id=uuid.uuid4(),
             user_id=current_user.id,
             action="CERTIFICATE_REGENERATED",
-            target_type="certificate",
-            target_id=new_cert_id,
+            target_type="user",
+            target_id=user.id,
             status="SUCCESS"
         )
         db.add(audit_success)
@@ -924,8 +952,8 @@ def regenerate_user_certificate(
                 id=uuid.uuid4(),
                 user_id=current_user.id,
                 action="CERTIFICATE_REGENERATED",
-                target_type="certificate",
-                target_id=active_cert.id,
+                target_type="user",
+                target_id=user.id,
                 status="FAILED"
             )
             db.add(audit_fail)

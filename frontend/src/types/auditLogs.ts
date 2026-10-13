@@ -1,9 +1,13 @@
 export interface AuditLogItem {
   id: string;
   user_id: string | null;
+  actor_name?: string | null;
+  actor_email?: string | null;
+  actor_role?: string | null;
   action: string;
   target_type: string;
   target_id: string | null;
+  target_name?: string | null;
   status: 'SUCCESS' | 'FAILED' | string;
   created_at: string;
 }

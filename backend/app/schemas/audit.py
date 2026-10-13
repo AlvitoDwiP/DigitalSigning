@@ -5,9 +5,13 @@ import uuid
 
 class AuditLogBase(BaseModel):
     user_id: Optional[uuid.UUID] = None
+    actor_name: Optional[str] = None
+    actor_email: Optional[str] = None
+    actor_role: Optional[str] = None
     action: str
     target_type: str
     target_id: Optional[uuid.UUID] = None
+    target_name: Optional[str] = None
     status: str
 
 class AuditLogResponse(AuditLogBase):
@@ -16,3 +20,4 @@ class AuditLogResponse(AuditLogBase):
     
     class Config:
         from_attributes = True
+
