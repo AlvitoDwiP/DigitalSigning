@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, cast, String
+from sqlalchemy import or_, cast, String, and_
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 import re
@@ -24,6 +24,7 @@ def extract_cn(subject: Optional[str]) -> Optional[str]:
 @router.get("/", response_model=dict)
 def get_audit_logs(
     search: Optional[str] = Query(None, description="Search across action, target_type, status, actor, and ID"),
+    user_id: Optional[uuid.UUID] = Query(None, description="Filter audit logs strictly related to a user (as actor, target, or cert owner)"),
     action: Optional[str] = Query(None, description="Filter by action enum"),
     status: Optional[str] = Query(None, description="Filter by status (SUCCESS/FAILED)"),
     start_date: Optional[datetime] = Query(None, description="Filter created_at >= start_date"),
@@ -34,6 +35,20 @@ def get_audit_logs(
     current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"]))
 ) -> Dict[str, Any]:
     query = db.query(AuditLog)
+
+    if user_id:
+        user_cert_ids = [
+            c[0] for c in db.query(Certificate.id).filter(Certificate.user_id == user_id).all()
+        ]
+        user_conditions = [
+            AuditLog.user_id == user_id,
+            AuditLog.target_id == user_id,
+        ]
+        if user_cert_ids:
+            user_conditions.append(
+                and_(AuditLog.target_type == "certificate", AuditLog.target_id.in_(user_cert_ids))
+            )
+        query = query.filter(or_(*user_conditions))
 
     if action and isinstance(action, str):
         query = query.filter(AuditLog.action == action)

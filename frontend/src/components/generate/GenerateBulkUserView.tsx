@@ -193,7 +193,7 @@ export function GenerateBulkUserView({ onNavigateUsers }: GenerateBulkUserViewPr
             <IconShield size={16} aria-hidden="true" />
           </div>
           <div className="rules-note-text">
-            <strong>Ketentuan format:</strong> NIK wajib 16 digit angka. Kata sandi minimal 8 karakter dengan minimal 1 huruf kapital dan 1 simbol. Passphrase minimal 8 karakter untuk pengamanan berkas sertifikat digital.
+            <strong>Ketentuan format:</strong> NIK wajib 16 digit angka. Kata sandi minimal 8 karakter dengan minimal 1 huruf kapital dan 1 simbol. Passphrase (pfx_pass) minimal 8 karakter, atau dapat dikosongkan untuk otomatis menggunakan password basic.
           </div>
         </div>
       </div>

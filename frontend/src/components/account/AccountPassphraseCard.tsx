@@ -103,34 +103,46 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
             required
           />
 
-          <PasswordInput
-            id="account-new-pfx-passphrase"
-            name="new_passphrase"
-            label="Passphrase baru"
-            helperText="Minimal 8 karakter"
-            value={newPassphrase}
-            onChange={(e) => {
-              setNewPassphrase(e.target.value);
-              setError(null);
-            }}
-            disabled={isProcessing}
-            autoComplete="new-password"
-            required
-          />
+          {(() => {
+            const isNewPfxValid = newPassphrase.length >= 8;
+            const isConfirmPfxValid = Boolean(newPassphrase && confirmPassphrase && confirmPassphrase === newPassphrase && isNewPfxValid);
 
-          <PasswordInput
-            id="account-confirm-pfx-passphrase"
-            name="confirm_passphrase"
-            label="Ulangi passphrase baru"
-            value={confirmPassphrase}
-            onChange={(e) => {
-              setConfirmPassphrase(e.target.value);
-              setError(null);
-            }}
-            disabled={isProcessing}
-            autoComplete="new-password"
-            required
-          />
+            return (
+              <>
+                <PasswordInput
+                  id="account-new-pfx-passphrase"
+                  name="new_passphrase"
+                  label="Passphrase baru"
+                  helperText={isNewPfxValid ? 'Passphrase memenuhi syarat (min. 8 karakter)' : 'Minimal 8 karakter'}
+                  value={newPassphrase}
+                  onChange={(e) => {
+                    setNewPassphrase(e.target.value);
+                    setError(null);
+                  }}
+                  isValid={isNewPfxValid}
+                  disabled={isProcessing}
+                  autoComplete="new-password"
+                  required
+                />
+
+                <PasswordInput
+                  id="account-confirm-pfx-passphrase"
+                  name="confirm_passphrase"
+                  label="Ulangi passphrase baru"
+                  helperText={isConfirmPfxValid ? 'Konfirmasi passphrase cocok' : undefined}
+                  value={confirmPassphrase}
+                  onChange={(e) => {
+                    setConfirmPassphrase(e.target.value);
+                    setError(null);
+                  }}
+                  isValid={isConfirmPfxValid}
+                  disabled={isProcessing}
+                  autoComplete="new-password"
+                  required
+                />
+              </>
+            );
+          })()}
 
           {error && (
             <div className="dialog-error-banner form-error-banner" role="alert">

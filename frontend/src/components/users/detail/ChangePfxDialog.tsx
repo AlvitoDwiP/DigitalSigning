@@ -135,12 +135,13 @@ export function ChangePfxDialog({
               id="new-pfx-password"
               name="new_pfx_password"
               label="Passphrase baru"
-              helperText="Minimal 8 karakter"
+              helperText={newPassword.length >= 8 ? 'Passphrase memenuhi syarat (min. 8 karakter)' : 'Minimal 8 karakter'}
               value={newPassword}
               onChange={(e) => {
                 setNewPassword(e.target.value);
                 setValidationError(null);
               }}
+              isValid={newPassword.length >= 8}
               disabled={isProcessing}
               autoComplete="new-password"
             />
@@ -149,11 +150,17 @@ export function ChangePfxDialog({
               id="confirm-pfx-password"
               name="confirm_pfx_password"
               label="Ulangi passphrase baru"
+              helperText={
+                Boolean(newPassword && confirmPassword && confirmPassword === newPassword && newPassword.length >= 8)
+                  ? 'Konfirmasi passphrase cocok'
+                  : undefined
+              }
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
                 setValidationError(null);
               }}
+              isValid={Boolean(newPassword && confirmPassword && confirmPassword === newPassword && newPassword.length >= 8)}
               disabled={isProcessing}
               autoComplete="new-password"
             />

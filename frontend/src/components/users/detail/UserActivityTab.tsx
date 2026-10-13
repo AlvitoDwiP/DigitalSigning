@@ -31,8 +31,8 @@ export function UserActivityTab({ userId }: UserActivityTabProps) {
     setError(null);
 
     try {
-      // Query audit logs where the target or actor matches this userId
-      const res = await fetchAuditLogs({ search: userId, limit: 50 });
+      // Query audit logs strictly related to this userId (actor, target, or cert owner)
+      const res = await fetchAuditLogs({ user_id: userId, limit: 50 });
       if (res.success && res.data) {
         setActivities(res.data.items || []);
       } else {

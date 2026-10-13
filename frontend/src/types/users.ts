@@ -106,8 +106,8 @@ export interface GenerateUserPayload {
   organization: string;
   ou: string;
   password: string;
-  pfx_password: string;
-  confirm_pfx_password: string;
+  pfx_password?: string;
+  confirm_pfx_password?: string;
 }
 
 export interface GenerateUserData {

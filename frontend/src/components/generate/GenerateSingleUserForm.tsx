@@ -17,6 +17,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
   const [organization, setOrganization] = useState('');
   const [ou, setOu] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [pfxPassword, setPfxPassword] = useState('');
   const [confirmPfxPassword, setConfirmPfxPassword] = useState('');
 
@@ -77,23 +78,34 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
       errors.password = 'Kata sandi harus mengandung minimal satu simbol.';
     }
 
-    // 7. Passphrase
-    if (!pfxPassword) {
-      errors.pfxPassword = 'Passphrase wajib diisi.';
-    } else if (pfxPassword.length < 8) {
-      errors.pfxPassword = 'Passphrase minimal 8 karakter.';
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Konfirmasi kata sandi wajib diisi.';
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = 'Kata sandi dan konfirmasi tidak cocok.';
     }
 
-    // 8. Confirm Passphrase
-    if (!confirmPfxPassword) {
-      errors.confirmPfxPassword = 'Ulangi passphrase.';
-    } else if (pfxPassword !== confirmPfxPassword) {
-      errors.confirmPfxPassword = 'Passphrase tidak cocok.';
+    // 7. Passphrase (Opsional, otomatis Mkri006! jika kosong)
+    const cleanPfx = pfxPassword.trim();
+    const cleanConfirmPfx = confirmPfxPassword.trim();
+
+    if (cleanPfx) {
+      if (cleanPfx.length < 8) {
+        errors.pfxPassword = 'Passphrase minimal 8 karakter.';
+      }
+      if (!cleanConfirmPfx) {
+        errors.confirmPfxPassword = 'Ulangi passphrase.';
+      } else if (cleanPfx !== cleanConfirmPfx) {
+        errors.confirmPfxPassword = 'Passphrase tidak cocok.';
+      }
+    } else if (cleanConfirmPfx) {
+      errors.pfxPassword = 'Isi passphrase utama terlebih dahulu atau kosongkan keduanya.';
     }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
+
+  const DEFAULT_PASSPHRASE = 'Mkri006!';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +118,9 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
     setIsSubmitting(true);
 
     try {
+      const finalPfx = pfxPassword.trim() ? pfxPassword : DEFAULT_PASSPHRASE;
+      const finalConfirmPfx = pfxPassword.trim() ? confirmPfxPassword : DEFAULT_PASSPHRASE;
+
       const response = await generateUser({
         name: name.trim(),
         nik: nik.trim(),
@@ -113,13 +128,14 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
         organization: organization.trim(),
         ou: ou.trim(),
         password,
-        pfx_password: pfxPassword,
-        confirm_pfx_password: confirmPfxPassword,
+        pfx_password: finalPfx,
+        confirm_pfx_password: finalConfirmPfx,
       });
 
       if (response.success && response.data) {
         // Clear sensitive credentials from memory
         setPassword('');
+        setConfirmPassword('');
         setPfxPassword('');
         setConfirmPfxPassword('');
 
@@ -151,6 +167,33 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
       setIsSubmitting(false);
     }
   };
+
+  // Validasi real-time untuk status visual hijau & centang
+  const cleanName = name.trim();
+  const cleanEmail = email.trim();
+  const isNameValid = Boolean(cleanName.length >= 2 && (!cleanEmail || cleanName.toLowerCase() !== cleanEmail.toLowerCase()));
+  const isNikValid = nik.length === 16 && /^\d{16}$/.test(nik);
+  const isEmailValid = Boolean(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) && (!cleanName || cleanEmail.toLowerCase() !== cleanName.toLowerCase()));
+  const isOrgValid = Boolean(organization.trim().length >= 2);
+  const isOuValid = Boolean(ou.trim().length >= 2);
+  const isPasswordValid = Boolean(
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[^a-zA-Z0-9]/.test(password)
+  );
+  const isConfirmPasswordValid = Boolean(
+    password &&
+    confirmPassword &&
+    confirmPassword === password &&
+    isPasswordValid
+  );
+  const isPfxValid = Boolean(pfxPassword.length >= 8);
+  const isConfirmPfxValid = Boolean(
+    pfxPassword &&
+    confirmPfxPassword &&
+    confirmPfxPassword === pfxPassword &&
+    pfxPassword.length >= 8
+  );
 
   return (
     <form onSubmit={handleSubmit} className="generate-form" noValidate>
@@ -185,6 +228,8 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
                 if (formErrors.name) setFormErrors(prev => ({ ...prev, name: '' }));
               }}
               error={formErrors.name}
+              isValid={isNameValid}
+              helperText={isNameValid ? 'Nama lengkap valid' : undefined}
               disabled={isSubmitting}
               required
             />
@@ -195,7 +240,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <Input
               id="gen-user-nik"
               label="NIK"
-              helperText="16 digit"
+              helperText={isNikValid ? 'NIK 16 digit lengkap' : '16 digit'}
               maxLength={16}
               value={nik}
               onChange={(e) => {
@@ -204,6 +249,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
                 if (formErrors.nik) setFormErrors(prev => ({ ...prev, nik: '' }));
               }}
               error={formErrors.nik}
+              isValid={isNikValid}
               disabled={isSubmitting}
               required
             />
@@ -221,6 +267,8 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
                 if (formErrors.email) setFormErrors(prev => ({ ...prev, email: '' }));
               }}
               error={formErrors.email}
+              isValid={isEmailValid}
+              helperText={isEmailValid ? 'Format email valid' : (email ? 'Format: nama@domain.com' : undefined)}
               disabled={isSubmitting}
               required
             />
@@ -237,6 +285,8 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
                 if (formErrors.organization) setFormErrors(prev => ({ ...prev, organization: '' }));
               }}
               error={formErrors.organization}
+              isValid={isOrgValid}
+              helperText={isOrgValid ? 'Instansi valid' : undefined}
               disabled={isSubmitting}
               required
             />
@@ -253,6 +303,8 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
                 if (formErrors.ou) setFormErrors(prev => ({ ...prev, ou: '' }));
               }}
               error={formErrors.ou}
+              isValid={isOuValid}
+              helperText={isOuValid ? 'Unit kerja valid' : undefined}
               disabled={isSubmitting}
               required
             />
@@ -270,7 +322,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
         </div>
 
         <div className="form-grid">
-          <div className="form-col-2">
+          <div className="form-col-1">
             <PasswordInput
               id="gen-user-password"
               label="Kata sandi"
@@ -280,7 +332,33 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
                 if (formErrors.password) setFormErrors(prev => ({ ...prev, password: '' }));
               }}
               error={formErrors.password}
-              helperText="Minimal 8 karakter, ada satu huruf kapital dan satu simbol."
+              isValid={isPasswordValid}
+              helperText={
+                isPasswordValid
+                  ? 'Kata sandi memenuhi syarat keamanan (minimal 8 karakter, huruf kapital, dan simbol).'
+                  : 'Minimal 8 karakter, ada satu huruf kapital dan satu simbol.'
+              }
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+
+          <div className="form-col-1">
+            <PasswordInput
+              id="gen-user-confirm-password"
+              label="Konfirmasi kata sandi"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (formErrors.confirmPassword) setFormErrors(prev => ({ ...prev, confirmPassword: '' }));
+              }}
+              error={formErrors.confirmPassword}
+              isValid={isConfirmPasswordValid}
+              helperText={
+                isConfirmPasswordValid
+                  ? 'Konfirmasi kata sandi cocok'
+                  : (password ? 'Ketik ulang kata sandi yang diinputkan' : undefined)
+              }
               disabled={isSubmitting}
               required
             />
@@ -298,6 +376,12 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
           <p className="form-section-desc">
             Dipakai untuk membuka berkas sertifikat pengguna. Berbeda dari kata sandi login.
           </p>
+          <div className="passphrase-default-hint">
+            <IconShield size={18} className="hint-icon" aria-hidden="true" />
+            <span>
+              Jika passphrase tidak diisi, maka akan otomatis terisi dengan password basic.
+            </span>
+          </div>
         </div>
 
         <div className="form-grid">
@@ -305,15 +389,20 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-pfx-pass"
               label="Passphrase"
-              helperText="Minimal 8 karakter"
+              placeholder="Otomatis terisi password basic jika kosong"
+              helperText={
+                isPfxValid
+                  ? 'Passphrase memenuhi syarat (min. 8 karakter)'
+                  : (pfxPassword ? 'Minimal 8 karakter' : 'Kosongkan untuk otomatis menggunakan password basic')
+              }
               value={pfxPassword}
               onChange={(e) => {
                 setPfxPassword(e.target.value);
                 if (formErrors.pfxPassword) setFormErrors(prev => ({ ...prev, pfxPassword: '' }));
               }}
               error={formErrors.pfxPassword}
+              isValid={isPfxValid}
               disabled={isSubmitting}
-              required
             />
           </div>
 
@@ -321,14 +410,20 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-confirm-pfx-pass"
               label="Ulangi passphrase"
+              placeholder="Otomatis terisi password basic jika kosong"
+              helperText={
+                isConfirmPfxValid
+                  ? 'Konfirmasi passphrase cocok'
+                  : (pfxPassword ? 'Ulangi passphrase yang dimasukkan di atas' : 'Kosongkan untuk otomatis menggunakan password basic')
+              }
               value={confirmPfxPassword}
               onChange={(e) => {
                 setConfirmPfxPassword(e.target.value);
                 if (formErrors.confirmPfxPassword) setFormErrors(prev => ({ ...prev, confirmPfxPassword: '' }));
               }}
               error={formErrors.confirmPfxPassword}
+              isValid={isConfirmPfxValid}
               disabled={isSubmitting}
-              required
             />
           </div>
         </div>

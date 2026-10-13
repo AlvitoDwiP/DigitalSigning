@@ -1,15 +1,16 @@
 import { useState, forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
-import { IconLock, IconEye, IconEyeOff } from '../icons/Icons';
+import { IconLock, IconEye, IconEyeOff, IconCheckCircle } from '../icons/Icons';
 
 export interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
   error?: string;
   helperText?: string;
+  isValid?: boolean;
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ label = 'Password', error, helperText, id, className = '', ...props }, ref) => {
+  ({ label = 'Password', error, helperText, isValid, id, className = '', ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : 'input-password');
     const errorId = `${inputId}-error`;
@@ -19,6 +20,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       setShowPassword(prev => !prev);
     };
 
+    const showValid = Boolean(isValid && !error);
+
     return (
       <div className="input-group">
         {label && (
@@ -27,7 +30,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             {props.required && <span className="input-required" aria-hidden="true"> *</span>}
           </label>
         )}
-        <div className={`input-wrapper has-icon has-trailing-btn ${error ? 'has-error' : ''}`}>
+        <div className={`input-wrapper has-icon has-trailing-btn ${error ? 'has-error' : ''} ${showValid ? 'is-valid' : ''}`}>
           <span className="input-leading-icon" aria-hidden="true">
             <IconLock size={18} />
           </span>
@@ -41,15 +44,22 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             autoComplete="current-password"
             {...props}
           />
-          <button
-            type="button"
-            className="input-trailing-btn"
-            onClick={toggleVisibility}
-            aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
-            tabIndex={0}
-          >
-            {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-          </button>
+          <div className="input-trailing-group">
+            {showValid && (
+              <span className="input-valid-icon" aria-hidden="true">
+                <IconCheckCircle size={18} />
+              </span>
+            )}
+            <button
+              type="button"
+              className="input-trailing-btn"
+              onClick={toggleVisibility}
+              aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+              tabIndex={0}
+            >
+              {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+            </button>
+          </div>
         </div>
         {error && (
           <p id={errorId} className="input-error-msg" role="alert">
@@ -57,7 +67,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           </p>
         )}
         {!error && helperText && (
-          <p id={helperId} className="input-helper-msg">
+          <p id={helperId} className={`input-helper-msg ${showValid ? 'is-valid-text' : ''}`}>
             {helperText}
           </p>
         )}

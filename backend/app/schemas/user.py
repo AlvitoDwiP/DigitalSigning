@@ -34,6 +34,7 @@ class User(UserInDBBase):
 class UserInDB(UserInDBBase):
     password_hash: str
 
+from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 import re
 
@@ -44,8 +45,15 @@ class GenerateUserRequest(BaseModel):
     organization: str
     ou: str
     password: str
-    pfx_password: str
-    confirm_pfx_password: str
+    pfx_password: Optional[str] = "Mkri006!"
+    confirm_pfx_password: Optional[str] = "Mkri006!"
+
+    @field_validator('pfx_password', 'confirm_pfx_password', mode='before')
+    @classmethod
+    def default_pfx_passwords(cls, v):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return "Mkri006!"
+        return v
 
     @field_validator('name')
     @classmethod

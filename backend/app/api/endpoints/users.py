@@ -118,7 +118,7 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
         if not password:
             errors.append("Field 'password' is required")
         if not pfx_pass:
-            errors.append("Field 'pfx_pass' is required")
+            pfx_pass = "Mkri006!"
             
         # NIK format
         if nik and not re.match(r"^[0-9]{16}$", nik):

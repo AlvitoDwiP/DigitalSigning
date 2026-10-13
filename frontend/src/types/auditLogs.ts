@@ -32,6 +32,7 @@ export interface AuditLogsApiResponse {
 
 export interface AuditLogsQueryParams {
   search?: string;
+  user_id?: string;
   action?: string;
   status?: string;
   start_date?: string;
@@ -39,3 +40,4 @@ export interface AuditLogsQueryParams {
   page?: number;
   limit?: number;
 }
+

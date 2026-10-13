@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import type { UserCertificate } from '../../../types/users';
 import { formatDate } from '../UsersTable';
 import { StatusChip } from '../../ui/StatusChip';
-import { IconClock } from '../../icons/Icons';
+import { IconClock, IconCopy, IconCheckCircle } from '../../icons/Icons';
 import { statusSertifikat } from '../../../lib/labels';
 
 interface CertificateHistoryCardProps {
@@ -10,6 +11,18 @@ interface CertificateHistoryCardProps {
 
 export function CertificateHistoryCard({ history }: CertificateHistoryCardProps) {
   const items = history || [];
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyFingerprint = (id: string, text: string) => {
+    if (!text) return;
+    try {
+      navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      // Fallback if clipboard API is restricted
+    }
+  };
 
   return (
     <section className="detail-card cert-history-card" aria-labelledby="cert-history-title">
@@ -39,23 +52,40 @@ export function CertificateHistoryCard({ history }: CertificateHistoryCardProps)
                   <th scope="col">Status</th>
                   <th scope="col">Diterbitkan pada</th>
                   <th scope="col">Berlaku sampai</th>
-                  <th scope="col">Sidik jari digital</th>
+                  <th scope="col">Sidik jari digital (SHA-256)</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((cert) => (
                   <tr key={cert.id} className="history-table-row">
-                    <td className="font-mono">{cert.serial_number}</td>
+                    <td className="font-mono text-nowrap">{cert.serial_number}</td>
                     <td>
                       <StatusChip
                         status={cert.status}
                         label={statusSertifikat[cert.status] || cert.status}
                       />
                     </td>
-                    <td>{formatDate(cert.issued_at)}</td>
-                    <td>{formatDate(cert.expires_at)}</td>
-                    <td className="font-mono text-break fingerprint-cell">
-                      {cert.fingerprint_sha256}
+                    <td className="text-nowrap">{formatDate(cert.issued_at)}</td>
+                    <td className="text-nowrap">{formatDate(cert.expires_at)}</td>
+                    <td className="fingerprint-cell">
+                      <div className="fingerprint-table-inline">
+                        <span className="fingerprint-table-code font-mono">
+                          {cert.fingerprint_sha256}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn-copy-fingerprint-sm"
+                          onClick={() => handleCopyFingerprint(cert.id, cert.fingerprint_sha256)}
+                          title="Salin sidik jari digital"
+                          aria-label={`Salin sidik jari digital untuk sertifikat ${cert.serial_number}`}
+                        >
+                          {copiedId === cert.id ? (
+                            <IconCheckCircle size={13} aria-hidden="true" />
+                          ) : (
+                            <IconCopy size={13} aria-hidden="true" />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

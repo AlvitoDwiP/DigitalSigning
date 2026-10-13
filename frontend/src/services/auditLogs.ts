@@ -10,6 +10,9 @@ export async function fetchAuditLogs(params: AuditLogsQueryParams = {}): Promise
   if (params.search && params.search.trim()) {
     query.set('search', params.search.trim());
   }
+  if (params.user_id && params.user_id.trim()) {
+    query.set('user_id', params.user_id.trim());
+  }
   if (params.action && params.action.trim()) {
     query.set('action', params.action.trim());
   }
