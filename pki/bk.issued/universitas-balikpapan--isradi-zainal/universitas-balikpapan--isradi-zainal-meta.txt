@@ -1,9 +1,0 @@
-Person       : Isradi Zainal
-Email        : isradi.zainal@unbalik.ac.id
-Organisation : Universitas Balikpapan
-Org Unit     : TTE
-Validity     : 730 days
-Folder       : /home/sysadmin/pki/issued/universitas-balikpapan--isradi-zainal
-Files        : universitas-balikpapan--isradi-zainal.key | universitas-balikpapan--isradi-zainal.csr | universitas-balikpapan--isradi-zainal.crt | universitas-balikpapan--isradi-zainal.pfx | universitas-balikpapan--isradi-zainal-compat.p12
-PFX name     : Isradi Zainal – Universitas Balikpapan (TTE)
-IssuedAt-UTC : 2025-10-20T01:10:23Z
