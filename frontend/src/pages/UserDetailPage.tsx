@@ -6,19 +6,29 @@ import {
   changeUserPfxPassword,
   deleteUser,
 } from '../services/users';
+import { UserSummaryTab } from '../components/users/detail/UserSummaryTab';
 import { UserInfoCard } from '../components/users/detail/UserInfoCard';
 import { ActiveCertificateCard } from '../components/users/detail/ActiveCertificateCard';
 import { CertificateHistoryCard } from '../components/users/detail/CertificateHistoryCard';
+import { UserActivityTab } from '../components/users/detail/UserActivityTab';
 import { RegenerateDialog } from '../components/users/detail/RegenerateDialog';
 import { ChangePfxDialog } from '../components/users/detail/ChangePfxDialog';
 import { UserDeleteDialog } from '../components/users/UserDeleteDialog';
+import { StatusChip } from '../components/ui/StatusChip';
+import { maskNik } from '../components/users/UsersTable';
+import { statusAkun } from '../lib/labels';
 import {
   IconCheckCircle,
   IconAlertTriangle,
   IconRefresh,
   IconUsers,
+  IconDashboard,
+  IconUser,
+  IconCertificate,
+  IconAudit,
 } from '../components/icons/Icons';
 
+export type UserDetailTab = 'summary' | 'account' | 'certificate' | 'activity';
 
 interface UserDetailPageProps {
   userId: string;
@@ -30,6 +40,7 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
+  const [activeTab, setActiveTab] = useState<UserDetailTab>('summary');
 
   // Success Feedback Toast
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -286,6 +297,8 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
     );
   }
 
+  const certHistoryCount = user?.certificate_history ? user.certificate_history.length : 0;
+
   return (
     <div className="user-detail-page-container">
       {/* Breadcrumb Navigation */}
@@ -309,7 +322,7 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
         </div>
       )}
 
-      {/* Content Layout */}
+      {/* Loading Skeleton */}
       {isLoading || !user ? (
         <div className="detail-skeleton-container" aria-busy="true" aria-label="Memuat detail pengguna...">
           <div className="skeleton-card skeleton-card-user" />
@@ -317,26 +330,136 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
           <div className="skeleton-card skeleton-card-history" />
         </div>
       ) : (
-        <div className="user-detail-grid">
-          {/* User Information Card */}
-          <UserInfoCard
-            user={user}
-            onDeleteUser={handleOpenDelete}
-          />
+        <>
+          {/* Header Card & Tab Bar */}
+          <div className="user-detail-header-card">
+            <div className="user-detail-hero-top">
+              <div className="user-profile-header">
+                <div className="user-profile-avatar" aria-hidden="true">
+                  <span>{user.name ? user.name.trim().charAt(0).toUpperCase() : 'U'}</span>
+                </div>
+                <div className="user-profile-titles">
+                  <div className="user-profile-name-row">
+                    <h1 className="user-profile-name">{user.name}</h1>
+                    <StatusChip
+                      status={user.status}
+                      label={statusAkun[user.status] || user.status}
+                    />
+                  </div>
+                  <div className="user-hero-meta-row">
+                    <span className="user-hero-meta-item font-mono">{maskNik(user.nik)}</span>
+                    <span className="meta-separator">•</span>
+                    <span className="user-hero-meta-item">{user.email}</span>
+                    {user.organization && (
+                      <>
+                        <span className="meta-separator">•</span>
+                        <span className="user-hero-meta-item">
+                          {user.organization}{user.ou ? ` / ${user.ou}` : ''}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          {/* Active Certificate Card */}
-          <ActiveCertificateCard
-            certificate={user.active_certificate}
-            onRegenerate={handleOpenRegenerate}
-            onChangePfx={handleOpenChangePfx}
-            disabled={isRegenerating || isChangingPfx}
-          />
+            {/* Tab Navigation Bar */}
+            <div className="user-detail-tabs-bar" role="tablist" aria-label="Tab Informasi Pengguna">
+              <button
+                type="button"
+                role="tab"
+                id="tab-summary"
+                aria-selected={activeTab === 'summary'}
+                aria-controls="pane-summary"
+                className={`user-detail-tab-btn ${activeTab === 'summary' ? 'active' : ''}`}
+                onClick={() => setActiveTab('summary')}
+              >
+                <IconDashboard size={17} aria-hidden="true" />
+                <span>Ringkasan</span>
+              </button>
 
-          {/* Certificate History Card */}
-          <CertificateHistoryCard
-            history={user.certificate_history}
-          />
-        </div>
+              <button
+                type="button"
+                role="tab"
+                id="tab-account"
+                aria-selected={activeTab === 'account'}
+                aria-controls="pane-account"
+                className={`user-detail-tab-btn ${activeTab === 'account' ? 'active' : ''}`}
+                onClick={() => setActiveTab('account')}
+              >
+                <IconUser size={17} aria-hidden="true" />
+                <span>Akun</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                id="tab-certificate"
+                aria-selected={activeTab === 'certificate'}
+                aria-controls="pane-certificate"
+                className={`user-detail-tab-btn ${activeTab === 'certificate' ? 'active' : ''}`}
+                onClick={() => setActiveTab('certificate')}
+              >
+                <IconCertificate size={17} aria-hidden="true" />
+                <span>Sertifikat</span>
+                {certHistoryCount > 0 && (
+                  <span className="tab-badge">{certHistoryCount}</span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                id="tab-activity"
+                aria-selected={activeTab === 'activity'}
+                aria-controls="pane-activity"
+                className={`user-detail-tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
+                onClick={() => setActiveTab('activity')}
+              >
+                <IconAudit size={17} aria-hidden="true" />
+                <span>Riwayat Aktivitas</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Active Tab Panes */}
+          <div className="user-detail-tab-pane" role="tabpanel">
+            {activeTab === 'summary' && (
+              <div id="pane-summary" aria-labelledby="tab-summary">
+                <UserSummaryTab user={user} onSwitchTab={setActiveTab} />
+              </div>
+            )}
+
+            {activeTab === 'account' && (
+              <div id="pane-account" aria-labelledby="tab-account">
+                <UserInfoCard
+                  user={user}
+                  onDeleteUser={handleOpenDelete}
+                />
+              </div>
+            )}
+
+            {activeTab === 'certificate' && (
+              <div id="pane-certificate" aria-labelledby="tab-certificate" className="detail-cards-stack">
+                <ActiveCertificateCard
+                  certificate={user.active_certificate}
+                  onRegenerate={handleOpenRegenerate}
+                  onChangePfx={handleOpenChangePfx}
+                  disabled={isRegenerating || isChangingPfx}
+                />
+                <CertificateHistoryCard
+                  history={user.certificate_history}
+                />
+              </div>
+            )}
+
+            {activeTab === 'activity' && (
+              <div id="pane-activity" aria-labelledby="tab-activity">
+                <UserActivityTab userId={user.id} />
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Dialogs */}
@@ -369,3 +492,4 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
     </div>
   );
 }
+

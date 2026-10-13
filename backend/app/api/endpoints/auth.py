@@ -5,6 +5,7 @@ from app.api import deps
 from app.core import security
 from app.core.config import settings
 from app.models.user import User
+from app.models.audit_log import AuditLog
 from app.schemas.user import UserLogin, User as UserSchema
 from app.schemas.token import Token
 
@@ -29,7 +30,16 @@ def login_access_token(
         subject=user.id, expires_delta=access_token_expires
     )
     
-    # Audit log should be tracked here conceptually, but we keep it simple for now
+    # Catat audit log keberhasilan login
+    audit = AuditLog(
+        user_id=user.id,
+        action="LOGIN",
+        target_type="user",
+        target_id=user.id,
+        status="SUCCESS",
+    )
+    db.add(audit)
+    db.commit()
     
     return {
         "success": True,

@@ -2998,6 +2998,382 @@ button, input, select, textarea {
   }
 }
 
+/* User Detail Tab Layout Styles */
+.user-detail-header-card {
+  background-color: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.user-detail-hero-top {
+  padding: 24px 28px 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.user-hero-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.meta-separator {
+  color: var(--line);
+  font-weight: 700;
+}
+
+.user-detail-tabs-bar {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  background-color: var(--bg);
+  padding: 0 16px;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.user-detail-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.user-detail-tab-btn:hover {
+  color: var(--ink);
+}
+
+.user-detail-tab-btn.active {
+  color: var(--red);
+  border-bottom-color: var(--red);
+}
+
+.tab-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background-color: var(--line);
+  color: var(--muted);
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+}
+
+.user-detail-tab-btn.active .tab-badge {
+  background-color: var(--c-red-bg);
+  color: var(--red);
+}
+
+.user-detail-tab-pane {
+  min-height: 240px;
+}
+
+.detail-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* User Summary Tab Specifics */
+.user-summary-tab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.summary-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.summary-metric-card {
+  background-color: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.summary-metric-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.summary-metric-icon-account {
+  background-color: var(--c-blue-bg);
+  color: var(--c-blue-text);
+}
+
+.summary-metric-icon-cert {
+  background-color: var(--c-green-bg);
+  color: var(--c-green-text);
+}
+
+.summary-metric-icon-history {
+  background-color: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.summary-metric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.summary-metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.summary-metric-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.summary-metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.summary-metric-subtext {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.summary-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+.summary-card-link {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.summary-card-link:hover {
+  color: var(--red);
+}
+
+.summary-empty-cert-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 20px;
+  background-color: var(--bg);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  gap: 12px;
+}
+
+.summary-empty-cert-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-pill);
+  background-color: var(--panel);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.summary-empty-cert-text {
+  max-width: 420px;
+}
+
+.summary-empty-cert-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px 0;
+}
+
+.summary-empty-cert-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* User Activity Tab Specifics */
+.user-activity-tab-container {
+  width: 100%;
+}
+
+.activity-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.activity-loading-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activity-skeleton-row {
+  height: 48px;
+  background: linear-gradient(90deg, var(--bg) 25%, var(--line) 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+.activity-error-container {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--c-red-text);
+  background-color: var(--c-red-bg);
+  border-radius: var(--radius-md);
+  margin: 20px;
+}
+
+.activity-error-icon {
+  flex-shrink: 0;
+}
+
+.activity-error-text {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.activity-error-message {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.empty-activity-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 12px;
+}
+
+.empty-activity-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  background-color: var(--bg);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.empty-activity-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.empty-activity-desc {
+  font-size: 13.5px;
+  color: var(--muted);
+  max-width: 400px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.activity-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.activity-time-cell {
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+
+.activity-time-text {
+  color: var(--muted);
+}
+
+.activity-action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-action-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.activity-action-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.activity-actor-cell {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.activity-actor-name {
+  font-weight: 600;
+}
+
+.activity-actor-role {
+  margin-left: 4px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
 /* ==========================================================================
    Generate User Page Styles (FE-1E)
    ========================================================================== */

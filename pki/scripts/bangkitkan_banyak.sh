@@ -84,6 +84,11 @@ EOF
     continue
   fi
 
+  if [[ ! -f "$p12_file" ]] || [[ ! -s "$p12_file" ]] || ! openssl pkcs12 -in "$p12_file" -passin "pass:$PFXPASS" -noout -nokeys 2>/dev/null; then
+    printf '{"nik":"%s","status":"FAILED","error":"P12 file missing or validation failed"}\n' "$NIK"
+    continue
+  fi
+
   # Extract certificate info via openssl
   serial=""
   not_before=""

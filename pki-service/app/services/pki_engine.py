@@ -70,6 +70,23 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
             raise
         raise PKIEngineError("Unexpected error executing PKI engine", "INTERNAL_ERROR")
 
+def validate_p12_file(p12_path: Path, pfx_password: str):
+    """
+    Validasi keberadaan serta keterbacaan file .p12 menggunakan OpenSSL.
+    """
+    if not p12_path.is_file() or p12_path.stat().st_size == 0:
+        raise PKIEngineError(f"P12 credential file not found: {p12_path.name}", "P12_NOT_FOUND")
+    try:
+        res = subprocess.run(
+            ["openssl", "pkcs12", "-in", str(p12_path), "-passin", f"pass:{pfx_password}", "-noout", "-nokeys"],
+            capture_output=True,
+            text=True
+        )
+        if res.returncode != 0:
+            raise PKIEngineError(f"P12 credential file validation failed: {res.stderr.strip()}", "P12_VALIDATION_FAILED")
+    except subprocess.CalledProcessError:
+        raise PKIEngineError("Failed to validate generated P12 credential", "P12_VALIDATION_FAILED")
+
 def generate_single(name: str, nik: str, email: str, organization: str, ou: str, pfx_password: str):
     lines = [
         organization,
@@ -122,6 +139,8 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
             fingerprint = line.split("=")[1].strip().replace(":", "")
             
     p12_file = out_dir / f"{nik}.p12"
+    # Validasi keberadaan serta keterbacaan file .p12
+    validate_p12_file(p12_file, pfx_password)
     
     return {
         "serial_number": serial,
@@ -204,6 +223,20 @@ def generate_staged(name: str, nik: str, email: str, organization: str, ou: str,
         elif "Fingerprint" in line:
             fingerprint = line.split("=")[1].strip().replace(":", "")
             
+    # Validasi keberadaan serta keterbacaan file .p12 di staging
+    staged_p12_files = list(staging_dir.glob("*.p12"))
+    if not staged_p12_files:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        raise PKIEngineError("P12 credential file not generated in staging", "P12_NOT_FOUND")
+    
+    try:
+        validate_p12_file(staged_p12_files[0], pfx_password)
+    except Exception as e:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        raise e
+
     final_crt_path = final_user_dir / f"{person_slug}.crt"
     final_p12_ref = final_user_dir / f"{nik}.p12"
     
@@ -285,11 +318,36 @@ def generate_bulk(requests: list) -> list:
                 item = json.loads(line_str)
                 if item.get("status") == "SUCCESS" and "metadata" in item:
                     meta = item["metadata"]
-                    if "subject" not in meta:
-                        matched_req = next((r if isinstance(r, dict) else r.model_dump() for r in requests if (r if isinstance(r, dict) else r.model_dump()).get("nik") == item.get("nik")), None)
-                        if matched_req:
+                    matched_req = next((r if isinstance(r, dict) else r.model_dump() for r in requests if (r if isinstance(r, dict) else r.model_dump()).get("nik") == item.get("nik")), None)
+                    if matched_req:
+                        # Validasi artefak sertifikat .crt
+                        crt_path_str = meta.get("certificate_path")
+                        if not crt_path_str or not Path(crt_path_str).is_file():
+                            item["status"] = "FAILED"
+                            item["error"] = "Certificate file missing or invalid"
+                            results.append(item)
+                            continue
+                            
+                        # Validasi artefak file .p12
+                        p12_path_str = meta.get("p12_reference")
+                        if not p12_path_str or not Path(p12_path_str).is_file():
+                            item["status"] = "FAILED"
+                            item["error"] = "P12 credential file missing or invalid"
+                            results.append(item)
+                            continue
+                            
+                        try:
+                            validate_p12_file(Path(p12_path_str), matched_req["pfx_password"])
+                        except PKIEngineError as pe:
+                            item["status"] = "FAILED"
+                            item["error"] = f"P12 validation failed: {str(pe)}"
+                            results.append(item)
+                            continue
+
+                        if "subject" not in meta:
                             meta["subject"] = f"/C=ID/O={matched_req['organization']}/OU={matched_req['ou']}/CN={matched_req['name']}/emailAddress={matched_req['email']}"
-                        else:
+                    else:
+                        if "subject" not in meta:
                             meta["subject"] = "CN=Unknown"
                     if "issuer" not in meta:
                         meta["issuer"] = "Intermediate CA"
