@@ -1,5 +1,5 @@
 # ==========================================
-# macOS System Files
+# macOS & OS System Files
 # ==========================================
 .DS_Store
 .DS_Store?
@@ -10,6 +10,56 @@ ehthumbs.db
 Thumbs.db
 
 # ==========================================
+# Environment & Secret Files
+# ==========================================
+.env
+.env.*
+*.env
+!.env.example
+
+# ==========================================
+# PKI Private Keys & Secrets (Sangat Rahasia)
+# ==========================================
+*.key
+*.pem
+*.csr
+*.p12
+*.pfx
+*-meta.txt
+
+# Private Directories
+**/private/
+**/newcerts/
+pki/root/private/
+pki/intermediate/private/
+pki/issued/
+pki/issued/.staging_*
+pki/bk.issued/
+pki/uploads/
+pki/p12/
+
+# Legacy PKI & User Certificates Bundles
+sign-api(well3)/p12/
+sign-api(well3)/bk.p12/
+archive/pki-legacy/issued-prelaunch/
+archive/pki-legacy/backups/*.csv
+
+# Kecualikan Sertifikat Publik CA (Aman dipush)
+!pki/root/certs/root-ca.crt
+!pki/intermediate/certs/intermediate-ca.crt
+!pki/intermediate/certs/ca-chain.crt
+
+# ==========================================
+# Database & Storage Dumps
+# ==========================================
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+pgdata/
+postgres_data/
+
+# ==========================================
 # Python & Virtual Environments
 # ==========================================
 __pycache__/
@@ -17,12 +67,30 @@ __pycache__/
 *$py.class
 *.so
 .python-version
-
-# Virtual Environment Folders
 .venv/
 venv/
 ENV/
 env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# Node.js & Frontend Build
+# ==========================================
+node_modules/
+dist/
+build/
+.npm/
+
+# ==========================================
+# Temporary Files, Uploads & Logs
+# ==========================================
+*.tmp
+*.log
+uploads/
+*.zip
+*.tar.gz
 
 # ==========================================
 # IDE & Editor Settings
@@ -33,57 +101,3 @@ env/
 *.swo
 *.sublime-project
 *.sublime-workspace
-
-# ==========================================
-# Environment & Secret Files
-# ==========================================
-.env
-.env.*
-*.env
-
-# ==========================================
-# PKI Secrets, Private Keys & Certificates
-# (Mencegah kebocoran Kunci Rahasia & .p12)
-# ==========================================
-# Private Keys & Request Files
-*.key
-*.pem
-*.csr
-private/
-**/root/private/*
-**/intermediate/private/*
-
-# PKCS#12 & PFX Bundles
-*.p12
-*.pfx
-
-# Issued User Certificates & Folders
-pki/issued/
-pki/issued/.staging_*
-pki/bk.issued/
-pki/uploads/
-pki/p12/
-sign-api(well3)/p12/
-sign-api(well3)/bk.p12/
-archive/pki-legacy/issued-prelaunch/
-*-meta.txt
-
-
-
-# Kecualikan sertifikat CA Publik (Root & Intermediate CA certs aman dipush)
-!pki/root/certs/root-ca.crt
-!pki/intermediate/certs/intermediate-ca.crt
-!pki/intermediate/certs/ca-chain.crt
-
-# ==========================================
-# Temporary Files & Logs
-# ==========================================
-*.tmp
-*.log
-uploads/
-
-# Node.js & Frontend Build
-node_modules/
-dist/
-.npm
-
