@@ -20,7 +20,7 @@ export interface LoginResponse {
 
 export function getAuthToken(): string | null {
   try {
-    return localStorage.getItem(TOKEN_STORAGE_KEY);
+    return localStorage.getItem('access_token') || localStorage.getItem(TOKEN_STORAGE_KEY);
   } catch {
     return null;
   }
@@ -29,6 +29,7 @@ export function getAuthToken(): string | null {
 export function setAuthToken(token: string): void {
   try {
     localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    localStorage.setItem('access_token', token);
   } catch {
     // Storage access blocked
   }
@@ -36,7 +37,7 @@ export function setAuthToken(token: string): void {
 
 export function getAuthUser(): AuthUser | null {
   try {
-    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    const raw = localStorage.getItem('auth_user') || localStorage.getItem(USER_STORAGE_KEY);
     if (raw) {
       return JSON.parse(raw);
     }
@@ -48,7 +49,9 @@ export function getAuthUser(): AuthUser | null {
 
 export function setAuthUser(user: AuthUser): void {
   try {
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    const val = JSON.stringify(user);
+    localStorage.setItem(USER_STORAGE_KEY, val);
+    localStorage.setItem('auth_user', val);
   } catch {
     // Storage access blocked
   }
@@ -58,6 +61,8 @@ export function clearAuthSession(): void {
   try {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('auth_user');
   } catch {
     // Storage access blocked
   }
