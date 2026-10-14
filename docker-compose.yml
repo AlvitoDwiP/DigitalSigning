@@ -4,46 +4,18 @@ services:
     container_name: digital_signature_db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespassword}
-      POSTGRES_DB: digital_signature_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-digital_signature_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d digital_signature_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-digital_signature_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - platform_network
-
-  pki-service:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.pki-service
-    container_name: digital_signature_pki_service
-    restart: always
-    ports:
-      - "8001:8001"
-    environment:
-      - PKI_SERVICE_TOKEN=${PKI_SERVICE_TOKEN:-dev-pki-service-token-2026}
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-      - PKI_ENGINE_DIR=/app/pki/scripts
-      - P12_ARCHIVE_DIR=/app/sign-api(well3)/p12
-      - PORT=8001
-    volumes:
-      - ./pki-service/app:/app/app
-      - ./pki:/app/pki
-      - ./sign-api(well3):/app/sign-api(well3)
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
     networks:
       - platform_network
 
@@ -56,21 +28,21 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgrespassword}@postgres:5432/digital_signature_db
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-digital-signature-platform-2026}
-      - PKI_SERVICE_URL=http://pki-service:8001
-      - PKI_SERVICE_TOKEN=${PKI_SERVICE_TOKEN:-dev-pki-service-token-2026}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-digital_signature_db}
+      - SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-development}
+      - PKI_ENGINE_DIR=/app/pki/scripts
+      - P12_ARCHIVE_DIR=/app/sign-api(well3)/p12
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
       - PORT=8000
     volumes:
       - ./backend/app:/app/app
       - ./backend/alembic:/app/alembic
+      - ./pki:/app/pki
+      - ./sign-api(well3):/app/sign-api(well3)
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       postgres:
-        condition: service_healthy
-      pki-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
@@ -87,6 +59,9 @@ services:
       dockerfile: docker/Dockerfile.frontend
     container_name: digital_signature_frontend
     restart: always
+    profiles:
+      - frontend
+      - full
     ports:
       - "3000:3000"
     environment:

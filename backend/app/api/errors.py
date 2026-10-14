@@ -81,8 +81,10 @@ def setup_exception_handlers(app: FastAPI):
         else:
             message = str(exc.detail) if exc.detail else "HTTP Error"
             
+        headers = getattr(exc, "headers", None)
         return JSONResponse(
             status_code=exc.status_code,
+            headers=headers,
             content={
                 "success": False,
                 "error": {

@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from typing import List
-from pydantic import model_validator
+from typing import List, Union
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 # Root directory of the repository
@@ -31,14 +31,30 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key-digital-signature-platform-2026")
     
     # CORS
-    CORS_ORIGINS: List[str] = [
-        origin.strip()
-        for origin in os.getenv(
-            "CORS_ORIGINS",
-            "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
-        ).split(",")
-        if origin.strip()
+    CORS_ORIGINS: Union[List[str], str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
     ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            v_str = v.strip()
+            if not v_str:
+                return []
+            if v_str.startswith("[") and v_str.endswith("]"):
+                import json
+                try:
+                    return json.loads(v_str)
+                except Exception:
+                    pass
+            return [i.strip() for i in v_str.split(",") if i.strip()]
+        elif isinstance(v, (list, tuple)):
+            return [str(i) for i in v]
+        return []
     
     # JWT Auth
     JWT_ALGORITHM: str = "HS256"
@@ -50,8 +66,10 @@ class Settings(BaseSettings):
         "postgresql://postgres:postgres@localhost:5432/digital_signature_db"
     )
     
-    # PKI Service integration
-    PKI_SERVICE_URL: str = os.getenv("PKI_SERVICE_URL", "http://localhost:8001")
+    # PKI Engine & Storage integration (Monolith)
+    PKI_ENGINE_DIR: str = os.getenv("PKI_ENGINE_DIR", "/app/pki/scripts")
+    P12_ARCHIVE_DIR: str = os.getenv("P12_ARCHIVE_DIR", "/app/sign-api(well3)/p12")
+    PKI_SERVICE_URL: str = os.getenv("PKI_SERVICE_URL", "http://localhost:8000")
     PKI_SERVICE_TOKEN: str = os.getenv("PKI_SERVICE_TOKEN", "dev-pki-service-token-2026")
     PKI_TIMEOUT: int = int(os.getenv("PKI_TIMEOUT", "30"))
 

@@ -2,11 +2,20 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies for psycopg2 and health checks
+# Install system dependencies for PostgreSQL, OpenSSL, and PKI engine scripts
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    bash \
+    openssl \
     curl \
+    util-linux \
+    coreutils \
+    findutils \
+    diffutils \
+    sed \
+    gawk \
+    grep \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .
