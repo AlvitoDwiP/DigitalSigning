@@ -7,7 +7,7 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_SCRIPT="$SCRIPT_DIR/change_p12_passphrase-admin.sh"
+TARGET_SCRIPT="$SCRIPT_DIR/change_p12_passphrase_admin.sh"
 
 if [[ ! -f "$TARGET_SCRIPT" ]]; then
   echo "ERROR: Target script not found: $TARGET_SCRIPT" >&2

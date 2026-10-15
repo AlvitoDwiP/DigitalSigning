@@ -12,7 +12,7 @@ DEFAULT_H="$(cd "$SCRIPT_DIR/../.." && pwd)"
 H="${H:-$DEFAULT_H}"
 
 ISSUED_ROOT="${ISSUED_ROOT:-$H/pki/issued}"
-P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api(well3)/p12}"
+P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api/p12}"
 CHAIN_PATH="${CHAIN_PATH:-$H/pki/intermediate/certs/ca-chain.crt}"
 
 

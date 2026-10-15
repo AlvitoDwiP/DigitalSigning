@@ -2,471 +2,254 @@
 
 ## 1. Tujuan
 
-Dokumen ini mendefinisikan arsitektur teknis Digital Signature Platform untuk mengelola user, provisioning sertifikat melalui PKI engine yang sudah tersedia, perubahan Passphrase, autentikasi, audit, dan integrasi API.
+Dokumen ini mendefinisikan arsitektur teknis **Digital Signature Platform** (Phase 1) untuk mengelola akun pengguna, provisioning sertifikat digital melalui PKI engine OpenSSL berbasis skrip Bash yang telah tersedia, perubahan Passphrase, otentikasi, otorisasi, pencatatan audit log, serta integrasi API platform.
 
-Platform berfungsi sebagai layer aplikasi dan orkestrasi. Proses kriptografi dan penerbitan sertifikat tetap menggunakan PKI engine yang sudah tersedia dan tidak ditulis ulang pada Phase 1.
+Platform berfungsi sebagai layer aplikasi, business logic, dan orkestrasi. Proses kriptografi dan penerbitan sertifikat tetap menggunakan PKI engine yang sudah tersedia dan tidak ditulis ulang.
 
-## 2. Komponen Sistem
+---
 
-Arsitektur Phase 1 terdiri dari:
+## 2. Rasional Keputusan Arsitektur: Monolith Backend Terpadu
 
-1. **Frontend**
-   - Antarmuka web.
-   - Menampilkan dashboard dan fitur sesuai role.
-   - Berkomunikasi hanya dengan Platform API.
-   - Tidak mengakses PKI engine secara langsung.
+Pada evaluasi awal, backend sempat dipisahkan menjadi dua container: `backend` (Platform API) dan `pki-service` (adapter eksekusi bash di port 8001). Berdasarkan tinjauan kepraktisan dan kebutuhan operasional Phase 1, arsitektur disederhanakan menjadi **Satu Backend Monolith Terpadu (FastAPI)** karena:
 
-2. **Platform API / Backend**
-   - Dibangun menggunakan FastAPI.
-   - Menangani autentikasi, RBAC, user management, certificate metadata, dashboard, audit log, dan business logic.
-   - Menjadi satu-satunya API yang digunakan frontend.
-   - Tidak menjalankan script Bash PKI secara langsung.
+1. **Efisiensi Sumber Daya & Operasional:** Menghilangkan overhead pengelolaan 2 aplikasi FastAPI, 2 Dockerfile, latensi jaringan HTTP internal, dan alokasi RAM ganda pada container engine.
+2. **Eliminasi Kerapuhan Jaringan Internal:** Pemanggilan PKI dieksekusi secara *in-process* melalui modul Python bawaan (`subprocess.run`), menghilangkan risiko kegagalan koneksi antar-container atau kendala sinkronisasi token internal (`PKI_SERVICE_TOKEN`).
+3. **Pemisahan Tanggung Jawab Tetap Terjaga:** Secara struktural di tingkat kode, router controller (`app/api/endpoints/`) tetap terpisah dari adapter PKI (`app/services/pki_engine.py` dan `pki_client.py`). Kode tetap modular dan mudah diekstrak kembali jika kebutuhan skala besar di masa mendatang menuntutnya.
+
+---
+
+## 3. Komponen Sistem
+
+Arsitektur Phase 1 terdiri dari komponen-komponen berikut:
+
+1. **Frontend (React + TypeScript + Vite)**
+   - Bertindak sebagai antarmuka pengguna web utama dan konsumen utama Platform API.
+   - Mengelola state interaktif, form input pengguna, rendering data dashboard, dan token sesi di localStorage (`access_token` / `ds_auth_token`).
+   - Berkomunikasi secara eksklusif dengan Platform API melalui HTTP REST (via proxy Vite di lokal atau reverse proxy di production).
+   - **Isolasi Keamanan:** Frontend tidak pernah mengakses file privat, bundle P12, atau skrip PKI secara langsung.
+
+2. **Platform API / Backend Monolith (FastAPI)**
+   - Satu-satunya backend API utama untuk aplikasi.
+   - Menangani autentikasi JWT, RBAC (`SUPER_ADMIN`, `ADMIN`, `USER`), validasi Pydantic, business logic, manajemen siklus hidup sertifikat, dan audit logging.
+   - Router controller **tidak menjalankan skrip Bash PKI secara langsung**, melainkan mendelegasikannya ke service adapter internal.
 
 3. **PostgreSQL**
-   - Menyimpan data user, metadata sertifikat, dan audit log.
-   - Tidak menyimpan private key, PFX, Passphrase, atau credential sensitif.
+   - Menyimpan data operasional aplikasi: tabel `users`, `certificates`, dan `audit_logs`.
+   - Menegakkan integritas data melalui foreign keys, unique constraints, dan partial indexes (misal: hanya 1 sertifikat `ACTIVE` per user).
+   - **Prinsip Keamanan:** Database **tidak pernah menyimpan** private key, binary bundle PFX/P12, plaintext password, atau passphrase.
 
-4. **PKI Service**
-   - Service internal yang menjadi adapter/orchestrator terhadap PKI engine.
-   - Menjalankan script PKI yang sudah tersedia.
-   - Melakukan validasi hasil sebelum metadata dikembalikan ke Platform API.
-   - Tidak menyediakan akses publik.
+4. **Internal PKI Adapter (`app/services/pki_engine.py` & `pki_client.py`)**
+   - Modul internal di dalam backend yang bertugas sebagai orkestrator dan jembatan ke skrip Bash PKI.
+   - Menjalankan skrip Bash via Python `subprocess.run` dengan argumen aman (tanpa `shell=True`) dan batasan timeout ketat.
+   - Memvalidasi keberadaan dan integritas file output (`.crt` dan `.p12`) menggunakan OpenSSL CLI sebelum metadata disimpan ke database.
+   - Menangani staging isolasi untuk proses regenerate serta pembersihan artefak (*cleanup/rollback*) jika terjadi kegagalan transaksi database.
 
-5. **Existing PKI Engine**
-   - `bangkitkan_single.sh`
-   - `bangkitkan_banyak.sh`
-   - `change_p12_passphrase.sh`
-   - OpenSSL/CA dan struktur penyimpanan sertifikat yang sudah tersedia.
-   - Tidak direwrite menjadi engine baru.
+5. **Existing PKI Engine (`pki/scripts/`)**
+   - Skrip Bash aktif yang membungkus perintah OpenSSL:
+     - `bangkitkan_single.sh`: Penerbitan sertifikat single user.
+     - `bangkitkan_banyak.sh`: Penerbitan batch melalui input TSV/CSV.
+     - `change_p12_passphrase-admin.sh`: Reset passphrase P12 oleh Admin.
+     - `change_p12_passphrase-user.sh`: Ganti passphrase P12 oleh User mandiri.
+   - Struktur CA runtime: Root CA (`pki/root/`) dan Intermediate CA (`pki/intermediate/`).
+   - Direktori penyimpanan sertifikat: `pki/issued/` dan arsip kredensial `sign-api(well3)/p12/`.
 
-6. **Existing Sign API**
-   - Digunakan untuk kebutuhan PDF signing pada Phase 2.
+6. **Existing Sign API (`sign-api(well3)`)**
+   - Disiapkan untuk kebutuhan PDF signing pada Phase 2.
    - Tidak diaktifkan atau diintegrasikan ke alur signing pada Phase 1.
 
-## 3. Arsitektur Komunikasi
+---
+
+## 4. Arsitektur Komunikasi
 
 ```text
-Frontend
-    |
-    | HTTP/JSON
-    v
-Platform API
-    |
-    | HTTP/JSON internal
-    v
-PKI Service
-    |
-    | secure process execution
-    v
-Existing PKI Engine
-    |
-    +--> Certificate
-    +--> PFX/P12
-    +--> Metadata
+[ Browser / Frontend (React + Vite) ] (Port 3000)
+                     │
+                     ▼ HTTP/JSON (Bearer Token & CORS)
+[ Backend Platform API (FastAPI Monolith) ] (Port 8000)
+    │                               │
+    ▼ (SQLAlchemy ORM / Alembic)     ▼ (In-Process Python Call)
+[ PostgreSQL Database ]         [ Internal PKI Adapter: pki_engine.py ]
+  (Port 5432)                       │
+                                    ▼ (Secure Subprocess / OpenSSL CLI)
+                                [ Existing PKI Engine (pki/scripts/) ]
+                                    │
+                                    ├── Private Key (.key) & CSR (.csr)
+                                    ├── Signed Certificate (.crt)
+                                    └── Encrypted PKCS#12 Bundle (.p12)
 ```
 
-Platform API juga berkomunikasi dengan PostgreSQL:
+---
+
+## 5. Batas Tanggung Jawab Komponen
+
+### A. Frontend (React)
+- Menangani rendering visual, formulir input, dan feedback pengguna.
+- Menyimpan dan menyertakan token otentikasi JWT pada request API.
+- Menampilkan pesan error yang telah distandardisasi oleh backend.
+- **Batasan:** Tidak melakukan validasi keamanan akhir dan tidak pernah memproses file kriptografi secara langsung.
+
+### B. Backend Routers & Controllers (`app/api/endpoints/`)
+- Menerima request HTTP, memvalidasi schema input Pydantic.
+- Menegakkan RBAC melalui dependency injection FastAPI (`deps.py`).
+- Mengelola transaksi database (commit/rollback) dan pencatatan audit log.
+- Memanggil internal service adapter untuk operasi PKI.
+- **Batasan:** Tidak berisi baris kode OpenSSL, pemanggilan subprocess, atau pembacaan path fisik berkas PKI.
+
+### C. Internal Service Adapter (`app/services/pki_engine.py` & `pki_client.py`)
+- Menerjemahkan kebutuhan bisnis menjadi parameter input skrip Bash.
+- Menjalankan subprocess OpenSSL dengan penanganan timeout dan penangkapan exit code/stderr.
+- Melakukan verifikasi artefak fisik: memastikan sertifikat `.crt` dan file kredensial `.p12` terbentuk serta dapat dibuka dengan passphrase.
+- Mengurai metadata sertifikat (serial number, subject, issuer, SHA-256 fingerprint, masa berlaku).
+- Menyediakan fungsi isolasi staging untuk regenerate dan fungsi cleanup jika terjadi kegagalan transaksi database.
+- **Batasan:** Tidak mengelola sesi HTTP pengguna, otorisasi role, atau rendering respons frontend.
+
+### D. PKI Engine Scripts (`pki/scripts/`)
+- Mengeksekusi perintah kriptografi OpenSSL: pembuatan RSA key, CSR, penandatanganan oleh Intermediate CA, dan packaging PKCS#12.
+- Mengelola serial number CA dan index database teks CA (`index.txt`, `serial`).
+
+---
+
+## 6. Alur Kerja Proses Kritis
+
+### 6.1. Generate User (Single)
 
 ```text
-Frontend
-    |
-    v
-Platform API -----> PostgreSQL
-    |
-    v
-PKI Service -----> Existing PKI Engine
+Frontend React
+  -> POST /api/v1/users/generate (Header: Bearer Token)
+  -> Router FastAPI (users.py):
+       1. Validasi role (SUPER_ADMIN / ADMIN)
+       2. Validasi input Pydantic & cek duplikasi NIK/Email/Name di PostgreSQL
+  -> Internal Adapter (pki_engine.generate_single):
+       3. Eksekusi pki/scripts/bangkitkan_single.sh via subprocess
+       4. Validasi artefak: OpenSSL x509 membaca metadata & OpenSSL pkcs12 menguji keterbacaan .p12
+  -> Router FastAPI:
+       5. Database transaction:
+            - Insert User
+            - Insert Certificate (Status: ACTIVE)
+            - Insert AuditLog ("USER_CREATED", "CERTIFICATE_GENERATED")
+       6. Commit DB transaction
+  -> Jika DB gagal:
+       - Rollback DB transaction
+       - Panggil pki_client.delete_user_materials(nik) untuk membersihkan artefak fisik
+  -> Return 200 OK dengan metadata user & sertifikat ke React
 ```
 
-Frontend tidak boleh berkomunikasi langsung dengan PostgreSQL, PKI Service, atau PKI engine.
-
-## 4. Batas Tanggung Jawab
-
-### Frontend
-
-Frontend bertanggung jawab atas:
-- tampilan;
-- form;
-- validasi dasar untuk pengalaman pengguna;
-- role-based navigation;
-- menampilkan status proses;
-- menampilkan error yang sudah disederhanakan oleh backend.
-
-Frontend tidak bertanggung jawab atas:
-- penerbitan sertifikat;
-- penyimpanan Passphrase;
-- eksekusi script;
-- validasi keamanan akhir;
-- pembuatan audit log secara langsung.
-
-### Platform API
-
-Platform API bertanggung jawab atas:
-- autentikasi;
-- RBAC;
-- validasi business rule;
-- user management;
-- certificate metadata;
-- dashboard;
-- audit log;
-- transaksi database;
-- pemanggilan PKI Service.
-
-### PKI Service
-
-PKI Service bertanggung jawab atas:
-- menerima request provisioning;
-- menjalankan PKI engine;
-- timeout dan process handling;
-- validasi hasil sertifikat;
-- validasi P12/PFX;
-- mengambil metadata sertifikat;
-- mengembalikan hasil terstruktur.
-
-PKI Service tidak bertanggung jawab atas:
-- user authentication;
-- role management;
-- dashboard;
-- audit log aplikasi;
-- penyimpanan user di database platform.
-
-## 5. Generate User
-
-Generate User berarti melakukan provisioning user baru sekaligus menerbitkan credential/sertifikat melalui PKI engine.
-
-### Single
+### 6.2. Generate User Bulk (CSV)
 
 ```text
-Frontend
-  -> POST /api/v1/users/generate
-  -> Platform API
-  -> validasi input
-  -> PKI Service
-  -> bangkitkan_single.sh
-  -> validasi certificate + P12
-  -> metadata dikembalikan
-  -> Platform API menyimpan user + certificate
-  -> audit log
-  -> response ke frontend
+Frontend React
+  -> Upload CSV 7 kolom: name,nik,email,organization,ou,password,pfx_pass
+  -> POST /api/v1/users/generate-bulk/validate:
+       - Validasi header, tipe data, format NIK 16 digit, format email, dan duplikasi DB
+       - Return preview aman tanpa membocorkan password/passphrase
+  -> POST /api/v1/users/generate-bulk:
+       - Buat temporary file TSV terproteksi (permission 0600)
+       - Internal Adapter memanggil bangkitkan_banyak.sh via subprocess
+       - Validasi setiap sertifikat .crt dan .p12 yang dihasilkan
+       - Iterasi penyimpanan ke PostgreSQL per user (isolasi kegagalan per row)
+       - Catat AuditLog untuk setiap penerbitan berhasil
+  -> Return ringkasan hasil (total, success, failed) ke React
 ```
 
-Validasi utama:
-- NIK tepat 16 digit;
-- NIK belum digunakan;
-- email valid dan unik;
-- field wajib terisi;
-- Passphrase tersedia.
+### 6.3. Regenerate Certificate (Isolated Staging & Rollback)
 
-Passphrase hanya diteruskan untuk proses provisioning dan tidak disimpan ke database, audit log, atau response setelah proses selesai.
-
-### Bulk
+Regenerate menerbitkan sertifikat baru untuk pengguna yang sudah ada dengan default passphrase `<DEFAULT_PASSPHRASE>` jika tidak disediakan, tanpa merusak sertifikat lama jika terjadi kegagalan:
 
 ```text
-Frontend
-  -> upload CSV
-  -> /generate-bulk/validate
-  -> validasi seluruh row
-  -> preview
-  -> konfirmasi
-  -> /generate-bulk
-  -> PKI Service
-  -> bangkitkan_banyak.sh
-  -> validasi hasil
-  -> simpan user + certificate yang berhasil
-  -> audit
+Admin memicu Regenerate di Frontend
+  -> POST /api/v1/users/{user_id}/certificates/regenerate
+  -> Router FastAPI:
+       - Cek keberadaan user dan sertifikat berstatus ACTIVE
+  -> Internal Adapter (pki_engine.generate_staged):
+       1. Buat folder staging sementara terisolasi: .staging_{person_slug}_{staging_id}
+       2. Jalankan penerbitan sertifikat ke dalam folder staging
+       3. Validasi fisik artefak di staging via OpenSSL
+  -> Router FastAPI:
+       4. Database Transaction:
+            - Update sertifikat lama: status -> REPLACED, replaced_by -> ID sertifikat baru
+            - Insert sertifikat baru: status -> ACTIVE
+            - Insert AuditLog: action -> CERTIFICATE_REGENERATED, status -> SUCCESS
+       5. Commit Transaction
+  -> Internal Adapter (commit_staged):
+       6. Pindahkan file dari folder staging ke folder aktif dan arsip P12
+       7. Hapus folder staging
+  -> Jika terjadi kegagalan di langkah manapun:
+       - Rollback database (sertifikat lama TETAP berstatus ACTIVE)
+       - Panggil cleanup_staged() untuk menghapus artefak di folder staging
+       - Catat AuditLog dengan status FAILED
 ```
 
-Semua row harus divalidasi sebelum proses generation dimulai.
+### 6.4. Ubah Passphrase P12/PFX
 
-Platform tidak bergantung pada default credential dari script lama, melainkan menggunakan default credential baru `Mkri006!`.
-
-## 6. Regenerate Certificate
-
-Regenerate menghasilkan sertifikat baru untuk user yang sudah ada dengan default passphrase `Mkri006!`.
-
-Aturan:
-1. Sertifikat lama tetap `ACTIVE` selama proses baru belum berhasil.
-2. PKI Service menerbitkan dan memvalidasi sertifikat baru.
-3. Setelah sertifikat baru valid:
-   - sertifikat lama menjadi `REPLACED`;
-   - sertifikat baru menjadi `ACTIVE`.
-4. Jika proses gagal, sertifikat lama tetap `ACTIVE`.
-5. Hanya satu sertifikat yang boleh berstatus `ACTIVE` untuk satu user.
+Perubahan passphrase P12 **tidak menerbitkan sertifikat baru**:
 
 ```text
-User
-  |
-  v
-Platform API
-  |
-  v
-PKI Service
-  |
-  v
-Generate certificate
-  |
-  +-- gagal --> old certificate tetap ACTIVE
-  |
-  +-- berhasil --> new ACTIVE
-                    old REPLACED
+Frontend -> POST /api/v1/users/{user_id}/pfx-password atau /api/v1/account/pfx-password
+  -> Router FastAPI memvalidasi hak akses:
+       - Admin dapat mereset tanpa password lama
+       - User wajib menyertakan password lama
+  -> Internal Adapter memanggil skrip:
+       - Admin: change_p12_passphrase-admin.sh
+       - User: change_p12_passphrase-user.sh
+  -> Skrip mengekstrak private key & cert dengan password lama, lalu mengemas ulang dengan password baru
+  -> Verifikasi keterbacaan P12 baru via OpenSSL
+  -> AuditLog dicatat (tanpa mencatat nilai passphrase)
+  -> Serial number, fingerprint, dan masa berlaku sertifikat TETAP SAMA
 ```
 
-## 7. Ubah Passphrase
+---
 
-Perubahan Passphrase tidak menerbitkan sertifikat baru.
+## 7. Batasan Keamanan & Boundary Operasional
 
-Alurnya:
+1. **Secret & Key Isolation:**
+   - Private key (`.key`), sertifikat individual (`.crt`), dan kredensial (`.p12`) diabaikan oleh Git melalui `.gitignore`.
+   - File fisik `.p12` dibuat dengan mask permission `umask 077` (hanya dapat dibaca oleh pemilik proses).
+2. **No Secret in Database / Logs:**
+   - Password login akun di-hash menggunakan algoritma `bcrypt`.
+   - Passphrase P12 tidak pernah disimpan di database, audit log, maupun respons API.
+3. **CORS Enforcement:**
+   - Mengizinkan origin frontend spesifik (`http://localhost:3000`, `http://127.0.0.1:3000`).
+   - Pada environment `production`, konfigurasi secara ketat menolak penggunaan wildcard `*` jika `allow_credentials=True`.
+4. **Subprocess Sanitization:**
+   - Pemanggilan skrip bash dilakukan menggunakan list argumen `["bash", path]` tanpa `shell=True`.
+   - Input baris divalidasi terhadap karakter berbahaya (`\t`, `\r`, `\n`) dan NIK disanitasi hanya menerima digit numerik.
+
+---
+
+## 8. Deployment via Docker Compose
+
+Arsitektur monolith diorkestrasi melalui file `docker-compose.yml`:
 
 ```text
-Frontend
-  -> Platform API
-  -> PKI Service
-  -> change_p12_passphrase.sh
-  -> validasi P12 dengan passphrase baru
-  -> success
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: digital_signature_db
+    ports: ["5432:5432"]
+    healthcheck: pg_isready
+
+  backend:
+    build: docker/Dockerfile.backend (Python 3.9 + OpenSSL + Bash CLI Tools)
+    container_name: digital_signature_backend
+    ports: ["8000:8000"]
+    volumes:
+      - ./backend/app:/app/app
+      - ./pki:/app/pki
+      - ./sign-api(well3):/app/sign-api(well3)
+    depends_on: postgres (condition: service_healthy)
+
+  frontend (Opsional / Development):
+    profiles: ["frontend", "full"]
+    build: docker/Dockerfile.frontend
+    ports: ["3000:3000"]
 ```
 
-Perubahan ini tidak mengubah:
-- serial number;
-- fingerprint;
-- issued_at;
-- expires_at;
-- certificate status.
+---
 
-Yang berubah hanya passphrase pada PFX/P12.
+## 9. Catatan Kesiapan Produksi (Production Readiness)
 
-Password akun dapat digunakan untuk konfirmasi identitas sesuai kebutuhan aplikasi, tetapi password akun dan Passphrase tetap tidak disimpan sebagai plaintext.
+Meskipun sistem telah terbukti lulus 100% pada 35 unit test dan pengujian fungsional browser end-to-end, status saat ini adalah **tahap pengujian integrasi fungsional (Development/Staging)**. Sebelum dideklarasikan *production-ready*, langkah operasional berikut tetap diwajibkan:
 
-## 8. Authentication
-
-### Development
-
-```text
-Email + Password
-        |
-        v
-     Login
-        |
-        v
-    Dashboard
-```
-
-### Production
-
-```text
-Email + Password
-        |
-        v
-       OTP
-        |
-        v
-    Dashboard
-```
-
-Arsitektur autentikasi disiapkan agar OTP dapat ditambahkan kemudian tanpa mengubah struktur utama sistem.
-
-## 9. RBAC
-
-Role:
-- `SUPER_ADMIN`
-- `ADMIN`
-- `USER`
-
-RBAC diterapkan pada Platform API, bukan hanya frontend.
-
-Contoh:
-- frontend menyembunyikan menu yang tidak tersedia;
-- backend tetap wajib memeriksa role pada setiap endpoint yang membutuhkan hak akses.
-
-Super Admin dapat mengelola Admin.
-Admin dapat mengelola User dan proses provisioning.
-User hanya mengakses data dan proses miliknya sendiri sesuai fitur yang tersedia.
-
-## 10. Security Boundary
-
-Hal yang tidak boleh keluar dari boundary internal:
-- private key;
-- PFX/P12 passphrase;
-- CA private key;
-- CA password;
-- service token;
-- credential PKI lainnya.
-
-Passphrase:
-- tidak disimpan di PostgreSQL;
-- tidak disimpan di audit log;
-- tidak dikirim kembali ke frontend setelah proses;
-- tidak ditulis ke log aplikasi.
-
-PKI Service menggunakan service token internal melalui environment variable.
-
-## 11. Konfigurasi Environment
-
-Credential dan konfigurasi sensitif menggunakan environment variable, antara lain:
-
-```text
-DATABASE_URL
-SECRET_KEY
-PKI_SERVICE_URL
-PKI_SERVICE_TOKEN
-PKI_TIMEOUT
-```
-
-Nilai secret tidak ditulis langsung pada source code.
-
-`.env` lokal tidak boleh masuk repository.
-
-`.env.example` hanya berisi nama variable dan contoh non-secret.
-
-## 12. Docker
-
-Phase 1 menggunakan Docker untuk:
-- frontend;
-- backend;
-- PostgreSQL.
-
-PKI engine yang sudah berjalan tidak perlu dipindahkan ke container hanya demi arsitektur platform.
-
-Jika PKI Service ditempatkan dalam container, container tersebut harus memiliki akses aman ke environment PKI engine dan tidak mengekspos endpoint PKI ke publik.
-
-## 13. Repository Boundary
-
-Repository platform tidak memasukkan:
-- `.git` dari project PKI lama;
-- `.venv`;
-- generated certificate;
-- PFX/P12;
-- private key;
-- CA key;
-- CA credential;
-- hasil issuance;
-- file upload sensitif;
-- secret.
-
-Source PKI engine yang sudah ada menjadi dependency/environment terpisah sesuai deployment.
-
-## 14. Error Handling
-
-Platform API tidak mengembalikan raw output OpenSSL atau path internal server ke frontend.
-
-Error internal dipetakan menjadi error terstruktur, misalnya:
-
-```text
-INVALID_INPUT
-INVALID_NIK
-INVALID_EMAIL
-CERTIFICATE_ALREADY_EXISTS
-P12_NOT_FOUND
-PKI_GENERATION_FAILED
-PKI_VALIDATION_FAILED
-P12_VALIDATION_FAILED
-PKI_TIMEOUT
-PKI_SERVICE_UNAVAILABLE
-INTERNAL_ERROR
-```
-
-HTTP mapping:
-
-```text
-400 -> validation/input error
-409 -> conflict
-502 -> PKI service/engine failure
-500 -> internal error
-```
-
-Detail teknis hanya dicatat secara aman pada internal log yang tidak mengandung secret.
-
-## 15. Transaction Boundary
-
-Untuk single generate:
-
-```text
-Validate
-  -> Generate PKI
-  -> Validate output
-  -> DB transaction
-      - create user
-      - create certificate
-      - create audit
-  -> commit
-```
-
-Jika provisioning PKI gagal, user/certificate tidak dibuat.
-
-Jika database gagal setelah certificate berhasil dibuat, sistem tidak boleh menganggap provisioning database sukses. Kondisi tersebut perlu dicatat untuk reconciliation/manual handling dan tidak boleh menyebabkan penghapusan CA state secara sembarangan.
-
-Untuk regenerate:
-- jangan mengubah certificate lama sebelum certificate baru berhasil divalidasi.
-
-## 16. Expiration
-
-Validity certificate:
-- 730 hari / 2 tahun.
-
-Status certificate:
-- `ACTIVE`
-- `EXPIRED`
-- `REPLACED`
-- `REVOKED`
-
-Backend menjadi sumber kebenaran untuk sinkronisasi expiration.
-
-Frontend tidak boleh menjadi satu-satunya mekanisme yang mengubah status `ACTIVE` menjadi `EXPIRED`.
-
-## 17. Phase 1
-
-Fokus Phase 1:
-
-- authentication;
-- RBAC;
-- Dashboard;
-- Pengguna;
-- Generate User single;
-- Generate User bulk;
-- certificate metadata;
-- regenerate;
-- Ubah Passphrase;
-- Audit Log;
-- account management;
-- API platform;
-- PKI Service integration.
-
-Tidak termasuk:
-- PDF signing;
-- QR signature;
-- signature appearance;
-- verification portal;
-- approval workflow;
-- sign-api integration aktif;
-- mobile app;
-- multi-tenant;
-- microservices tambahan yang tidak diperlukan.
-
-## 18. Phase 2
-
-Phase 2 dapat mengaktifkan:
-
-```text
-User
-  -> Upload PDF
-  -> Signing API
-  -> PKCS#12 / certificate
-  -> Digital Signature
-  -> Signed PDF
-  -> Verification
-```
-
-Existing `sign-api(well3)` menjadi kandidat engine untuk proses signing karena sudah menyediakan endpoint `/sign`.
-
-Phase 2 tidak mengubah fungsi provisioning sertifikat pada Phase 1.
-
-## 19. Prinsip Arsitektur
-
-1. **Platform tidak menulis ulang PKI engine.**
-2. **Platform API tidak menjalankan Bash PKI secara langsung.**
-3. **PKI Service menjadi satu-satunya adapter ke PKI engine.**
-4. **Database hanya menyimpan metadata, bukan material kriptografi sensitif.**
-5. **Backend menjadi sumber kebenaran untuk authorization dan certificate state.**
-6. **Passphrase tidak pernah dipersistenkan sebagai plaintext.**
-7. **Certificate lama tidak diganti sebelum certificate baru berhasil divalidasi.**
-8. **Phase 1 fokus pada provisioning dan management, bukan PDF signing.**
-9. **Arsitektur dibuat sederhana agar mudah dikembangkan tanpa overengineering.**
+1. **Rotasi Kredensial:** Mengganti seluruh default password, `POSTGRES_PASSWORD`, dan `SECRET_KEY` dengan string acak berkekuatan tinggi (>32 karakter) di lingkungan produksi.
+2. **Reverse Proxy & TLS:** Menempatkan Nginx atau Cloud Ingress dengan sertifikat HTTPS resmi di depan backend port 8000 dan frontend port 3000.
+3. **Pencadangan CA:** Menyiapkan mekanisme backup berkala terenkripsi untuk direktori `pki/intermediate/` dan `pki/root/`.

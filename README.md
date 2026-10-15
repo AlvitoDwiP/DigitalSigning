@@ -2,393 +2,230 @@
 
 ## 1. Overview
 
-Digital Signature Platform adalah aplikasi web untuk pengelolaan user dan credential digital signature melalui PKI engine yang sudah tersedia.
+Digital Signature Platform adalah aplikasi web enterprise-grade untuk pengelolaan identitas pengguna dan provisioning kredensial sertifikat tanda tangan digital menggunakan engine PKI OpenSSL berbasis skrip Bash yang telah tersedia.
 
-Phase 1 berfokus pada:
+Konsumen utama dari platform ini adalah antarmuka web berbasis **React + TypeScript + Vite**, yang berinteraksi secara aman dengan **FastAPI Backend**.
 
-- authentication;
-- role management;
-- user management;
-- Generate User;
-- bulk Generate User;
-- certificate management;
-- regenerate;
-- Ubah Passphrase;
-- audit;
-- API.
+Fokus implementasi Phase 1 meliputi:
 
-PDF signing disiapkan untuk Phase 2.
+- Authentication & Session Management (JWT Bearer Token);
+- Role-Based Access Control (RBAC: `SUPER_ADMIN`, `ADMIN`, `USER`);
+- User Management & Lifecycle (Active, Inactive);
+- Single User Generate (penerbitan akun dan sertifikat terintegrasi);
+- Bulk User Generate (validasi dan pemrosesan batch via CSV);
+- Certificate Management (Active, Expired, Replaced, Revoked);
+- Certificate Expiration & Regenerate (Staged generation & rollback);
+- Perubahan Passphrase P12/PFX (Admin & Self-Service User);
+- Audit Logging untuk semua aktivitas penting;
+- REST API terstruktur untuk seluruh operasi.
+
+Fitur penandatanganan dokumen (PDF Signing aktif) dipersiapkan untuk Phase 2.
 
 ---
 
 ## 2. Architecture
 
+Arsitektur aplikasi menggunakan pendekatan **Monolith Backend Terpadu** yang dirancang untuk kesederhanaan deployment operasional tanpa kompleksitas microservices yang prematur:
+
 ```text
-Frontend
-    |
-    v
-Platform API
-    |
-    +------> PostgreSQL
-    |
-    v
-PKI Service
-    |
-    v
-Existing PKI Engine
+[ Frontend (React + TypeScript + Vite) ] (Port 3000)
+                    │
+                    ▼ HTTP/JSON (CORS & Vite Proxy)
+[ Platform API (FastAPI Monolith) ] (Port 8000)
+    │                       │
+    ▼ (SQLAlchemy/Alembic)   ▼ (In-Process Adapter Call)
+[ PostgreSQL DB ]       [ Internal PKI Adapter: pki_client.py & pki_engine.py ]
+  (Port 5432)               │
+                            ▼ (Secure Subprocess Execution / OpenSSL)
+                        [ Existing PKI Engine Scripts (pki/scripts/) ]
+                            │
+                            ├── Private Key (.key) & CSR (.csr)
+                            ├── Intermediate CA Signed Certificate (.crt)
+                            └── Encrypted PKCS#12 Bundle (.p12)
 ```
 
-PKI Service menjadi adapter/orchestrator terhadap script PKI yang sudah tersedia.
-
-Platform tidak menulis ulang engine PKI.
+### Karakteristik Arsitektur:
+1. **Frontend Isolation:** Frontend tidak pernah mengakses file privat, database, atau skrip bash secara langsung. Seluruh interaksi melewati REST API.
+2. **Controller/Router Separation:** Endpoint FastAPI (`app/api/endpoints/`) tidak memanggil skrip bash OpenSSL secara langsung, melainkan mendelegasikannya ke internal service adapter (`app/services/pki_client.py` dan `pki_engine.py`).
+3. **In-Process PKI Adapter:** Adapter menangani validasi input/output, sanitasi format, batas timeout proses, verifikasi integritas artefak sertifikat via OpenSSL, serta mekanisme rollback jika terjadi kegagalan transaksi database.
+4. **Data vs Artifact Separation:** PostgreSQL hanya menyimpan metadata identitas dan metadata sertifikat (serial number, subject, issuer, fingerprint, status, masa berlaku). File privat dan bundle `.p12` tersimpan secara terisolasi di volume sistem berkas.
 
 ---
 
-## 3. Roles
+## 3. Roles & Permissions
 
-Terdapat tiga role:
+Platform menerapkan RBAC ketat pada layer backend:
 
-- `SUPER_ADMIN`
-- `ADMIN`
-- `USER`
-
-Ringkasan:
-
-| Fitur | Super Admin | Admin | User |
-|---|---:|---:|---:|
-| Dashboard | ✓ | ✓ | ✓ |
-| Pengguna | ✓ | ✓ | - |
-| Generate | ✓ | ✓ | - |
-| Management Admin | ✓ | - | - |
-| Audit Log | ✓ | ✓ | - |
-| Penandatanganan | - | ✓ | ✓ |
-| Kelola Akun | - | - | ✓ |
-
-Detail permission ada di `SPECIFICATION.md`.
+| Fitur | Super Admin | Admin | User | Keterangan |
+|---|:---:|:---:|:---:|---|
+| Dashboard | ✓ | ✓ | ✓ | User melihat personal dashboard, Admin melihat ringkasan operasional |
+| Pengguna | ✓ | ✓ | - | Manajemen data pengguna dan riwayat kredensial |
+| Generate User | ✓ | ✓ | - | Provisioning akun dan sertifikat tunggal / bulk CSV |
+| Management Admin | ✓ | - | - | Pengangkatan dan pemberhentian role Admin |
+| Audit Log | ✓ | ✓ | - | Rekam jejak aktivitas sistem yang tidak dapat diubah |
+| Penandatanganan | - | ✓ | ✓ | Placeholder / dipersiapkan untuk Phase 2 |
+| Kelola Akun | - | - | ✓ | Profil mandiri dan perubahan passphrase P12 user |
+| Ubah Passphrase | Admin Reset | Admin Reset | Self-Service | Pergantian passphrase P12 tanpa menerbitkan ulang sertifikat |
+| Regenerate | ✓ | ✓ | - | Penerbitan sertifikat baru menggantikan sertifikat aktif |
 
 ---
 
 ## 4. Repository Structure
 
-Struktur target:
-
 ```text
 digital-signature-platform/
-├── frontend/
-├── backend/
-├── pki-service/
-├── docs/
-├── docker/
-├── .env.example
-├── .gitignore
-└── README.md
-```
-
-Dokumentasi:
-
-```text
-docs/
-├── DATABASE.md
-├── ARCHITECTURE.md
-├── API.md
-├── DESIGN.md
-└── SPECIFICATION.md
+├── frontend/               # Single Page Application (React, Vite, TypeScript)
+│   ├── src/
+│   │   ├── components/     # UI components (dashboard, generate, users, audit, ui)
+│   │   ├── pages/          # Page views (Dashboard, Users, Generate, Login, etc.)
+│   │   ├── services/       # API client adapter (api.ts, users.ts, admins.ts, etc.)
+│   │   └── types/          # TypeScript interface definitions
+│   ├── package.json
+│   └── vite.config.ts      # Dev server & reverse proxy configuration
+├── backend/                # Monolith API Backend (FastAPI, SQLAlchemy, Alembic)
+│   ├── app/
+│   │   ├── api/            # API endpoints & dependency injection (deps.py)
+│   │   ├── core/           # Configuration, security, database session
+│   │   ├── models/         # SQLAlchemy ORM models (User, Certificate, AuditLog)
+│   │   ├── schemas/        # Pydantic schemas (request/response validation)
+│   │   ├── services/       # Business logic & PKI Engine adapter (pki_engine.py)
+│   │   └── cli.py          # Operational CLI (Bootstrap Super Admin)
+│   ├── alembic/            # Database schema migrations
+│   ├── requirements.txt    # Python dependencies
+│   └── tests/              # Pytest automated test suite
+├── pki/                    # PKI Engine & CA Runtime
+│   ├── scripts/            # Bash orchestration scripts (issue_cert_single.sh, dll)
+│   ├── root/               # Root Certificate Authority
+│   ├── intermediate/       # Intermediate Certificate Authority
+│   └── issued/             # Penyimpanan artefak sertifikat per pengguna
+├── sign-api/               # Direktori arsip P12 runtime dan signing engine Phase 2 (alias: sign-api(well3))
+│   └── p12/                # Arsip kredensial .p12 aktif
+├── docker/                 # Dockerfiles untuk backend dan frontend
+├── docs/                   # Spesifikasi teknis dan dokumentasi arsitektur
+├── docker-compose.yml      # Orkestrasi container PostgreSQL & Backend Monolith
+├── .env.example            # Template konfigurasi environment
+└── README.md               # Dokumentasi utama proyek
 ```
 
 ---
 
-## 5. Documentation
+## 5. Environment Configuration
 
-### `SPECIFICATION.md`
-
-Master specification dan source of truth kebutuhan produk.
-
-### `DATABASE.md`
-
-Struktur PostgreSQL, tabel, relasi, constraint, index, dan lifecycle data.
-
-### `ARCHITECTURE.md`
-
-Arsitektur komponen dan batas tanggung jawab Frontend, Platform API, PKI Service, PostgreSQL, dan existing PKI engine.
-
-### `API.md`
-
-Kontrak endpoint, request, response, authorization, dan error.
-
-### `DESIGN.md`
-
-Rancangan antarmuka dan user flow. Dokumen ini dikelola terpisah sebagai acuan design.
-
----
-
-## 6. Technology Direction
-
-### Backend
-
-- Python
-- FastAPI
-- PostgreSQL
-- Alembic
-
-### Frontend
-
-Framework frontend mengikuti implementasi yang dipilih pada tahap development.
-
-### PKI
-
-Menggunakan existing PKI engine:
-
-```text
-bangkitkan_single.sh
-bangkitkan_banyak.sh
-change_p12_passphrase.sh
-```
-
-### Container
-
-Phase 1 menggunakan Docker untuk komponen aplikasi utama.
-
----
-
-## 7. Environment
-
-Contoh konfigurasi:
+Konfigurasi menggunakan variabel lingkungan yang dikelola melalui file `.env`. Gunakan `.env.example` sebagai referensi.
 
 ```env
-DATABASE_URL=
-SECRET_KEY=
-PKI_SERVICE_URL=
-PKI_SERVICE_TOKEN=
-PKI_TIMEOUT=
+# Database Credentials (PostgreSQL)
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_secure_db_password
+POSTGRES_DB=digital_signature_db
+
+# Connection URL
+DATABASE_URL=postgresql://postgres:your_secure_db_password@postgres:5432/digital_signature_db
+
+# Security & Secrets
+SECRET_KEY=your_at_least_32_characters_random_secret_key
+ENVIRONMENT=development
+PORT=8000
+
+# PKI Paths inside Container
+PKI_ENGINE_DIR=/app/pki/scripts
+P12_ARCHIVE_DIR=/app/sign-api/p12
+
+# CORS Allowed Origins
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
 
-Secret asli tidak boleh dimasukkan ke repository.
-
-Gunakan `.env` lokal untuk development dan `.env.example` sebagai template.
+> **Keamanan Kredensial:**
+> - File `.env` lokal diabaikan oleh Git via `.gitignore`.
+> - Jangan pernah mencantumkan secret produksi di dalam `.env.example` atau commit Git.
+> - Pada environment `production`, backend memvalidasi bahwa `SECRET_KEY` memiliki panjang minimal 32 karakter dan `CORS_ORIGINS` tidak menggunakan wildcard (`*`).
 
 ---
 
-## 8. Development Flow
+## 6. Running the Project
 
-Urutan implementasi yang direkomendasikan:
+### Prasyarat:
+- Docker Desktop atau Docker Engine yang mendukung Docker Compose v2.
+- Node.js v18+ dan npm (untuk menjalankan development frontend).
 
-```text
-1. Database
-2. Backend foundation
-3. Authentication
-4. RBAC
-5. User management
-6. PKI Service
-7. Generate User single
-8. Bulk Generate
-9. Certificate management
-10. Regenerate
-11. Ubah Passphrase
-12. Dashboard
-13. Audit Log
-14. Frontend integration
-15. Testing
-```
-
-Jangan mengaktifkan PDF signing sebelum Phase 1 stabil.
-
----
-
-## 9. Generate User
-
-Generate User berarti membuat user baru sekaligus melakukan provisioning certificate melalui PKI engine.
-
-Single:
-
-```text
-Frontend
-→ Platform API
-→ PKI Service
-→ bangkitkan_single.sh
-→ validate output
-→ save metadata
-→ audit
-```
-
-Bulk:
-
-```text
-CSV
-→ validate
-→ preview
-→ confirm
-→ PKI Service
-→ bangkitkan_banyak.sh
-→ validate
-→ save result
-→ audit
-```
-
----
-
-## 10. Certificate
-
-Validity:
-
-```text
-730 hari / 2 tahun
-```
-
-Status:
-
-```text
-ACTIVE
-EXPIRED
-REPLACED
-REVOKED
-```
-
-Hanya satu certificate yang boleh `ACTIVE` untuk satu user.
-
-Regenerate tidak mengubah certificate lama sampai certificate baru berhasil dibuat dan divalidasi.
-
----
-
-## 11. Security
-
-Jangan menyimpan:
-
-- Passphrase;
-- private key;
-- PFX/P12;
-- CA password;
-- service token;
-
-di database aplikasi atau Git.
-
-Jangan menampilkan credential sensitif pada frontend.
-
-Jangan mengembalikan raw OpenSSL error ke client.
-
----
-
-## 12. Running the Project
-
-Detail command final bergantung pada implementasi repository.
-
-Target development menggunakan Docker untuk application services.
-
-Contoh:
-
+### Langkah 1: Siapkan File Environment
 ```bash
 cp .env.example .env
+# Sesuaikan password dan secret key pada file .env
 ```
 
-Kemudian jalankan service melalui Docker Compose setelah konfigurasi environment tersedia.
+### Langkah 2: Jalankan Backend & Database via Docker
+Jalankan container backend dan PostgreSQL:
+```bash
+docker compose up -d --build postgres backend
+```
 
-Command final sebaiknya diperbarui ketika Docker Compose dan struktur source code sudah dibuat.
+Periksa status container untuk memastikan status `healthy`:
+```bash
+docker compose ps
+```
+
+Container yang berjalan:
+- `digital_signature_db`: PostgreSQL 16 (Port 5432)
+- `digital_signature_backend`: FastAPI Backend Monolith (Port 8000)
+
+### Langkah 3: Bootstrap Akun Super Admin Pertama
+Eksekusi CLI bootstrap langsung di dalam container backend:
+```bash
+docker exec -it digital_signature_backend python -m app.cli create-super-admin \
+  --email admin@mkri.id \
+  --password <YourAdminPassword> \
+  --name "Super Admin" \
+  --nik 1234567890123456 \
+  --organization "Universitas B" \
+  --ou "TTE"
+```
+
+### Langkah 4: Jalankan Frontend (React + Vite)
+Di terminal host lokal:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Aplikasi web dapat diakses di browser melalui: **`http://localhost:3000`**.
 
 ---
 
-## 13. Testing
+## 7. Verifikasi & Pengujian
 
-Minimum testing:
-
-### Authentication
-- login berhasil;
-- login gagal;
-- logout;
-- authorization.
-
-### User
-- validasi NIK;
-- validasi email;
-- duplicate user;
-- generate single;
-- bulk validation;
-- bulk generation.
-
-### Certificate
-- generation;
-- expiration;
-- regenerate;
-- hanya satu ACTIVE certificate.
-
-### PFX
-- perubahan password berhasil;
-- password baru dapat membuka P12;
-- password tidak muncul di log/response.
-
-### RBAC
-- Super Admin;
-- Admin;
-- User;
-- akses endpoint tanpa permission harus ditolak.
-
-### Audit
-- aktivitas penting menghasilkan audit;
-- secret tidak masuk audit.
+### Status Pengujian Terverifikasi:
+1. **Automated Unit Testing (Pytest):**
+   - **35 dari 35 test lulus (100%)**: mencakup RBAC Admin, otentikasi JWT, filter & pagination pengguna, validasi CSV bulk 7 kolom, penanganan error PKI, dan staging regenerate sertifikat.
+   ```bash
+   # Menjalankan test suite backend
+   cd backend
+   pytest
+   ```
+2. **Frontend Production Build:**
+   - `npm run build` (`tsc && vite build`) berhasil dikompilasi dengan **0 kesalahan TypeScript**.
+3. **Pengujian Nyata di Browser (End-to-End):**
+   - Alur Login Admin (`POST /api/v1/auth/login`) -> Generate Pengguna (`POST /api/v1/users/generate`) -> Eksekusi OpenSSL Intermediate CA -> Penerbitan Sertifikat & file `.p12` -> Tampilan UI Real-Time telah terverifikasi bekerja end-to-end.
 
 ---
 
-## 14. Phase 1 vs Phase 2
+## 8. Panduan Troubleshooting
 
-### Phase 1
-
-Fokus pada provisioning dan management:
-
-```text
-Authentication
-User
-Certificate
-PKI
-PFX
-Audit
-Dashboard
-API
-```
-
-### Phase 2
-
-Fokus pada signing:
-
-```text
-Upload PDF
-→ Sign
-→ Signed PDF
-→ Verification
-```
-
-Existing `sign-api(well3)` dapat digunakan sebagai signing engine pada Phase 2 setelah kontrak integrasinya ditentukan.
+| Masalah | Kemungkinan Penyebab | Solusi |
+|---|---|---|
+| `could not translate host name "postgres"` saat menjalankan pytest di host | Variabel `DATABASE_URL` di terminal host mencoba mengakses hostname Docker | Pastikan pengujian lokal di host menggunakan koneksi localhost atau database test terisolasi. |
+| `Permission denied` saat eksekusi skrip PKI | Hak eksekusi skrip bash hilang | Jalankan `chmod +x pki/scripts/*.sh`. |
+| Login gagal dengan pesan `value is not a valid email address` | Format email menggunakan domain reserved (misal `.local`) | Gunakan domain TLD standar seperti `.id`, `.com`, atau `.org` pada pendaftaran akun. |
+| `one_active_certificate_per_user` constraint violation | Terdapat duplikasi sertifikat aktif untuk pengguna yang sama | Pastikan proses regenerate menggunakan alur staging terisolasi dan transaksi database untuk menandai sertifikat lama sebagai `REPLACED`. |
 
 ---
 
-## 15. Important Rules
+## 9. Dokumentasi Terkait
 
-1. Jangan membuat PKI engine baru jika existing engine masih digunakan.
-2. Jangan menjalankan Bash PKI langsung dari Platform API.
-3. Gunakan PKI Service sebagai adapter.
-4. Jangan menyimpan Passphrase.
-5. Jangan menyimpan private key pada database.
-6. Backend menjadi sumber kebenaran authorization.
-7. Frontend tidak menjadi security boundary.
-8. Jangan mengaktifkan fitur Phase 2 sebelum Phase 1 selesai.
-9. Jangan menambah service/tabel/role tanpa kebutuhan yang jelas.
-10. Selalu perbarui dokumentasi ketika requirement berubah.
+Rincian arsitektur dan spesifikasi dapat dipelajari lebih lanjut pada berkas di direktori `docs/`:
 
----
-
-## 16. Source of Truth
-
-Untuk implementasi, gunakan urutan referensi:
-
-```text
-SPECIFICATION.md
-      ↓
-ARCHITECTURE.md
-      ↓
-DATABASE.md
-      ↓
-API.md
-      ↓
-DESIGN.md
-      ↓
-Source Code
-```
-
-Jika requirement berubah, dokumentasi harus diperbarui sebelum implementasi perubahan tersebut.
+1. [SPECIFICATION.md](docs/SPECIFICATION.md) — Master spesifikasi kebutuhan sistem, roles, dan business rules.
+2. [ARCHITECTURE.md](docs/ARCHITECTURE.md) — Rincian arsitektur monolith, interaksi komponen, dan boundary keamanan.
+3. [DATABASE.md](docs/DATABASE.md) — Skema database PostgreSQL, model tabel, relasi, constraint, dan index.
+4. [API.md](docs/API.md) — Kontrak endpoint API, skema request/response, autentikasi, dan error handling.
+5. [DESIGN.md](docs/DESIGN.md) — Panduan desain visual, layout antarmuka, dan pengalaman pengguna.

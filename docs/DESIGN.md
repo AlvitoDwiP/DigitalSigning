@@ -134,7 +134,7 @@ Hanya tersedia untuk Super Admin.
 - Tidak ada angka, testimoni, atau klaim keamanan karangan. Data contoh wajib berlabel "Data contoh" dan bisa dikosongkan.
 - Passphrase: hanya input bertipe password, dikosongkan setelah proses, tidak pernah ditampilkan, disimpan, atau dicatat di audit atau log.
 - NIK dimasker (empat digit awal dan akhir) di semua daftar dan pratinjau.
-- Private key, password, dan passphrase tidak pernah muncul di UI. Default credential baru platform menggunakan `Mkri006!`.
+- Private key, password, dan passphrase tidak pernah muncul di UI. Default credential baru platform menggunakan nilai standar default (`<DEFAULT_PASSPHRASE>`).
 - Path berkas tidak pernah berasal dari input frontend.
 - Hapus selalu lewat dialog konfirmasi yang menyebut dampaknya.
 - Regenerate: sertifikat lama baru menjadi REPLACED setelah yang baru berhasil dibuat dan divalidasi. Jika gagal, sertifikat lama tetap ACTIVE.

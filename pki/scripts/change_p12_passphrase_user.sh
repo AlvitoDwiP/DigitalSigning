@@ -11,7 +11,7 @@ DEFAULT_H="$(cd "$SCRIPT_DIR/../.." && pwd)"
 H="${H:-$DEFAULT_H}"
 
 ISSUED_ROOT="${ISSUED_ROOT:-$H/pki/issued}"
-P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api(well3)/p12}"
+P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api/p12}"
 
 
 die() { echo "ERROR: $*" >&2; exit 1; }

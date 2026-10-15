@@ -46,7 +46,7 @@ Data berikut **tidak boleh disimpan** di database:
 - API key
 - CA password
 
-Password login hanya disimpan dalam bentuk `password_hash`. Default login password dan passphrase yang digunakan dalam alur provisioning/regenerate adalah `Mkri006!`.
+Password login hanya disimpan dalam bentuk `password_hash`. Default login password dan passphrase yang digunakan dalam alur provisioning/regenerate menggunakan placeholder nilai default sistem (`<DEFAULT_PASSPHRASE>`).
 
 Passphrase hanya digunakan selama proses PKI dan tidak dikembalikan melalui response API maupun audit log.
 
@@ -472,7 +472,7 @@ Certificate lama
       ↓
 Tetap ACTIVE
       ↓
-Generate certificate baru (default passphrase: Mkri006!)
+Generate certificate baru (default passphrase: <DEFAULT_PASSPHRASE>)
       ↓
 Validasi certificate baru
       ↓

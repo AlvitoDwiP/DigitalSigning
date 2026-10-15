@@ -371,3 +371,4 @@ V	281006073335Z		116F	unknown	/C=ID/O=Universitas B/CN=Ahmad Kurniawan/OU=TTE
 V	281006073518Z		1170	unknown	/C=ID/O=Universitas B/CN=Ahmad Test Trace/OU=TTE
 V	281006073627Z		1171	unknown	/C=ID/O=Universitas B/CN=Ahmad Kurniawan/OU=TTE
 V	281013072436Z		1172	unknown	/C=ID/O=Universitas B/CN=Budi Santoso/OU=TTE
+V	281013074842Z		1173	unknown	/C=ID/O=MKRI/CN=contoh pengguna 1/OU=Pustik

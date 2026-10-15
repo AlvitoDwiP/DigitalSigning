@@ -330,7 +330,7 @@ USER
 }
 ```
 
-Passphrase dan password login plaintext tidak boleh dikembalikan. Default credential jika menggunakan default adalah `Mkri006!`.
+Passphrase dan password login plaintext tidak boleh dikembalikan. Default credential jika menggunakan nilai default sistem adalah `<DEFAULT_PASSPHRASE>`.
 
 ---
 
@@ -459,7 +459,7 @@ Passphrase dan private key tidak pernah dikembalikan.
 
 ## POST `/api/v1/users/{user_id}/certificates/regenerate`
 
-Menerbitkan certificate baru dengan default passphrase `Mkri006!`.
+Menerbitkan certificate baru dengan default passphrase `<DEFAULT_PASSPHRASE>` jika tidak disediakan.
 
 ### Role
 
@@ -468,7 +468,7 @@ Menerbitkan certificate baru dengan default passphrase `Mkri006!`.
 
 ### Request
 
-Tidak membutuhkan body khusus (menggunakan default passphrase `Mkri006!`).
+Dapat menyertakan passphrase baru pada request body atau menggunakan default sistem (`<DEFAULT_PASSPHRASE>`).
 
 ### Flow
 
@@ -755,70 +755,53 @@ Tidak melakukan integrasi aktif dengan existing sign-api.
 
 ---
 
-# 15. Internal PKI Service Contract
+# 15. Internal PKI Adapter Contract (In-Process)
 
-Endpoint internal:
+Pada arsitektur Monolith, PKI Engine dipanggil langsung secara *in-process* melalui internal Python adapter (`app.services.pki_engine` yang dibungkus oleh `app.services.pki_client`), bukan melalui service HTTP terpisah atau port terbuka di luar backend.
 
-```text
-POST /internal/pki/generate
-POST /internal/pki/generate-bulk
-POST /internal/pki/pfx-password
-```
+Lapisan adapter ini memastikan:
+1. Router/controller tidak pernah mengeksekusi shell/OpenSSL secara langsung.
+2. Tidak ada endpoint HTTP publik maupun port internal yang mengekspos pemanggilan subprocess bash.
+3. Seluruh argumen disanitasi menggunakan array parameter aman (`subprocess.run(["bash", script, ...])`) tanpa `shell=True`.
 
-Endpoint ini tidak boleh diakses frontend/public.
+### Python Adapter Interface (`pki_engine.py`)
 
-### Generate
+Fungsi utama adapter internal:
+- `generate_certificate(request: PKIGenerateRequest) -> PKIGenerateResult`
+- `change_pfx_password(nik: str, current_passphrase: str, new_passphrase: str) -> None`
+- `verify_p12(p12_path: Path, passphrase: str) -> bool`
+- `check_health() -> Dict[str, Any]`
 
-Request:
+### Input Schema (`PKIGenerateRequest`)
 
-```json
+```python
 {
-  "name": "Budi Santoso",
-  "nik": "327xxxxxxxxxxxxx",
-  "email": "budi@mkri.go.id",
-  "organization": "Mahkamah Konstitusi Republik Indonesia",
-  "ou": "TTE",
-  "pfx_password": "********"
+    "name": "Budi Santoso",
+    "nik": "327xxxxxxxxxxxxx",
+    "email": "budi@mkri.go.id",
+    "organization": "Mahkamah Konstitusi Republik Indonesia",
+    "ou": "TTE",
+    "pfx_password": "********",
+    "custom_env": {}  # Optional untuk staging / regenerate
 }
 ```
 
-Response metadata:
+### Output Metadata (`PKIGenerateResult`)
 
-```json
+```python
 {
-  "serial_number": "...",
-  "subject": "...",
-  "issuer": "...",
-  "fingerprint_sha256": "...",
-  "issued_at": "...",
-  "expires_at": "...",
-  "certificate_path": "...",
-  "p12_reference": "..."
+    "serial_number": "1173",
+    "subject": "/C=ID/ST=DKI Jakarta/L=Jakarta Pusat/O=Mahkamah Konstitusi Republik Indonesia/OU=TTE/CN=Budi Santoso/UID=327xxxxxxxxxxxxx",
+    "issuer": "/C=ID/ST=DKI Jakarta/O=Mahkamah Konstitusi Republik Indonesia/OU=TTE/CN=MKRI Intermediate CA",
+    "fingerprint_sha256": "...",
+    "issued_at": "2026-10-14T07:44:35Z",
+    "expires_at": "2028-10-13T07:44:35Z",
+    "certificate_path": "/app/pki/issued/budi_santoso_327xxxxxxxxxxxxx.crt",
+    "p12_reference": "/app/sign-api(well3)/p12/327xxxxxxxxxxxxx.p12"
 }
 ```
 
-Tidak mengembalikan password/private key.
-
-### Passphrase
-
-Request:
-
-```json
-{
-  "nik": "327xxxxxxxxxxxxx",
-  "new_password": "********"
-}
-```
-
-Response:
-
-```json
-{
-  "success": true
-}
-```
-
-PKI Service harus memvalidasi P12 menggunakan password baru sebelum mengembalikan success.
+*Catatan Keamanan:* Passphrase tidak pernah disimpan di database, metadata, atau audit log.
 
 ---
 
@@ -834,11 +817,10 @@ PKI Service harus memvalidasi P12 menggunakan password baru sebelum mengembalika
 | `PKI_GENERATION_FAILED` | 502 | PKI generation gagal |
 | `PKI_VALIDATION_FAILED` | 502 | Hasil PKI gagal divalidasi |
 | `P12_VALIDATION_FAILED` | 502 | P12 gagal divalidasi |
-| `PKI_TIMEOUT` | 502 | PKI timeout |
-| `PKI_SERVICE_UNAVAILABLE` | 502 | PKI Service tidak tersedia |
+| `PKI_TIMEOUT` | 502 | Subprocess PKI engine timeout |
 | `INTERNAL_ERROR` | 500 | Kesalahan internal |
 
-Raw error dari engine tidak boleh menjadi response publik.
+Raw error dari engine atau bash stderr tidak pernah menjadi response publik.
 
 ---
 
@@ -864,11 +846,12 @@ Authorization backend adalah sumber kebenaran.
 
 # 18. API Principles
 
-1. Frontend hanya berkomunikasi dengan Platform API.
-2. Platform API tidak menjalankan Bash PKI secara langsung.
-3. PKI Service menjadi adapter ke existing PKI engine.
-4. Endpoint internal PKI tidak public.
-5. Secret tidak masuk response.
-6. Raw engine error tidak diteruskan ke frontend.
-7. Semua endpoint sensitif melakukan authorization di backend.
-8. API Phase 1 tidak mengaktifkan PDF signing.
+1. Frontend (React) berkomunikasi dengan Platform API (FastAPI) secara eksklusif via HTTP/JSON.
+2. Platform API tidak menjalankan Bash PKI secara langsung dari route handlers; seluruh eksekusi didelegasikan ke internal adapter (`app.services.pki_engine`).
+3. PKI Engine bash scripts tetap dipertahankan tanpa modifikasi kriptografis.
+4. Pemanggilan PKI berjalan in-process di dalam container backend tanpa network hop HTTP mikroservis tambahan.
+5. Secret (passphrase, private key) tidak pernah masuk response API atau disimpan di database.
+6. Raw engine error / subprocess traceback disanitasi dan ditransformasi menjadi standard API error response.
+7. Semua endpoint sensitif melakukan verifikasi JWT dan RBAC di backend.
+8. API Phase 1 fokus pada lifecycle manajemen pengguna dan sertifikat digital.
+

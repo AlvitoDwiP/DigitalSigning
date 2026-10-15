@@ -16,38 +16,37 @@ Dokumen ini merupakan **master specification / source of truth** untuk kebutuhan
 
 ---
 
-## 2. Scope Phase 1
+## 2. Scope Phase 1 & Status Implementasi
 
-### Termasuk
+React (+ TypeScript + Vite) merupakan antarmuka web dan konsumen utama dari Platform API ini.
 
-1. Authentication.
-2. Role Based Access Control.
-3. Dashboard.
-4. User Management.
-5. Generate User single.
-6. Generate User bulk melalui CSV.
-7. Certificate metadata management.
-8. Regenerate certificate.
-9. Ubah Passphrase.
-10. Management Admin.
-11. Audit Log.
-12. Kelola Akun.
-13. Platform API.
-14. Integrasi dengan PKI Service.
+### Status Fitur Aktual:
 
-### Tidak termasuk
+#### A. Selesai & Terverifikasi (Completed & Verified)
+1. **Authentication & Session:** Login JWT Bearer token, session persistence di localStorage (`access_token` & `ds_auth_token`), logout, dan token validation.
+2. **Role-Based Access Control (RBAC):** Penegakan hak akses pada seluruh endpoint backend untuk `SUPER_ADMIN`, `ADMIN`, dan `USER`.
+3. **User Management:** Manajemen daftar pengguna, pencarian, pemfilteran berdasarkan role/status/sertifikat, pagination, serta halaman detail pengguna.
+4. **Generate User Single:** Provisioning pengguna baru dan penerbitan sertifikat terintegrasi dari form React, diproses oleh internal PKI adapter ke skrip Bash OpenSSL, serta penyimpanan metadata ke PostgreSQL dan file bundle `.p12` ke storage disk.
+5. **Generate User Bulk (CSV):** Alur validasi 7 kolom (`name,nik,email,organization,ou,password,pfx_pass`), preview data aman tanpa membocorkan rahasia, eksekusi batch, dan isolasi kegagalan per baris.
+6. **Certificate Metadata Management:** Pelacakan masa berlaku 730 hari, serial number, subject, issuer, SHA-256 fingerprint, dan penegakan aturan 1 sertifikat `ACTIVE` per user.
+7. **Regenerate Certificate:** Penerbitan sertifikat baru menggantikan sertifikat aktif menggunakan mekanisme folder staging terisolasi dan transaksi database dengan cleanup rollback otomatis untuk menjaga integritas status sertifikat lama jika terjadi kegagalan.
+8. **Ubah Passphrase:** Pergantian passphrase P12/PFX oleh Admin maupun mandiri oleh User tanpa mengubah metadata sertifikat.
+9. **Management Admin:** Pengangkatan dan pencabutan hak akses role Admin oleh Super Admin.
+10. **Audit Logging:** Pencatatan riwayat aktivitas operasional penting ke tabel `audit_logs` tanpa mengekspos passphrase atau kredensial sensitif.
+11. **Dashboard Operasional:** Metrik statistik operasional sistem (Total User, Active, Expired), peringatan sertifikat mendekati kedaluwarsa, dan ringkasan aktivitas terbaru.
+12. **Monolith Platform API:** Satu backend terpadu (FastAPI) yang memanggil engine PKI secara internal (*in-process*) via `app/services/pki_engine.py` tanpa container microservice terpisah.
 
-1. Upload PDF untuk signing.
-2. PDF signing aktif.
-3. QR signature.
-4. Signature appearance.
-5. Upload gambar tanda tangan/stempel.
-6. Verification portal.
-7. Approval workflow.
-8. Mobile application.
-9. Multi-tenant.
-10. Rewriting PKI/CA engine.
-11. Integrasi aktif dengan existing sign-api untuk proses PDF signing.
+#### B. Disiapkan untuk Penguatan (In Progress / Future Phase 1 Enhancement)
+1. **Revocation Workflow UI:** Status enum `REVOKED` sudah disiapkan pada skema PostgreSQL dan database constraint, namun alur UI pencabutan sertifikat belum diimplementasikan di Phase 1.
+2. **Two-Factor Authentication (OTP):** Arsitektur login disiapkan untuk mendukung verifikasi OTP di tahap production.
+
+#### C. Direncanakan untuk Phase 2 (Planned)
+1. Upload dokumen PDF untuk penandatanganan digital.
+2. Eksekusi PDF signing aktif melalui integrasi `sign-api(well3)`.
+3. Penempatan QR signature dan signature appearance pada PDF.
+4. Portal verifikasi keabsahan dokumen bertanda tangan digital.
+5. Alur persetujuan dokumen (*approval workflow*).
+6. Aplikasi mobile dan dukungan multi-tenant.
 
 ---
 
@@ -133,15 +132,15 @@ Role tidak dipilih dari form Generate dan otomatis menjadi `USER`.
 Flow:
 
 ```text
-Generate User
-→ input
-→ validasi
-→ PKI Service
-→ PKI Engine
-→ validasi hasil
-→ simpan User + Certificate
-→ Audit
-→ selesai
+Generate User (Single)
+→ input form React
+→ validasi input & cek DB
+→ Internal PKI Adapter (pki_engine.py)
+→ PKI Engine (bangkitkan_single.sh)
+→ validasi hasil (.crt & .p12)
+→ simpan User + Certificate di PostgreSQL
+→ Audit Log
+→ response 200 OK ke React
 ```
 
 Generate dianggap berhasil hanya jika hasil PKI berhasil dan output certificate/P12 telah tervalidasi.
@@ -173,12 +172,13 @@ Flow:
 Upload CSV
 → Parse
 → Validate semua row
-→ Preview
+→ Preview aman tanpa secret
 → Confirm
-→ Generate
+→ Internal PKI Adapter (generate_bulk)
+→ PKI Engine (bangkitkan_banyak.sh)
 → Validate output
-→ Simpan hasil
-→ Audit
+→ Simpan hasil ke DB
+→ Audit Log
 ```
 
 Validasi mencakup:
@@ -231,7 +231,7 @@ Backend bertanggung jawab memastikan status expiration diperbarui berdasarkan `e
 
 ## 7. Regenerate
 
-Regenerate menerbitkan certificate baru untuk user yang sudah ada dengan default passphrase `Mkri006!`.
+Regenerate menerbitkan certificate baru untuk user yang sudah ada dengan default passphrase `<DEFAULT_PASSPHRASE>` jika tidak ditentukan secara eksplisit.
 
 Aturan:
 
@@ -589,7 +589,7 @@ Tidak boleh hardcode secret di source code.
 
 ### Passphrase
 
-Passphrase hanya digunakan selama proses yang membutuhkan credential tersebut. Default credential (seperti login password / passphrase sertifikat provisioning atau regenerate) menggunakan `Mkri006!`.
+Passphrase hanya digunakan selama proses yang membutuhkan credential tersebut. Default credential (seperti login password / passphrase sertifikat provisioning atau regenerate) menggunakan nilai standar default sistem (`<DEFAULT_PASSPHRASE>`).
 
 Tidak boleh:
 

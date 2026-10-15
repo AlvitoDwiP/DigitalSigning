@@ -7,7 +7,7 @@ trap 'echo "❌ Error pada baris $LINENO: $BASH_COMMAND" >&2' ERR
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_H="$(cd "$SCRIPT_DIR/../.." && pwd)"
 H="${H:-$DEFAULT_H}"
-P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api(well3)/p12}"
+P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api/p12}"
 
 DEFAULT_ORG_NAME="Universitas B"
 DEFAULT_OU="TTE"

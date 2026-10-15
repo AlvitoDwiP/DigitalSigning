@@ -10,7 +10,7 @@ ehthumbs.db
 Thumbs.db
 
 # ==========================================
-# Environment & Secret Files
+# Environment & Secret Files (Kredensial & Env)
 # ==========================================
 .env
 .env.*
@@ -18,7 +18,7 @@ Thumbs.db
 !.env.example
 
 # ==========================================
-# PKI Private Keys & Secrets (Sangat Rahasia)
+# PKI Private Keys, Secrets & Backups (Sangat Rahasia)
 # ==========================================
 *.key
 *.pem
@@ -26,25 +26,33 @@ Thumbs.db
 *.p12
 *.pfx
 *-meta.txt
+*.old
+*.bak
 
-# Private Directories
+# Direktori Privat & Database CA Runtime
 **/private/
 **/newcerts/
+**/backup/
 pki/root/private/
 pki/intermediate/private/
+pki/intermediate/backup/
+pki/root/backup/
 pki/issued/
 pki/issued/.staging_*
 pki/bk.issued/
 pki/uploads/
 pki/p12/
+.staging_*
 
-# Legacy PKI & User Certificates Bundles
+# User Certificates Bundles & Runtime P12 Archives
+sign-api/p12/
+sign-api/bk.p12/
 sign-api(well3)/p12/
 sign-api(well3)/bk.p12/
 archive/pki-legacy/issued-prelaunch/
 archive/pki-legacy/backups/*.csv
 
-# Kecualikan Sertifikat Publik CA (Aman dipush)
+# Kecualikan Sertifikat Publik CA (Aman dipush untuk verifikasi trust)
 !pki/root/certs/root-ca.crt
 !pki/intermediate/certs/intermediate-ca.crt
 !pki/intermediate/certs/ca-chain.crt
@@ -82,13 +90,21 @@ node_modules/
 dist/
 build/
 .npm/
+.vite/
+frontend/.vite/
 
 # ==========================================
 # Temporary Files, Uploads & Logs
 # ==========================================
 *.tmp
 *.log
+*.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 uploads/
+**/uploads/
 *.zip
 *.tar.gz
 
@@ -97,6 +113,8 @@ uploads/
 # ==========================================
 .vscode/
 .idea/
+.cursor/
+.gemini/
 *.swp
 *.swo
 *.sublime-project

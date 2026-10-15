@@ -1,14 +1,14 @@
 # Technical Documentation
 
-Direktori ini berisi dokumentasi teknis dan arsitektur untuk **Digital Signature Platform**.
+Direktori ini berisi dokumentasi teknis dan spesifikasi arsitektur resmi untuk **Digital Signature Platform** (Phase 1).
 
 ## Daftar Dokumen
 
-1. [SPECIFICATION.md](file:///Users/a/Maganghub%20MK/kriptografi/Archive%20(ongoing)/docs/SPECIFICATION.md) — Master spesifikasi sistem, roles, permissions, dan alur bisnis.
-2. [ARCHITECTURE.md](file:///Users/a/Maganghub%20MK/kriptografi/Archive%20(ongoing)/docs/ARCHITECTURE.md) — Arsitektur sistem, batas tanggung jawab (boundary), flow data, dan interaksi komponen.
-3. [DATABASE.md](file:///Users/a/Maganghub%20MK/kriptografi/Archive%20(ongoing)/docs/DATABASE.md) — Skema database PostgreSQL, model tabel, relasi, index, dan constraint.
-4. [API.md](file:///Users/a/Maganghub%20MK/kriptografi/Archive%20(ongoing)/docs/API.md) — Kontrak API endpoints (Platform API & PKI Service Adapter), format request/response, dan error handling.
-5. [DESIGN.md](file:///Users/a/Maganghub%20MK/kriptografi/Archive%20(ongoing)/docs/DESIGN.md) — Rancangan UI/UX, tema, layout antarmuka, dan komponen visual.
+1. [SPECIFICATION.md](SPECIFICATION.md) — Master spesifikasi sistem, roles, permissions, status fitur aktual, dan alur bisnis.
+2. [ARCHITECTURE.md](ARCHITECTURE.md) — Arsitektur monolith terpadu, batas tanggung jawab router/service/adapter/engine, data flow, dan batasan keamanan.
+3. [DATABASE.md](DATABASE.md) — Skema database PostgreSQL aktual, model ORM, relasi, index, dan constraint database.
+4. [API.md](API.md) — Kontrak REST API platform, format request/response, autentikasi JWT, validasi, dan penanganan error.
+5. [DESIGN.md](DESIGN.md) — Panduan desain visual, layout antarmuka, token warna/tema, dan rancangan komponen UI.
 
 ---
-Untuk dokumentasi operasional dan quickstart proyek, lihat [README.md](file:///Users/a/Maganghub%20MK/kriptografi/Archive%20(ongoing)/README.md) di root direktori.
+Untuk panduan operasional, instalasi Docker, pembuatan akun admin, dan quickstart, lihat [README.md](../README.md) di root direktori proyek.

@@ -23,19 +23,44 @@ def get_pki_paths():
     pki_dir = pki_engine_dir if pki_engine_dir.name == "pki" else pki_engine_dir.parent
     h_dir = pki_dir.parent
     issued_dir = pki_dir / "issued"
-    p12_archive_dir = Path(os.environ.get("P12_ARCHIVE_DIR", getattr(settings, "P12_ARCHIVE_DIR", str(h_dir / "sign-api(well3)" / "p12"))))
+    default_p12 = h_dir / "sign-api" / "p12"
+    if not default_p12.exists() and (h_dir / "sign-api(well3)" / "p12").exists():
+        default_p12 = h_dir / "sign-api(well3)" / "p12"
+    p12_archive_dir = Path(os.environ.get("P12_ARCHIVE_DIR", getattr(settings, "P12_ARCHIVE_DIR", str(default_p12))))
     chain_path = pki_dir / "intermediate" / "certs" / "ca-chain.crt"
     return pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path
 
 def execute_script(script_name: str, input_data: str = None, args: list = None, timeout: int = 30, env: dict = None) -> str:
     pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path = get_pki_paths()
-    script_path = pki_engine_dir / script_name
-    if not script_path.is_file():
-        # Fallback check in pki_dir directly if not in pki_engine_dir
-        if (pki_dir / script_name).is_file():
-            script_path = pki_dir / script_name
-        else:
-            raise PKIEngineError(f"Script {script_name} not found at {script_path}", "INTERNAL_ERROR")
+    
+    # Bi-directional mapping for backward and forward compatibility
+    SCRIPT_MAP = {
+        "bangkitkan_single.sh": "issue_cert_single.sh",
+        "bangkitkan_banyak.sh": "issue_cert_bulk.sh",
+        "change_p12_passphrase-user.sh": "change_p12_passphrase_user.sh",
+        "change_p12_passphrase-admin.sh": "change_p12_passphrase_admin.sh",
+    }
+    
+    target_names = [script_name]
+    if script_name in SCRIPT_MAP:
+        target_names.append(SCRIPT_MAP[script_name])
+    for old_name, new_name in SCRIPT_MAP.items():
+        if script_name == new_name and old_name not in target_names:
+            target_names.append(old_name)
+            
+    script_path = None
+    for name in target_names:
+        candidate = pki_engine_dir / name
+        if candidate.is_file():
+            script_path = candidate
+            break
+        candidate_pki = pki_dir / name
+        if candidate_pki.is_file():
+            script_path = candidate_pki
+            break
+            
+    if not script_path:
+        raise PKIEngineError(f"Script {script_name} not found at {pki_engine_dir / script_name}", "INTERNAL_ERROR")
         
     cmd = ["bash", str(script_path)]
     if args:
@@ -99,7 +124,7 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
     ]
     input_data = "\n".join(lines) + "\n"
     
-    stdout = execute_script("bangkitkan_single.sh", input_data=input_data)
+    stdout = execute_script("issue_cert_single.sh", input_data=input_data)
     
     out_dir_match = re.search(r"Output dir :\s+(.*)", stdout)
     if not out_dir_match:
@@ -184,7 +209,7 @@ def generate_staged(name: str, nik: str, email: str, organization: str, ou: str,
     }
     
     try:
-        stdout = execute_script("bangkitkan_single.sh", input_data=input_data, env=env)
+        stdout = execute_script("issue_cert_single.sh", input_data=input_data, env=env)
     except Exception as e:
         if staging_dir.exists():
             shutil.rmtree(staging_dir, ignore_errors=True)
@@ -307,7 +332,7 @@ def generate_bulk(requests: list) -> list:
                 f.write(row)
                 
         timeout = max(60, len(requests) * 30)
-        stdout = execute_script("bangkitkan_banyak.sh", args=[str(temp_path)], timeout=timeout)
+        stdout = execute_script("issue_cert_bulk.sh", args=[str(temp_path)], timeout=timeout)
         
         results = []
         for line in stdout.splitlines():
@@ -373,7 +398,7 @@ def change_p12_passphrase_user(nik: str, old_password: str, new_password: str) -
             raise PKIEngineError("Password cannot contain newlines or tabs", "INVALID_INPUT")
             
     input_data = f"{nik_safe}\n{old_password}\n{new_password}\n"
-    execute_script("change_p12_passphrase-user.sh", input_data=input_data)
+    execute_script("change_p12_passphrase_user.sh", input_data=input_data)
     return True
 
 def change_p12_passphrase_admin(nik: str, new_password: str) -> bool:
@@ -385,7 +410,7 @@ def change_p12_passphrase_admin(nik: str, new_password: str) -> bool:
         raise PKIEngineError("Password cannot contain newlines or tabs", "INVALID_INPUT")
         
     input_data = f"{nik_safe}\n{new_password}\n"
-    execute_script("change_p12_passphrase-admin.sh", input_data=input_data)
+    execute_script("change_p12_passphrase_admin.sh", input_data=input_data)
     return True
 
 def change_p12_passphrase(nik: str, new_password: str):

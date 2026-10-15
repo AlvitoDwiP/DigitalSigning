@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     
     # PKI Engine & Storage integration (Monolith)
     PKI_ENGINE_DIR: str = os.getenv("PKI_ENGINE_DIR", "/app/pki/scripts")
-    P12_ARCHIVE_DIR: str = os.getenv("P12_ARCHIVE_DIR", "/app/sign-api(well3)/p12")
+    P12_ARCHIVE_DIR: str = os.getenv("P12_ARCHIVE_DIR", "/app/sign-api/p12")
     PKI_SERVICE_URL: str = os.getenv("PKI_SERVICE_URL", "http://localhost:8000")
     PKI_SERVICE_TOKEN: str = os.getenv("PKI_SERVICE_TOKEN", "dev-pki-service-token-2026")
     PKI_TIMEOUT: int = int(os.getenv("PKI_TIMEOUT", "30"))
@@ -83,6 +83,10 @@ class Settings(BaseSettings):
             if self.PKI_SERVICE_TOKEN in INSECURE_DEV_TOKENS or len(self.PKI_SERVICE_TOKEN) < 16:
                 raise ValueError(
                     "Production environment requires a strong and non-default PKI_SERVICE_TOKEN (at least 16 characters)."
+                )
+            if "*" in self.CORS_ORIGINS:
+                raise ValueError(
+                    "Production environment must not use wildcard '*' in CORS_ORIGINS when credentials are enabled."
                 )
         return self
 

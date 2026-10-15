@@ -41,9 +41,9 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     continue
   fi
 
-  # Call bangkitkan_single.sh capturing stdout and stderr
+  # Call issue_cert_single.sh capturing stdout and stderr
   set +e
-  single_output=$("$SCRIPT_DIR/bangkitkan_single.sh" <<EOF 2>&1
+  single_output=$("$SCRIPT_DIR/issue_cert_single.sh" <<EOF 2>&1
 $ORG
 $OU
 $CN
