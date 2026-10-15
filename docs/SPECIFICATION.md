@@ -235,13 +235,15 @@ Regenerate menerbitkan certificate baru untuk user yang sudah ada dengan default
 
 Aturan:
 
-1. Certificate lama tetap `ACTIVE` selama proses belum berhasil.
-2. Certificate baru harus berhasil diterbitkan dan divalidasi.
-3. Setelah berhasil:
+1. Admin wajib memverifikasi identitas dengan memasukkan password akun Admin yang sedang login melalui modal verifikasi sebelum regenerasi diproses.
+2. Jika password Admin salah atau kosong, proses langsung dihentikan (`INVALID_CREDENTIALS` / `INVALID_INPUT`) tanpa menyentuh PKI Engine.
+3. Certificate lama tetap `ACTIVE` selama proses belum berhasil.
+4. Certificate baru harus berhasil diterbitkan dan divalidasi.
+5. Setelah berhasil:
    - lama → `REPLACED`;
    - baru → `ACTIVE`.
-4. Jika gagal, certificate lama tetap `ACTIVE`.
-5. History certificate tetap disimpan sebagai metadata.
+6. Jika gagal, certificate lama tetap `ACTIVE`.
+7. History certificate tetap disimpan sebagai metadata.
 
 Regenerate tersedia untuk Super Admin dan Admin ketika mengelola user.
 

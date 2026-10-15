@@ -468,7 +468,16 @@ Menerbitkan certificate baru dengan default passphrase `<DEFAULT_PASSPHRASE>` ji
 
 ### Request
 
-Dapat menyertakan passphrase baru pada request body atau menggunakan default sistem (`<DEFAULT_PASSPHRASE>`).
+Body JSON:
+```json
+{
+  "admin_password": "password_akun_admin_yang_sedang_login",
+  "password": "opsional_passphrase_sertifikat_baru"
+}
+```
+
+- `admin_password` (string, wajib): Password akun Admin/Super Admin yang sedang login untuk verifikasi identitas otorisasi sebelum regenerasi diproses.
+- `password` (string, opsional): Passphrase baru untuk private key P12/PFX sertifikat (default sistem jika dikosongkan).
 
 ### Flow
 

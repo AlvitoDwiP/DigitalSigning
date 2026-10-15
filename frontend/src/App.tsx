@@ -8,23 +8,48 @@ import { AdminsPage } from './pages/AdminsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { AccountPage } from './pages/AccountPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { AppShell } from './components/layout/AppShell';
 import { getAuthToken, getAuthUser, clearAuthSession } from './services/api';
+
+function normalizePath(rawPath: string): string {
+  const clean = rawPath.split('?')[0].split('#')[0];
+  if (clean.length > 1 && clean.endsWith('/')) {
+    return clean.slice(0, -1);
+  }
+  return clean || '/dashboard';
+}
+
+const KNOWN_PATHS = [
+  '/',
+  '/login',
+  '/dashboard',
+  '/users',
+  '/generate',
+  '/admins',
+  '/audit-log',
+  '/audit-logs',
+  '/account',
+  '/signing',
+];
 
 export default function App() {
   // Path state initialized from browser window.location.pathname
   const [currentPath, setCurrentPath] = useState<string>(() => {
     if (typeof window !== 'undefined' && window.location.pathname) {
-      const p = window.location.pathname;
+      const p = normalizePath(window.location.pathname);
       return p === '/' ? '/dashboard' : p;
     }
     return '/dashboard';
   });
 
+  // Session expired notice banner state
+  const [sessionNotice, setSessionNotice] = useState<{ title: string; message: string } | null>(null);
+
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.location.pathname === '/login') {
+    if (typeof window !== 'undefined' && normalizePath(window.location.pathname) === '/login') {
       return false;
     }
     const token = getAuthToken();
@@ -34,7 +59,7 @@ export default function App() {
   // Handle browser popstate (back/forward)
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname || '/dashboard';
+      const path = normalizePath(window.location.pathname || '/dashboard');
       if (path === '/login') {
         setIsAuthenticated(false);
       } else {
@@ -44,7 +69,13 @@ export default function App() {
       setCurrentPath(path === '/' ? '/dashboard' : path);
     };
 
-    const handleUnauthorized = () => {
+    const handleUnauthorized = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const detail = customEvent.detail || {
+        title: 'Sesi Berakhir',
+        message: 'Sesi Anda telah berakhir. Silakan masuk kembali untuk melanjutkan.',
+      };
+      setSessionNotice(detail);
       setIsAuthenticated(false);
       navigateTo('/login');
     };
@@ -63,100 +94,125 @@ export default function App() {
     if (typeof window !== 'undefined' && window.history) {
       window.history.pushState({}, '', path);
     }
-    if (path === '/login') {
+    if (normalizePath(path) === '/login') {
       setIsAuthenticated(false);
     }
   };
 
   const handleLoginSuccess = (_email: string) => {
+    setSessionNotice(null);
     setIsAuthenticated(true);
     navigateTo('/dashboard');
   };
 
   const handleLogout = () => {
+    setSessionNotice(null);
     clearAuthSession();
     setIsAuthenticated(false);
     navigateTo('/login');
   };
 
-  if (!isAuthenticated || currentPath === '/login') {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  const isKnownRoute = (path: string): boolean => {
+    const normalized = normalizePath(path);
+    if (KNOWN_PATHS.includes(normalized)) return true;
+    if (normalized.startsWith('/users/') && normalized.length > 7) return true;
+    return false;
+  };
+
+  const activeNormalizedPath = normalizePath(currentPath);
+
+  // If unauthenticated:
+  if (!isAuthenticated) {
+    // If accessing an unregistered/unknown route, show 404 Standalone Page
+    if (!isKnownRoute(currentPath)) {
+      return (
+        <NotFoundPage
+          isStandalone={true}
+          onNavigate={(path) => {
+            if (normalizePath(path) === '/dashboard') {
+              navigateTo('/login');
+            } else {
+              navigateTo(path);
+            }
+          }}
+        />
+      );
+    }
+
+    return (
+      <LoginPage
+        onLoginSuccess={handleLoginSuccess}
+        sessionExpiredNotice={sessionNotice}
+        onClearSessionNotice={() => setSessionNotice(null)}
+      />
+    );
+  }
+
+  // If authenticated but path is '/login', redirect to dashboard
+  if (activeNormalizedPath === '/login') {
+    return (
+      <LoginPage
+        onLoginSuccess={handleLoginSuccess}
+        sessionExpiredNotice={sessionNotice}
+        onClearSessionNotice={() => setSessionNotice(null)}
+      />
+    );
   }
 
   const authUser = getAuthUser();
   const currentRole = authUser?.role || 'USER';
 
   const renderContent = () => {
-    if (currentPath === '/dashboard') {
+    const path = normalizePath(currentPath);
+
+    if (path === '/dashboard') {
       return <DashboardPage onNavigate={navigateTo} />;
     }
 
-    if (currentPath === '/users') {
+    if (path === '/users') {
       if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
-        return (
-          <ForbiddenPage
-            onNavigate={navigateTo}
-            message="Halaman Pengguna hanya dapat diakses oleh Administrator."
-          />
-        );
+        return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <UsersPage onNavigate={navigateTo} />;
     }
 
-    if (currentPath.startsWith('/users/')) {
-      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
-        return (
-          <ForbiddenPage
-            onNavigate={navigateTo}
-            message="Halaman Detail Pengguna hanya dapat diakses oleh Administrator."
-          />
-        );
+    if (path.startsWith('/users/')) {
+      const userId = path.slice(7);
+      if (!userId) {
+        return <UsersPage onNavigate={navigateTo} />;
       }
-      const userId = currentPath.replace('/users/', '').split('?')[0].split('#')[0];
+      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+        return <ForbiddenPage onNavigate={navigateTo} />;
+      }
       return <UserDetailPage userId={userId} onNavigate={navigateTo} />;
     }
 
-    if (currentPath === '/generate') {
+    if (path === '/generate') {
       if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
-        return (
-          <ForbiddenPage
-            onNavigate={navigateTo}
-            message="Halaman Generate User & Sertifikat hanya dapat diakses oleh Administrator."
-          />
-        );
+        return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <GeneratePage onNavigate={navigateTo} />;
     }
 
-    if (currentPath === '/admins') {
+    if (path === '/admins') {
       if (currentRole !== 'SUPER_ADMIN') {
-        return (
-          <ForbiddenPage
-            onNavigate={navigateTo}
-            message="Halaman Management Admin hanya dapat diakses oleh Super Admin."
-          />
-        );
+        return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <AdminsPage onNavigate={navigateTo} />;
     }
 
-    if (currentPath === '/audit-log' || currentPath === '/audit-logs') {
+    if (path === '/audit-log' || path === '/audit-logs') {
       if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
-        return (
-          <ForbiddenPage
-            onNavigate={navigateTo}
-            message="Halaman Audit Log hanya dapat diakses oleh Administrator."
-          />
-        );
+        return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <AuditLogsPage onNavigate={navigateTo} />;
     }
 
-    if (currentPath === '/account') {
+    if (path === '/account') {
       return <AccountPage onNavigate={navigateTo} />;
     }
 
-    if (currentPath === '/signing') {
+    if (path === '/signing') {
       return (
         <PlaceholderPage
           title="Penandatanganan"
@@ -167,8 +223,8 @@ export default function App() {
       );
     }
 
-    // Fallback default
-    return <DashboardPage onNavigate={navigateTo} />;
+    // Fallback 404 for unknown authenticated routes, preserving sidebar & topbar
+    return <NotFoundPage onNavigate={navigateTo} />;
   };
 
   return (

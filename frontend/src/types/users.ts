@@ -74,6 +74,13 @@ export interface RegenerateCertificateResponseData {
   };
 }
 
+export interface RegenerateCertificatePayload {
+  admin_password?: string;
+  password?: string;
+  pfx_password?: string;
+  confirm_pfx_password?: string;
+}
+
 export interface RegenerateCertificateApiResponse {
   success: boolean;
   data: RegenerateCertificateResponseData;

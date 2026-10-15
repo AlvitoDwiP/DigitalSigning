@@ -127,13 +127,15 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
     }
   };
 
-  const handleConfirmRegenerate = async () => {
+  const handleConfirmRegenerate = async (adminPassword: string) => {
     if (!user) return;
     setIsRegenerating(true);
     setRegenerateError(null);
 
     try {
-      const res = await regenerateUserCertificate(user.id);
+      const res = await regenerateUserCertificate(user.id, {
+        admin_password: adminPassword,
+      });
       if (res.success) {
         setIsRegenerateOpen(false);
         showFeedback('Sertifikat baru berhasil diterbitkan dan status sertifikat lama telah diperbarui.');

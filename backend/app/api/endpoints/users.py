@@ -18,7 +18,7 @@ from app.models.audit_log import AuditLog
 from app.schemas.user import User as UserSchema, GenerateUserRequest, GenerateUserResponse, GenerateUserResponseData
 from app.schemas.certificate import CertificateResponse, RegenerateCertificateRequest, RegenerateCertificateResponse
 from app.services.pki_client import pki_client
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
 
 router = APIRouter()
 
@@ -804,6 +804,33 @@ def regenerate_user_certificate(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "NO_ACTIVE_CERTIFICATE", "message": "User tidak memiliki sertifikat aktif untuk di-regenerate"}
+        )
+
+    # Verifikasi Password Admin yang sedang login
+    admin_pwd = None
+    if req:
+        admin_pwd = req.admin_password or req.password
+
+    if not admin_pwd or not admin_pwd.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_INPUT", "message": "Password akun Admin wajib diisi untuk verifikasi"}
+        )
+
+    if not verify_password(admin_pwd, current_user.password_hash):
+        audit_fail = AuditLog(
+            id=uuid.uuid4(),
+            user_id=current_user.id,
+            action="CERTIFICATE_REGENERATED",
+            target_type="user",
+            target_id=user.id,
+            status="FAILED"
+        )
+        db.add(audit_fail)
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_CREDENTIALS", "message": "Password admin salah. Verifikasi gagal."}
         )
 
     pfx_pass = "Mkri006!"

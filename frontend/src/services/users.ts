@@ -5,6 +5,7 @@ import type {
   DeleteUserApiResponse,
   UserDetailApiResponse,
   RegenerateCertificateApiResponse,
+  RegenerateCertificatePayload,
   ChangePfxPasswordRequest,
   ChangePfxPasswordApiResponse,
   GenerateUserPayload,
@@ -58,9 +59,13 @@ export async function fetchUserDetail(userId: string): Promise<UserDetailApiResp
   });
 }
 
-export async function regenerateUserCertificate(userId: string): Promise<RegenerateCertificateApiResponse> {
+export async function regenerateUserCertificate(
+  userId: string,
+  payload?: RegenerateCertificatePayload
+): Promise<RegenerateCertificateApiResponse> {
   return requestApi<RegenerateCertificateApiResponse>(`/api/v1/users/${userId}/certificates/regenerate`, {
     method: 'POST',
+    body: payload ? JSON.stringify(payload) : undefined,
   });
 }
 

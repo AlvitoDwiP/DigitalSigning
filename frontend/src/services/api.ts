@@ -68,6 +68,28 @@ export function clearAuthSession(): void {
   }
 }
 
+export class ApiError extends Error {
+  status?: number;
+  isNetworkError: boolean;
+  code?: string;
+  detail?: any;
+
+  constructor(
+    message: string,
+    status?: number,
+    code?: string,
+    detail?: any,
+    isNetworkError: boolean = false
+  ) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.detail = detail;
+    this.isNetworkError = isNetworkError;
+  }
+}
+
 export async function requestApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -86,25 +108,65 @@ export async function requestApi<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(endpoint, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      ...options,
+      headers,
+    });
+  } catch (err: any) {
+    // Distinguish network drop / offline / DNS failure
+    throw new ApiError(
+      'Layanan sedang tidak dapat dihubungi. Periksa koneksi Anda atau coba kembali beberapa saat lagi.',
+      undefined,
+      'NETWORK_ERROR',
+      undefined,
+      true
+    );
+  }
 
+  // Handle 401 unauthorized session expiry
   if (response.status === 401) {
-    clearAuthSession();
-    // Dispatch auth expiration event if needed
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('auth:unauthorized'));
+    // Avoid infinite redirect if the login request itself returns 401
+    if (!endpoint.includes('/auth/login')) {
+      clearAuthSession();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('auth:unauthorized', {
+            detail: {
+              title: 'Sesi Berakhir',
+              message: 'Sesi Anda telah berakhir. Silakan masuk kembali untuk melanjutkan.',
+            },
+          })
+        );
+      }
     }
-    throw new Error('Sesi Anda telah berakhir. Silakan login kembali.');
+    throw new ApiError(
+      'Sesi Anda telah berakhir. Silakan masuk kembali untuk melanjutkan.',
+      401,
+      'UNAUTHORIZED'
+    );
   }
 
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorMsg = json?.error?.message || json?.detail || json?.message || `HTTP Error ${response.status}`;
-    throw new Error(errorMsg);
+    // 500+ Server error sanitization: do not leak internal stack traces, DB errors, or file paths
+    if (response.status >= 500) {
+      const serverMsg =
+        response.status === 503
+          ? 'Layanan sedang tidak dapat dihubungi. Periksa koneksi Anda atau coba kembali beberapa saat lagi.'
+          : 'Terjadi kesalahan saat memproses permintaan. Silakan coba kembali beberapa saat lagi.';
+      throw new ApiError(serverMsg, response.status, `SERVER_ERROR_${response.status}`);
+    }
+
+    // 4xx Contextual client error (e.g. 400 validation, 403 forbidden, 404 not found)
+    const errorMsg =
+      json?.error?.message ||
+      (typeof json?.detail === 'object' ? json?.detail?.message : json?.detail) ||
+      json?.message ||
+      `HTTP Error ${response.status}`;
+    throw new ApiError(errorMsg, response.status, json?.error?.code, json?.detail);
   }
 
   return json as T;

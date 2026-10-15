@@ -196,7 +196,11 @@ def test_regenerate_certificate_uses_default_passphrase(client: TestClient, auth
 
     with patch("app.api.endpoints.users.pki_client.regenerate_stage", return_value=mock_stage_res) as mock_stage, \
          patch("app.api.endpoints.users.pki_client.regenerate_commit", return_value={"status": "SUCCESS"}):
-        res = client.post(f"/api/v1/users/{target_user.id}/certificates/regenerate", json={}, headers=auth_headers["admin"])
+        res = client.post(
+            f"/api/v1/users/{target_user.id}/certificates/regenerate",
+            json={"admin_password": "Password123!"},
+            headers=auth_headers["admin"]
+        )
         assert res.status_code == 200
         data = res.json()
         assert data["success"] is True

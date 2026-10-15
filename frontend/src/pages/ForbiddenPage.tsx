@@ -1,32 +1,34 @@
-import { IconAlertTriangle } from '../components/icons/Icons';
+import { ErrorStateCard } from '../components/common/ErrorStateCard';
+import { IconAlertTriangle, IconDashboard } from '../components/icons/Icons';
 
-interface ForbiddenPageProps {
-  onNavigate: (path: string) => void;
-  message?: string;
+export interface ForbiddenPageProps {
+  onNavigate?: (path: string) => void;
+  isStandalone?: boolean;
 }
 
-export function ForbiddenPage({
-  onNavigate,
-  message = 'Anda tidak memiliki hak akses (Role) untuk membuka halaman ini.',
-}: ForbiddenPageProps) {
+export function ForbiddenPage({ onNavigate, isStandalone = false }: ForbiddenPageProps) {
+  const handleGoDashboard = () => {
+    if (onNavigate) {
+      onNavigate('/dashboard');
+    } else if (typeof window !== 'undefined') {
+      window.location.href = '/dashboard';
+    }
+  };
+
   return (
-    <div className="users-page-container forbidden-page-container">
-      <div className="users-empty-state-card forbidden-card" role="alert">
-        <div className="empty-state-icon forbidden-icon" aria-hidden="true">
-          <IconAlertTriangle size={36} />
-        </div>
-        <h1 className="empty-state-title">Akses Ditolak (403 Forbidden)</h1>
-        <p className="empty-state-description">{message}</p>
-        <div className="empty-state-actions">
-          <button
-            type="button"
-            className="btn btn-primary empty-state-action-btn"
-            onClick={() => onNavigate('/dashboard')}
-          >
-            Kembali ke Dashboard
-          </button>
-        </div>
-      </div>
-    </div>
+    <ErrorStateCard
+      code="403"
+      title="Akses Tidak Diizinkan"
+      description="Anda tidak memiliki izin untuk mengakses halaman ini."
+      icon={<IconAlertTriangle size={36} />}
+      badgeVariant="red"
+      isStandalone={isStandalone}
+      primaryAction={{
+        label: 'Kembali ke Dashboard',
+        onClick: handleGoDashboard,
+        icon: <IconDashboard size={16} />,
+        variant: 'primary',
+      }}
+    />
   );
 }

@@ -31,6 +31,8 @@ class CertificateInDB(CertificateBase):
         from_attributes = True
 
 class RegenerateCertificateRequest(BaseModel):
+    admin_password: Optional[str] = None
+    password: Optional[str] = None
     pfx_password: Optional[str] = None
     confirm_pfx_password: Optional[str] = None
 

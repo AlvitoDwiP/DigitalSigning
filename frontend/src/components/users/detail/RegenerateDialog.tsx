@@ -1,13 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { UserDetailData } from '../../../types/users';
-import { IconRefresh, IconClose, IconAlertTriangle } from '../../icons/Icons';
+import { PasswordInput } from '../../ui/PasswordInput';
+import { IconLock, IconClose, IconAlertTriangle } from '../../icons/Icons';
 
 interface RegenerateDialogProps {
   user: UserDetailData | null;
   isOpen: boolean;
   isProcessing: boolean;
   error: string | null;
-  onConfirm: () => void;
+  onConfirm: (password: string) => void;
   onClose: () => void;
 }
 
@@ -20,6 +21,16 @@ export function RegenerateDialog({
   onClose,
 }: RegenerateDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [password, setPassword] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Bersihkan input password saat modal dibuka atau ditutup
+  useEffect(() => {
+    if (isOpen) {
+      setPassword('');
+      setValidationError(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -55,7 +66,22 @@ export function RegenerateDialog({
     };
   }, [isProcessing, onClose]);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationError(null);
+
+    const trimmed = password.trim();
+    if (!trimmed) {
+      setValidationError('Password akun Admin wajib diisi.');
+      return;
+    }
+
+    onConfirm(trimmed);
+  };
+
   if (!isOpen || !user) return null;
+
+  const activeError = validationError || error;
 
   return (
     <dialog
@@ -69,10 +95,10 @@ export function RegenerateDialog({
         <div className="dialog-header">
           <div className="dialog-header-title-group">
             <div className="dialog-info-icon" aria-hidden="true">
-              <IconRefresh size={22} />
+              <IconLock size={22} />
             </div>
             <h2 id="regenerate-dialog-title" className="dialog-title">
-              Terbitkan ulang sertifikat?
+              Verifikasi Password Admin
             </h2>
           </div>
           <button
@@ -86,39 +112,56 @@ export function RegenerateDialog({
           </button>
         </div>
 
-        {/* Body */}
-        <div className="dialog-body">
-          <p id="regenerate-dialog-description" className="dialog-main-text">
-            Terbitkan sertifikat baru untuk <strong>{user.name}</strong>? Sertifikat lama tetap berlaku sampai yang baru berhasil dibuat, lalu statusnya menjadi Diganti.
-          </p>
+        <form onSubmit={handleSubmit}>
+          {/* Body */}
+          <div className="dialog-body">
+            <p id="regenerate-dialog-description" className="dialog-main-text">
+              Masukkan password akun Anda untuk mengonfirmasi penerbitan ulang sertifikat bagi <strong>{user.name}</strong>.
+            </p>
 
-          {error && (
-            <div className="dialog-error-banner" role="alert">
-              <IconAlertTriangle size={16} aria-hidden="true" />
-              <span>{error}</span>
+            {activeError && (
+              <div className="dialog-error-banner" role="alert" style={{ marginBottom: '1.25rem' }}>
+                <IconAlertTriangle size={16} aria-hidden="true" />
+                <span>{activeError}</span>
+              </div>
+            )}
+
+            <div style={{ marginTop: '0.75rem' }}>
+              <PasswordInput
+                id="admin-verify-password"
+                label="Password Admin"
+                placeholder="Masukkan password akun Anda"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (validationError) setValidationError(null);
+                }}
+                disabled={isProcessing}
+                required
+                autoFocus
+              />
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Footer Actions */}
-        <div className="dialog-footer">
-          <button
-            type="button"
-            className="btn btn-ghost dialog-btn-cancel"
-            onClick={onClose}
-            disabled={isProcessing}
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary dialog-btn-confirm"
-            onClick={onConfirm}
-            disabled={isProcessing}
-          >
-            {isProcessing ? 'Menerbitkan...' : 'Terbitkan ulang'}
-          </button>
-        </div>
+          {/* Footer Actions */}
+          <div className="dialog-footer">
+            <button
+              type="button"
+              className="btn btn-ghost dialog-btn-cancel"
+              onClick={onClose}
+              disabled={isProcessing}
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary dialog-btn-confirm"
+              disabled={isProcessing || !password.trim()}
+            >
+              {isProcessing ? 'Memverifikasi...' : 'Verifikasi & Terbitkan Ulang'}
+            </button>
+          </div>
+        </form>
       </div>
     </dialog>
   );

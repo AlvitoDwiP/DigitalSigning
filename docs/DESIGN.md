@@ -144,8 +144,33 @@ Hanya tersedia untuk Super Admin.
 
 Setiap tampilan data punya empty, loading, dan error:
 - **Empty**: sebut penyebab dan aksi pengisinya.
-- **Loading**: kerangka sederhana tanpa animasi.
+- **Loading**: kerangka sederhana tanpa animasi berlebihan.
 - **Error**: sebut kegagalan dan nasib data ("Sertifikat lama tetap ACTIVE").
+
+### Halaman Error Sistem (Error Pages)
+
+Platform menerapkan halaman error terstandarisasi dengan hierarki visual terpadu (ikon lingkaran, kode status, judul, deskripsi, dan tombol aksi):
+1. **404 — Halaman Tidak Ditemukan**:
+   - Judul: *Halaman Tidak Ditemukan*
+   - Deskripsi: *"Halaman yang Anda cari tidak ditemukan atau mungkin sudah dipindahkan."*
+   - Aksi: Tombol utama "Kembali ke Dashboard", tombol sekunder "Kembali ke Halaman Sebelumnya" (jika riwayat tersedia).
+   - Mempertahankan layout sidebar dan topbar jika pengguna telah login; menampilkan layout standalone jika belum login.
+2. **403 — Akses Tidak Diizinkan**:
+   - Judul: *Akses Tidak Diizinkan*
+   - Deskripsi: *"Anda tidak memiliki izin untuk mengakses halaman ini."*
+   - Aksi: Tombol utama "Kembali ke Dashboard". Tidak mengekspos role internal atau konfigurasi sensitif.
+3. **500 — Terjadi Kesalahan (Server Error & React Error Boundary)**:
+   - Judul: *Terjadi Kesalahan*
+   - Deskripsi: *"Terjadi kesalahan saat memproses permintaan. Silakan coba kembali beberapa saat lagi."*
+   - Aksi: Tombol "Coba Lagi" (muat ulang aman) dan "Kembali ke Dashboard". Tidak menampilkan stack trace atau rincian exception server.
+4. **503 — Layanan Tidak Tersedia**:
+   - Judul: *Layanan Tidak Tersedia*
+   - Deskripsi: *"Layanan sedang tidak dapat dihubungi. Periksa koneksi Anda atau coba kembali beberapa saat lagi."*
+   - Aksi: Tombol "Coba Lagi" dan "Kembali ke Dashboard".
+5. **Sesi Berakhir (401 Unauthorized)**:
+   - Judul: *Sesi Berakhir*
+   - Deskripsi: *"Sesi Anda telah berakhir. Silakan masuk kembali untuk melanjutkan."*
+   - Perilaku: Mengarahkan pengguna ke halaman login dengan menampilkan banner peringatan sesi berakhir. Mencegah redirect berulang ketika request login itu sendiri menghasilkan 401. Password verifikasi yang salah tidak memicu sesi berakhir.
 
 ## Aksesibilitas
 
