@@ -748,19 +748,44 @@ Tidak boleh menampilkan secret.
 
 ---
 
-# 14. Signing
+# 14. Signing (Terintegrasi)
 
-## POST `/api/v1/signatures`
+## POST `/api/v1/signatures/sign`
 
-Route disiapkan untuk Phase 2.
+Menandatangani dokumen PDF secara digital (CMS PKCS#7 / PAdES) menggunakan sertifikat P12/PFX user secara in-process melalui internal signing service adapter.
 
-Pada Phase 1:
+### Role & Autentikasi
+- **USER:** Dapat menandatangani dokumen menggunakan sertifikat miliknya sendiri. NIK otomatis diambil dari akun sesi terautentikasi (mencegah IDOR). Field `nik` pada form diabaikan.
+- **ADMIN:** Dapat menandatangani menggunakan sertifikat miliknya sendiri atau atas nama NIK pengguna tertentu yang aktif.
+- **SUPER_ADMIN:** Dilarang menandatangani (mengembalikan HTTP 403 Forbidden).
 
-```text
-501 Not Implemented
-```
+### Request
+Multipart Form-Data:
+- `pdf` (file, wajib): Dokumen file PDF yang valid (`.pdf`, MIME `application/pdf`).
+- `passphrase` (string, opsional): Passphrase sertifikat P12. Dapat dikirim via form field ini atau via header `X-P12-Password`.
+- `nik` (string, opsional): NIK pemilik sertifikat (hanya diproses untuk role ADMIN; untuk USER selalu dipaksa sesuai sesi).
+- `stamp` (file, opsional): Gambar visual stempel (`image/png`, `image/jpeg`).
+- `page` (integer, opsional, default: 1): Nomor halaman penempatan stempel (1-indexed).
+- `llx` (float, opsional): Koordinat kiri-bawah X bounding box stempel.
+- `lly` (float, opsional): Koordinat kiri-bawah Y bounding box stempel.
+- `urx` (float, opsional): Koordinat kanan-atas X bounding box stempel.
+- `ury` (float, opsional): Koordinat kanan-atas Y bounding box stempel.
 
-Tidak melakukan integrasi aktif dengan existing sign-api.
+Header Opsional:
+- `X-P12-Password`: Alternatif aman untuk transmisi passphrase sertifikat tanpa query param/URL.
+
+### Response
+- **Status:** `200 OK`
+- **Content-Type:** `application/pdf`
+- **Content-Disposition:** `attachment; filename="signed_{original_filename}"`
+- **Body:** Binary payload stream dokumen PDF yang telah ditandatangani secara kriptografis.
+
+### Validasi & Error Handling
+- `400 Bad Request`: Format file bukan PDF, ukuran file kosong, atau koordinat stempel tidak valid.
+- `401 Unauthorized`: Token JWT tidak valid atau passphrase sertifikat P12 salah.
+- `403 Forbidden`: Role SUPER_ADMIN mencoba menandatangani, atau pengguna tidak memiliki sertifikat berstatus ACTIVE.
+- `404 Not Found`: File sertifikat P12 tidak ditemukan di arsip storage.
+- `500 Internal Server Error`: Kesalahan pada proses kriptografi PDF. Secret dan passphrase tidak pernah dibocorkan ke respon error atau log.
 
 ---
 
@@ -806,7 +831,7 @@ Fungsi utama adapter internal:
     "issued_at": "2026-10-14T07:44:35Z",
     "expires_at": "2028-10-13T07:44:35Z",
     "certificate_path": "/app/pki/issued/budi_santoso_327xxxxxxxxxxxxx.crt",
-    "p12_reference": "/app/sign-api(well3)/p12/327xxxxxxxxxxxxx.p12"
+    "p12_reference": "/app/sign-api/p12/327xxxxxxxxxxxxx.p12"
 }
 ```
 

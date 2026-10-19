@@ -29,6 +29,8 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat import backends
 from endesive.pdf import cms
 
+from fastapi.middleware.cors import CORSMiddleware
+
 # =========================
 # CONFIG
 # =========================
@@ -36,14 +38,29 @@ _BASE_DIR = Path(__file__).resolve().parent
 _DEFAULT_P12 = _BASE_DIR / "p12"
 _SYSADMIN_P12 = Path("/home/sysadmin/sign-api(well3)/p12")
 
+def _determine_p12_dir() -> Path:
+    env_dir = os.getenv("ALLOWED_P12_DIR")
+    if env_dir:
+        p = Path(env_dir).expanduser().resolve()
+        if p.is_dir():
+            return p
+    if _SYSADMIN_P12.is_dir():
+        return _SYSADMIN_P12
+    if _DEFAULT_P12.is_dir():
+        return _DEFAULT_P12
+    alt_p12 = _BASE_DIR.parent / "sign-api" / "p12"
+    if alt_p12.is_dir():
+        return alt_p12
+    return _DEFAULT_P12
+
 CONFIG = {
-    "ALLOWED_P12_DIR": os.getenv("ALLOWED_P12_DIR", str(_SYSADMIN_P12 if _SYSADMIN_P12.is_dir() else _DEFAULT_P12)),
+    "ALLOWED_P12_DIR": str(_determine_p12_dir()),
     "API_KEY": os.getenv("API_KEY", "rahasia-super"),
-    "ENABLE_CERT_LIST": True,
+    "ENABLE_CERT_LIST": os.getenv("ENABLE_CERT_LIST", "true").lower() in ("true", "1", "yes"),
     "MAX_UPLOAD_BYTES": int(os.getenv("MAX_UPLOAD_BYTES", 20 * 1024 * 1024)),  # 20 MB
     # Output filename: "plain" | "short3" (default) | "unique"
     "FILENAME_STRATEGY": os.getenv("FILENAME_STRATEGY", "short3"),
-    "ALLOW_EMPTY_P12_PASSWORD": False,
+    "ALLOW_EMPTY_P12_PASSWORD": os.getenv("ALLOW_EMPTY_P12_PASSWORD", "false").lower() in ("true", "1", "yes"),
 }
 
 ALLOWED_P12_DIR = CONFIG["ALLOWED_P12_DIR"]
@@ -53,7 +70,16 @@ MAX_UPLOAD_BYTES = int(CONFIG["MAX_UPLOAD_BYTES"])
 FILENAME_STRATEGY = CONFIG.get("FILENAME_STRATEGY", "short3")
 ALLOW_EMPTY_P12_PASSWORD = bool(CONFIG.get("ALLOW_EMPTY_P12_PASSWORD", False))
 
-app = FastAPI(title="endesive Sign API", version="1.0.0")
+app = FastAPI(title="endesive Sign API", version="1.0.0", description="Digital Signature API for PDF Documents")
+
+# CORS Middleware for local & web integrations
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ===== Auth =====
 def require_api_key(x_api_key: Optional[str] = Header(default=None)):
@@ -63,7 +89,13 @@ def require_api_key(x_api_key: Optional[str] = Header(default=None)):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "app": "endesive Sign API"}
+    p12_dir = _determine_p12_dir()
+    return {
+        "status": "ok",
+        "app": "endesive Sign API",
+        "p12_dir_found": p12_dir.is_dir(),
+        "p12_count": len([p for p in p12_dir.iterdir() if p.suffix.lower() == ".p12"]) if p12_dir.is_dir() else 0
+    }
 
 # ===== Utils =====
 _SAFE_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
@@ -87,10 +119,10 @@ def _nik_to_p12_name(nik: str) -> str:
     return f"{nik}.p12"
 
 def _resolve_p12_path_from_name(p12_name: str) -> Path:
-    if not ALLOWED_P12_DIR:
-        raise HTTPException(status_code=500, detail="ALLOWED_P12_DIR belum di-set di CONFIG.")
-    base = Path(ALLOWED_P12_DIR).expanduser().resolve(strict=True)
-    target = (base / _sanitize_p12_name(p12_name)).resolve(strict=True)
+    base = _determine_p12_dir()
+    if not base.exists() or not base.is_dir():
+        raise HTTPException(status_code=500, detail="Direktori P12 tidak ditemukan.")
+    target = (base / _sanitize_p12_name(p12_name)).resolve()
     try:
         target.relative_to(base)
     except Exception:
@@ -322,7 +354,7 @@ async def sign_pdf(
 def list_p12_files(_auth_ok: bool = Depends(require_api_key)):
     if not ENABLE_CERT_LIST:
         raise HTTPException(status_code=404, detail="Endpoint dimatikan.")
-    base = Path(ALLOWED_P12_DIR).expanduser()
+    base = _determine_p12_dir()
     if not base.exists() or not base.is_dir():
         raise HTTPException(status_code=500, detail="ALLOWED_P12_DIR tidak valid.")
     files: List[str] = sorted(

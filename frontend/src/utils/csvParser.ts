@@ -79,19 +79,22 @@ export function validateCsvContent(rawText: string): ClientCsvValidationResult {
     };
   }
 
-  // Validate Header
+  // Validate Header: support both standard 7-col and alternative 6-col (org,ou,cn,email,nik,pfx_pass)
   const headerCols = parseCsvLine(nonEmptyLines[0]).map((h) => h.toLowerCase());
-  const headerMatches =
+  const isStandard7Col =
     headerCols.length === EXPECTED_CSV_HEADERS.length &&
     EXPECTED_CSV_HEADERS.every((expected, idx) => headerCols[idx] === expected);
+  const isAlt6Col =
+    headerCols.length === 6 &&
+    ['org', 'ou', 'cn', 'email', 'nik', 'pfx_pass'].every((expected, idx) => headerCols[idx] === expected || (expected === 'org' && headerCols[idx] === 'organization'));
 
-  if (!headerMatches) {
+  if (!isStandard7Col && !isAlt6Col) {
     return {
       isValid: false,
       totalRows: 0,
       validCount: 0,
       invalidCount: 0,
-      headerError: `Header CSV tidak sesuai. Wajib berisi 7 kolom: ${EXPECTED_CSV_HEADERS.join(', ')}`,
+      headerError: `Header CSV tidak sesuai. Gunakan: ${EXPECTED_CSV_HEADERS.join(', ')} atau org,ou,cn,email,nik,pfx_pass`,
       rows: [],
     };
   }
@@ -117,9 +120,10 @@ export function validateCsvContent(rawText: string): ClientCsvValidationResult {
     const rowNumber = idx + 1;
     const cols = parseCsvLine(lineText);
     const errors: string[] = [];
+    const expectedCols = isStandard7Col ? 7 : 6;
 
-    if (cols.length !== 7) {
-      errors.push(`Format kolom tidak sesuai (ditemukan ${cols.length} kolom, diharapkan 7 kolom).`);
+    if (cols.length !== expectedCols) {
+      errors.push(`Format kolom tidak sesuai (ditemukan ${cols.length} kolom, diharapkan ${expectedCols} kolom).`);
       parsedRows.push({
         rowNumber,
         name: cols[0] || '-',
@@ -133,7 +137,20 @@ export function validateCsvContent(rawText: string): ClientCsvValidationResult {
       return;
     }
 
-    const [name, nik, email, organization, ou, password, pfxPass] = cols;
+    let name = '';
+    let nik = '';
+    let email = '';
+    let organization = '';
+    let ou = '';
+    let password = '';
+    let pfxPass = '';
+
+    if (isStandard7Col) {
+      [name, nik, email, organization, ou, password, pfxPass] = cols;
+    } else {
+      [organization, ou, name, email, nik, pfxPass] = cols;
+    }
+
     const cleanName = name.trim();
     const cleanNik = nik.trim();
     const cleanEmail = email.trim();
@@ -184,22 +201,22 @@ export function validateCsvContent(rawText: string): ClientCsvValidationResult {
       errors.push('Unit Organisasi (OU) wajib diisi.');
     }
 
-    // 6. Password Login
-    if (!password) {
-      errors.push('Password login wajib diisi.');
-    } else if (password.length < 8) {
-      errors.push('Password login minimal 8 karakter.');
-    } else if (!/[A-Z]/.test(password)) {
-      errors.push('Kata sandi harus memiliki minimal satu huruf kapital.');
-    } else if (!/[^a-zA-Z0-9]/.test(password)) {
-      errors.push('Kata sandi harus memiliki minimal satu simbol.');
+    // 6. Password Login (jika diisi, validasi policy; jika kosong, akan digenerate otomatis)
+    if (password && password.trim()) {
+      if (password.length < 8) {
+        errors.push('Password login minimal 8 karakter.');
+      } else if (!/[A-Z]/.test(password)) {
+        errors.push('Kata sandi harus memiliki minimal satu huruf kapital.');
+      } else if (!/[^a-zA-Z0-9]/.test(password)) {
+        errors.push('Kata sandi harus memiliki minimal satu simbol.');
+      }
     }
 
-    // 7. Passphrase
-    if (!pfxPass) {
-      errors.push('Passphrase wajib diisi.');
-    } else if (pfxPass.length < 8) {
-      errors.push('Passphrase minimal 8 karakter.');
+    // 7. Passphrase (jika diisi, validasi policy; jika kosong, akan digenerate otomatis)
+    if (pfxPass && pfxPass.trim()) {
+      if (pfxPass.length < 8) {
+        errors.push('Passphrase minimal 8 karakter.');
+      }
     }
 
     const isValid = errors.length === 0;

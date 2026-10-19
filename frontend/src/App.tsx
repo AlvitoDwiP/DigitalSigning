@@ -9,7 +9,7 @@ import { AuditLogsPage } from './pages/AuditLogsPage';
 import { AccountPage } from './pages/AccountPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
+import { SigningPage } from './pages/SigningPage';
 import { AppShell } from './components/layout/AppShell';
 import { getAuthToken, getAuthUser, clearAuthSession } from './services/api';
 
@@ -213,14 +213,10 @@ export default function App() {
     }
 
     if (path === '/signing') {
-      return (
-        <PlaceholderPage
-          title="Penandatanganan"
-          subtitle="Modul penandatanganan dokumen PDF digital (Reserved for Phase 2)."
-          iconName="signing"
-          isReserved={true}
-        />
-      );
+      if (currentRole === 'SUPER_ADMIN') {
+        return <ForbiddenPage onNavigate={navigateTo} />;
+      }
+      return <SigningPage onNavigate={navigateTo} />;
     }
 
     // Fallback 404 for unknown authenticated routes, preserving sidebar & topbar

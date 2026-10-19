@@ -2,10 +2,13 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies for PostgreSQL, OpenSSL, and PKI engine scripts
+# Install system dependencies for PostgreSQL, OpenSSL, image processing, and PKI engine scripts
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    g++ \
     libpq-dev \
+    libjpeg-dev \
+    zlib1g-dev \
     bash \
     openssl \
     curl \

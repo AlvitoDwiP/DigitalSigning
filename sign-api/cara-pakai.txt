@@ -1,11 +1,37 @@
-python3 -m uvicorn app:app --host 0.0.0.0 --port 8001
+========================================================================
+ARSIP REFERENSI: TOOLKIT & STANDALONE REFERENCE UNTUK SIGN API
+========================================================================
 
-curl -X POST "http://192.168.30.47:8001/sign" \
-  -H "X-API-Key: rahasia-super" \
-  -H "X-P12-Password: maiga" \
-  -F "pdf=@test.pdf;type=application/pdf" \
-  -F "nik=1234567890987654" \
-  -F "stamp=@visualisasi.png;type=image/png" \
-  -F "page=1" \
-  -F "llx=386" -F "lly=207" -F "urx=433" -F "ury=253" \
-  -OJ
+CATATAN ARSITEKTUR:
+Modul dalam direktori ini (`sign-api/`) dipertahankan sebagai artefak
+referensi kriptografi dan pengujian lokal (standalone toolkit).
+
+Dalam arsitektur resmi Digital Signature Platform:
+- Proses penandatanganan PDF dilakukan secara terpadu melalui Platform API
+  resmi pada endpoint: POST /api/v1/signatures/sign
+- Modul internal yang digunakan adalah: backend/app/services/pdf_signer.py
+- Penandatanganan terikat dengan autentikasi JWT, validasi RBAC, pembatasan
+  IDOR, validasi status sertifikat, dan audit logging di database.
+- Service `sign-api` TIDAK diaktifkan sebagai service produksi terpisah di
+  dalam Docker Compose untuk menjaga keamanan dan mencegah bypass otorisasi.
+
+PENGUJIAN LOKAL MANDIRI (STANDALONE / TESTING ONLY):
+Jika ingin menjalankan script ini secara mandiri untuk pengujian lokal:
+
+1. Install dependensi:
+   $ cd sign-api
+   $ pip install -r requirements.txt
+
+2. Jalankan secara lokal:
+   $ python3 -m uvicorn app:app --host 127.0.0.1 --port 8001
+
+3. Contoh request pengujian lokal (cURL):
+   curl -X POST "http://127.0.0.1:8001/sign" \
+     -H "X-API-Key: <LOCAL_DEV_KEY>" \
+     -H "X-P12-Password: <PASSWORD_P12>" \
+     -F "pdf=@test.pdf;type=application/pdf" \
+     -F "nik=3312032808880001" \
+     -F "stamp=@visualisasi.png;type=image/png" \
+     -F "page=1" \
+     -F "llx=218" -F "lly=393" -F "urx=258" -F "ury=433" \
+     -o "hasil_sign.pdf"

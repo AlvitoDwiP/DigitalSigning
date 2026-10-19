@@ -53,14 +53,6 @@ export function getNavItemsForRole(role: string): NavItem[] {
         label: 'Audit Log',
         icon: IconAudit,
       },
-      {
-        id: 'signing',
-        path: '/signing',
-        label: 'Penandatanganan',
-        icon: IconSignature,
-        isReserved: true,
-        reservedBadge: 'Segera',
-      },
     ];
   }
 
@@ -95,8 +87,6 @@ export function getNavItemsForRole(role: string): NavItem[] {
         path: '/signing',
         label: 'Penandatanganan',
         icon: IconSignature,
-        isReserved: true,
-        reservedBadge: 'Segera',
       },
     ];
   }
@@ -120,8 +110,6 @@ export function getNavItemsForRole(role: string): NavItem[] {
       path: '/signing',
       label: 'Penandatanganan',
       icon: IconSignature,
-      isReserved: true,
-      reservedBadge: 'Segera',
     },
   ];
 }

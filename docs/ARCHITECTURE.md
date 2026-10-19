@@ -13,7 +13,7 @@ Platform berfungsi sebagai layer aplikasi, business logic, dan orkestrasi. Prose
 Pada evaluasi awal, backend sempat dipisahkan menjadi dua container: `backend` (Platform API) dan `pki-service` (adapter eksekusi bash di port 8001). Berdasarkan tinjauan kepraktisan dan kebutuhan operasional Phase 1, arsitektur disederhanakan menjadi **Satu Backend Monolith Terpadu (FastAPI)** karena:
 
 1. **Efisiensi Sumber Daya & Operasional:** Menghilangkan overhead pengelolaan 2 aplikasi FastAPI, 2 Dockerfile, latensi jaringan HTTP internal, dan alokasi RAM ganda pada container engine.
-2. **Eliminasi Kerapuhan Jaringan Internal:** Pemanggilan PKI dieksekusi secara *in-process* melalui modul Python bawaan (`subprocess.run`), menghilangkan risiko kegagalan koneksi antar-container atau kendala sinkronisasi token internal (`PKI_SERVICE_TOKEN`).
+2. **Eliminasi Kerapuhan Jaringan Internal:** Pemanggilan PKI dieksekusi secara *in-process* melalui modul Python bawaan (`subprocess.run`), menghilangkan risiko kegagalan koneksi antar-container serta mengeliminasi ketergantungan konfigurasi token internal (`PKI_SERVICE_TOKEN`) dan URL service internal (`PKI_SERVICE_URL`).
 3. **Pemisahan Tanggung Jawab Tetap Terjaga:** Secara struktural di tingkat kode, router controller (`app/api/endpoints/`) tetap terpisah dari adapter PKI (`app/services/pki_engine.py` dan `pki_client.py`). Kode tetap modular dan mudah diekstrak kembali jika kebutuhan skala besar di masa mendatang menuntutnya.
 
 ---

@@ -255,14 +255,15 @@ ON DELETE SET NULL
 
 Audit tetap dipertahankan meskipun user yang terkait kemudian dihapus.
 
+Kapasitas log dibatasi maksimal 5.000 entri (dikonfigurasi via `MAX_AUDIT_LOGS`, default: 5000). Ketika entri ke-5.001 dimasukkan, sistem secara otomatis memangkas entri paling bawah (terlama berdasarkan `created_at` ASC) dengan mekanisme Circular/FIFO Pruning.
+
 ---
 
 ## 10. Audit Action
 
-Action utama Phase 1:
+Action utama Phase 1 (aktivitas operasional dan administratif yang diperlukan):
 
 ```text
-LOGIN
 USER_CREATED
 USER_DELETED
 

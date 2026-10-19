@@ -14,12 +14,6 @@ INSECURE_DEV_KEYS = {
     "changeme",
 }
 
-INSECURE_DEV_TOKENS = {
-    "dev-pki-service-token-2026",
-    "secret",
-    "changeme",
-}
-
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Digital Signature Platform API"
     VERSION: str = "1.0.0"
@@ -69,9 +63,8 @@ class Settings(BaseSettings):
     # PKI Engine & Storage integration (Monolith)
     PKI_ENGINE_DIR: str = os.getenv("PKI_ENGINE_DIR", "/app/pki/scripts")
     P12_ARCHIVE_DIR: str = os.getenv("P12_ARCHIVE_DIR", "/app/sign-api/p12")
-    PKI_SERVICE_URL: str = os.getenv("PKI_SERVICE_URL", "http://localhost:8000")
-    PKI_SERVICE_TOKEN: str = os.getenv("PKI_SERVICE_TOKEN", "dev-pki-service-token-2026")
     PKI_TIMEOUT: int = int(os.getenv("PKI_TIMEOUT", "30"))
+    MAX_AUDIT_LOGS: int = int(os.getenv("MAX_AUDIT_LOGS", "5000"))
 
     @model_validator(mode="after")
     def validate_production_security(self):
@@ -79,10 +72,6 @@ class Settings(BaseSettings):
             if self.SECRET_KEY in INSECURE_DEV_KEYS or len(self.SECRET_KEY) < 32:
                 raise ValueError(
                     "Production environment requires a strong and non-default SECRET_KEY (at least 32 characters)."
-                )
-            if self.PKI_SERVICE_TOKEN in INSECURE_DEV_TOKENS or len(self.PKI_SERVICE_TOKEN) < 16:
-                raise ValueError(
-                    "Production environment requires a strong and non-default PKI_SERVICE_TOKEN (at least 16 characters)."
                 )
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(

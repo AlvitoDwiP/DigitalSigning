@@ -39,3 +39,35 @@ export interface DashboardApiResponse {
   detail?: string;
   message?: string;
 }
+
+export interface DashboardUserCertificate {
+  id: string;
+  serial_number: string;
+  issued_at: string;
+  expires_at: string;
+  status: 'ACTIVE' | 'EXPIRED' | 'REPLACED' | 'REVOKED' | string;
+  days_remaining: number;
+}
+
+export interface DashboardUserAccount {
+  id: string;
+  name: string;
+  email: string;
+  nik: string;
+  organization: string;
+  ou: string;
+}
+
+export interface DashboardUserData {
+  user: DashboardUserAccount;
+  active_certificate: DashboardUserCertificate | null;
+  has_active_certificate: boolean;
+}
+
+export interface DashboardUserApiResponse {
+  success: boolean;
+  data: DashboardUserData;
+  detail?: string;
+  message?: string;
+}
+

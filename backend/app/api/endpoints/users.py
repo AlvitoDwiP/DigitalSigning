@@ -53,12 +53,20 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
             detail={"code": "INVALID_CSV", "message": "CSV file is empty"}
         )
         
-    # Validate Header
-    header = [h.strip() for h in rows[0]]
-    if header != CSV_EXPECTED_HEADERS:
+    # Validate Header: support both standard 7-col and alternative 6-col (org,ou,cn,email,nik,pfx_pass)
+    raw_header = [h.strip() for h in rows[0]]
+    header_lower = [h.lower() for h in raw_header]
+    
+    is_standard_7col = (raw_header == CSV_EXPECTED_HEADERS or header_lower == [h.lower() for h in CSV_EXPECTED_HEADERS])
+    is_alt_6col = (header_lower in (
+        ["org", "ou", "cn", "email", "nik", "pfx_pass"],
+        ["organization", "ou", "cn", "email", "nik", "pfx_pass"]
+    ))
+    
+    if not (is_standard_7col or is_alt_6col):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "INVALID_CSV_HEADER", "message": f"CSV header must be: {','.join(CSV_EXPECTED_HEADERS)}"}
+            detail={"code": "INVALID_CSV_HEADER", "message": f"CSV header must be: {','.join(CSV_EXPECTED_HEADERS)} or org,ou,cn,email,nik,pfx_pass"}
         )
         
     data_rows = rows[1:]
@@ -82,8 +90,9 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
         row_idx += 1
         errors = []
         
-        if len(r) != 7:
-            errors.append(f"Expected 7 columns, got {len(r)}")
+        expected_cols = 7 if is_standard_7col else 6
+        if len(r) != expected_cols:
+            errors.append(f"Expected {expected_cols} columns, got {len(r)}")
             parsed_rows.append({
                 "row": row_idx,
                 "nik": r[1].strip() if len(r) > 1 else "",
@@ -93,7 +102,12 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
             })
             continue
             
-        name, nik, email, org, ou, password, pfx_pass = [col.strip() for col in r]
+        if is_standard_7col:
+            name, nik, email, org, ou, password, pfx_pass = [col.strip() for col in r]
+        else:
+            # org, ou, cn, email, nik, pfx_pass
+            org, ou, name, email, nik, pfx_pass = [col.strip() for col in r]
+            password = ""
         
         # Check forbidden characters (\t, \r, \n)
         for field_name, field_val in [
@@ -115,8 +129,10 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
             errors.append("Field 'organization' is required")
         if not ou:
             errors.append("Field 'ou' is required")
+            
+        # Automatic default credentials when empty
         if not password:
-            errors.append("Field 'password' is required")
+            password = "Konstitusi100%"
         if not pfx_pass:
             pfx_pass = "Mkri006!"
             

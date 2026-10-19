@@ -67,21 +67,23 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
       errors.ou = 'Unit kerja wajib diisi.';
     }
 
-    // 6. Password Login
-    if (!password) {
-      errors.password = 'Kata sandi wajib diisi.';
-    } else if (password.length < 8) {
-      errors.password = 'Kata sandi minimal 8 karakter.';
-    } else if (!/[A-Z]/.test(password)) {
-      errors.password = 'Kata sandi harus mengandung minimal satu huruf kapital.';
-    } else if (!/[^a-zA-Z0-9]/.test(password)) {
-      errors.password = 'Kata sandi harus mengandung minimal satu simbol.';
-    }
+    // 6. Password Login (Opsional, otomatis bawaan sistem jika kosong)
+    if (password) {
+      if (password.length < 8) {
+        errors.password = 'Kata sandi minimal 8 karakter.';
+      } else if (!/[A-Z]/.test(password)) {
+        errors.password = 'Kata sandi harus mengandung minimal satu huruf kapital.';
+      } else if (!/[^a-zA-Z0-9]/.test(password)) {
+        errors.password = 'Kata sandi harus mengandung minimal satu simbol.';
+      }
 
-    if (!confirmPassword) {
-      errors.confirmPassword = 'Konfirmasi kata sandi wajib diisi.';
-    } else if (password !== confirmPassword) {
-      errors.confirmPassword = 'Kata sandi dan konfirmasi tidak cocok.';
+      if (!confirmPassword) {
+        errors.confirmPassword = 'Konfirmasi kata sandi wajib diisi.';
+      } else if (password !== confirmPassword) {
+        errors.confirmPassword = 'Kata sandi dan konfirmasi tidak cocok.';
+      }
+    } else if (confirmPassword) {
+      errors.password = 'Isi kata sandi atau kosongkan keduanya untuk otomatis.';
     }
 
     // 7. Passphrase (Opsional, otomatis Mkri006! jika kosong)
@@ -118,6 +120,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
     setIsSubmitting(true);
 
     try {
+      const finalPassword = password.trim() ? password : DEFAULT_PASSPHRASE;
       const finalPfx = pfxPassword.trim() ? pfxPassword : DEFAULT_PASSPHRASE;
       const finalConfirmPfx = pfxPassword.trim() ? confirmPfxPassword : DEFAULT_PASSPHRASE;
 
@@ -127,7 +130,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
         email: email.trim(),
         organization: organization.trim(),
         ou: ou.trim(),
-        password,
+        password: finalPassword,
         pfx_password: finalPfx,
         confirm_pfx_password: finalConfirmPfx,
       });

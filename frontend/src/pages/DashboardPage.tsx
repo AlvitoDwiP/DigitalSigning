@@ -3,19 +3,25 @@ import { StatsSection } from '../components/dashboard/StatsSection';
 import { NearestExpiryCard } from '../components/dashboard/NearestExpiryCard';
 import { ExpiryBucketsCard } from '../components/dashboard/ExpiryBucketsCard';
 import { RecentActivitiesCard } from '../components/dashboard/RecentActivitiesCard';
+import { UserDashboardView } from '../components/dashboard/UserDashboardView';
 import { DashboardSkeleton } from '../components/dashboard/DashboardSkeleton';
 import { DashboardError } from '../components/dashboard/DashboardError';
 import { IconRefresh } from '../components/icons/Icons';
 import { Button } from '../components/ui/Button';
-import { fetchAdminDashboard } from '../services/dashboard';
-import type { DashboardAdminData } from '../types/dashboard';
+import { fetchAdminDashboard, fetchUserDashboard } from '../services/dashboard';
+import { getAuthUser } from '../services/api';
+import type { DashboardAdminData, DashboardUserData } from '../types/dashboard';
 
 interface DashboardPageProps {
   onNavigate: (path: string) => void;
 }
 
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
-  const [data, setData] = useState<DashboardAdminData | null>(null);
+  const authUser = getAuthUser();
+  const isUserRole = authUser?.role === 'USER';
+
+  const [adminData, setAdminData] = useState<DashboardAdminData | null>(null);
+  const [userData, setUserData] = useState<DashboardUserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -29,15 +35,20 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     setError(null);
 
     try {
-      const result = await fetchAdminDashboard();
-      setData(result);
+      if (isUserRole) {
+        const result = await fetchUserDashboard();
+        setUserData(result);
+      } else {
+        const result = await fetchAdminDashboard();
+        setAdminData(result);
+      }
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat memuat data dashboard.');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [isUserRole]);
 
   useEffect(() => {
     loadDashboard();
@@ -47,12 +58,14 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     return <DashboardSkeleton />;
   }
 
-  if (error || !data) {
+  if (error || (isUserRole ? !userData : !adminData)) {
     return (
       <div className="dashboard-page">
         <div className="page-header">
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Ringkasan sertifikat dan pengguna.</p>
+          <p className="page-subtitle">
+            {isUserRole ? 'Ringkasan sertifikat dan informasi akun.' : 'Ringkasan sertifikat dan pengguna.'}
+          </p>
         </div>
         <DashboardError
           message={error || 'Data dashboard tidak tersedia.'}
@@ -62,6 +75,21 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       </div>
     );
   }
+
+  // 1. Role USER View
+  if (isUserRole && userData) {
+    return (
+      <UserDashboardView
+        data={userData}
+        onNavigate={onNavigate}
+        onRefresh={() => loadDashboard(true)}
+        isRefreshing={isRefreshing}
+      />
+    );
+  }
+
+  // 2. Role ADMIN & SUPER_ADMIN View
+  const data = adminData!;
 
   return (
     <div className="dashboard-page">

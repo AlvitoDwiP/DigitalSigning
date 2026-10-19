@@ -5584,3 +5584,318 @@ button, input, select, textarea {
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   User Dashboard Layout & Components
+   ========================================================================== */
+.user-welcome-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.user-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+}
+
+.user-cert-card,
+.user-account-card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.user-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.user-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-card-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cert-icon-badge {
+  background-color: var(--c-blue-bg);
+  color: var(--c-blue);
+}
+
+.account-icon-badge {
+  background-color: var(--c-green-bg);
+  color: var(--c-green);
+}
+
+.user-card-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.user-card-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 2px 0 0 0;
+}
+
+.user-card-body {
+  flex: 1;
+}
+
+/* User Certificate Details */
+.user-cert-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cert-serial-number {
+  margin-top: 4px;
+  padding: 8px 12px;
+  background-color: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  word-break: break-all;
+}
+
+.cert-serial-number code {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.cert-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 16px;
+}
+
+.cert-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cert-detail-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.detail-inline-icon {
+  color: var(--muted);
+}
+
+.cert-detail-value {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.badge-days {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.badge-days-success {
+  background-color: var(--c-green-bg);
+  color: var(--c-green);
+}
+
+.badge-days-warning {
+  background-color: var(--c-amber-bg);
+  color: var(--c-amber-text);
+}
+
+.badge-days-danger {
+  background-color: var(--c-red-bg);
+  color: var(--red);
+}
+
+/* Empty Certificate State */
+.user-cert-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 36px 16px;
+}
+
+.empty-icon-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--c-neutral-bg);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.empty-description {
+  font-size: 13.5px;
+  color: var(--muted);
+  max-width: 380px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* User Account Info List */
+.user-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.user-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border-light);
+  gap: 12px;
+}
+
+.user-info-row:last-child {
+  border-bottom: none;
+}
+
+.user-info-term {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.user-info-desc {
+  font-size: 13.5px;
+  color: var(--ink);
+  text-align: right;
+  word-break: break-word;
+  margin: 0;
+}
+
+.user-card-footer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* User Signing Placeholder Card */
+.user-sign-placeholder-card {
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-left: 4px solid var(--c-blue);
+  background: var(--surface);
+}
+
+.user-sign-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.user-sign-icon-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-lg);
+  background-color: var(--c-blue-bg);
+  color: var(--c-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-sign-text {
+  flex: 1;
+}
+
+.user-sign-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.user-sign-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.user-sign-description {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 650px;
+}
+
+.user-sign-action {
+  flex-shrink: 0;
+}
+
+@media (max-width: 860px) {
+  .user-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-sign-placeholder-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-sign-action {
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .cert-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

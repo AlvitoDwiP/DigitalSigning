@@ -44,13 +44,20 @@ class GenerateUserRequest(BaseModel):
     email: EmailStr
     organization: str
     ou: str
-    password: str
+    password: Optional[str] = "Konstitusi100%"
     pfx_password: Optional[str] = "Mkri006!"
     confirm_pfx_password: Optional[str] = "Mkri006!"
 
+    @field_validator('password', mode='before')
+    @classmethod
+    def default_password(cls, v):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return "Konstitusi100%"
+        return v
+
     @field_validator('pfx_password', 'confirm_pfx_password', mode='before')
     @classmethod
-    def default_pfx_passwords(cls, v):
+    def default_credentials(cls, v):
         if v is None or (isinstance(v, str) and not v.strip()):
             return "Mkri006!"
         return v

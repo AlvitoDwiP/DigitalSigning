@@ -32,7 +32,7 @@ React (+ TypeScript + Vite) merupakan antarmuka web dan konsumen utama dari Plat
 7. **Regenerate Certificate:** Penerbitan sertifikat baru menggantikan sertifikat aktif menggunakan mekanisme folder staging terisolasi dan transaksi database dengan cleanup rollback otomatis untuk menjaga integritas status sertifikat lama jika terjadi kegagalan.
 8. **Ubah Passphrase:** Pergantian passphrase P12/PFX oleh Admin maupun mandiri oleh User tanpa mengubah metadata sertifikat.
 9. **Management Admin:** Pengangkatan dan pencabutan hak akses role Admin oleh Super Admin.
-10. **Audit Logging:** Pencatatan riwayat aktivitas operasional penting ke tabel `audit_logs` tanpa mengekspos passphrase atau kredensial sensitif.
+10. **Audit Logging:** Pencatatan riwayat aktivitas operasional penting (generate, regenerate, delete user, ubah passphrase, assign/remove admin) ke tabel `audit_logs` tanpa mengekspos passphrase atau kredensial sensitif. Aktivitas autentikasi/login/sesi maupun navigasi tidak dicatat. Kapasitas log dibatasi maksimal 5.000 entri dengan mekanisme FIFO/Circular Pruning otomatis.
 11. **Dashboard Operasional:** Metrik statistik operasional sistem (Total User, Active, Expired), peringatan sertifikat mendekati kedaluwarsa, dan ringkasan aktivitas terbaru.
 12. **Monolith Platform API:** Satu backend terpadu (FastAPI) yang memanggil engine PKI secara internal (*in-process*) via `app/services/pki_engine.py` tanpa container microservice terpisah.
 
@@ -582,8 +582,8 @@ Contoh:
 ```text
 DATABASE_URL
 SECRET_KEY
-PKI_SERVICE_URL
-PKI_SERVICE_TOKEN
+PKI_ENGINE_DIR
+P12_ARCHIVE_DIR
 PKI_TIMEOUT
 ```
 
