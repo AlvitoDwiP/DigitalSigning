@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { AdminItem } from '../../types/admins';
 import { StatusChip } from '../ui/StatusChip';
-import { maskNik, formatDate } from '../users/UsersTable';
+import { IconEye, IconEyeOff } from '../icons/Icons';
+import { formatDate, maskNik } from '../users/UsersTable';
 import { peran, statusAkun } from '../../lib/labels';
 
 interface AdminsTableProps {
@@ -10,13 +12,28 @@ interface AdminsTableProps {
 }
 
 export function AdminsTable({ admins, onRemoveAdmin, disabled = false }: AdminsTableProps) {
+  const [showAllNik, setShowAllNik] = useState(false);
+
   return (
     <div className="users-table-responsive-wrapper" tabIndex={0} aria-label="Tabel Daftar Administrator">
       <table className="users-table admins-table">
         <thead>
           <tr>
             <th scope="col" className="col-user">Administrator</th>
-            <th scope="col" className="col-nik">NIK</th>
+            <th scope="col" className="col-nik">
+              <div className="th-nik-wrapper">
+                <span>NIK</span>
+                <button
+                  type="button"
+                  className="btn-nik-toggle"
+                  onClick={() => setShowAllNik((prev) => !prev)}
+                  title={showAllNik ? 'Sembunyikan semua NIK' : 'Perlihatkan semua NIK'}
+                  aria-label={showAllNik ? 'Sembunyikan semua NIK' : 'Perlihatkan semua NIK'}
+                >
+                  {showAllNik ? <IconEyeOff size={13} aria-hidden="true" /> : <IconEye size={13} aria-hidden="true" />}
+                </button>
+              </div>
+            </th>
             <th scope="col" className="col-email">Email</th>
             <th scope="col" className="col-role">Peran</th>
             <th scope="col" className="col-user-status">Status akun</th>
@@ -45,15 +62,19 @@ export function AdminsTable({ admins, onRemoveAdmin, disabled = false }: AdminsT
                       )}
                       <div className="user-mobile-subinfo" aria-label={`Email dan NIK ${admin.name}`}>
                         <span className="user-mobile-email">{admin.email}</span>
-                        <span className="user-mobile-nik font-mono">{maskNik(admin.nik)}</span>
+                        <span className="user-mobile-nik font-mono">
+                          {showAllNik ? (admin.nik || '-') : maskNik(admin.nik)}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </td>
 
-                {/* Masked NIK */}
-                <td className="col-nik font-mono">
-                  {maskNik(admin.nik)}
+                {/* NIK */}
+                <td className="col-nik">
+                  <span className="masked-nik-text font-mono">
+                    {showAllNik ? (admin.nik || '-') : maskNik(admin.nik)}
+                  </span>
                 </td>
 
                 {/* Email */}

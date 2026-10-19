@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { ComponentType } from 'react';
 import {
   IconDashboard,
@@ -133,6 +134,26 @@ export function Sidebar({
   const currentRole = authUser?.role || 'ADMIN';
   const navItems = getNavItemsForRole(currentRole);
 
+  // Lock scroll and handle escape key when mobile drawer is open
+  useEffect(() => {
+    if (!isOpenMobile) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onCloseMobile) {
+        onCloseMobile();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpenMobile, onCloseMobile]);
+
   const isPathActive = (itemPath: string) => {
     if (currentPath === itemPath) return true;
     if (itemPath === '/audit-log' && (currentPath === '/audit-logs' || currentPath === '/audit-log')) return true;
@@ -161,9 +182,6 @@ export function Sidebar({
           </div>
           <div className="brand-text">
             <span className="brand-title">Digital Signature</span>
-            <span className="brand-subtitle">
-              {currentRole === 'USER' ? 'Portal Pengguna' : 'Admin Platform'}
-            </span>
           </div>
           {isOpenMobile && (
             <button

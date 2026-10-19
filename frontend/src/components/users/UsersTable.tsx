@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { UserItem } from '../../types/users';
 import { StatusChip } from '../ui/StatusChip';
+import { IconEye, IconEyeOff } from '../icons/Icons';
 import { statusAkun, statusSertifikat } from '../../lib/labels';
 
 interface UsersTableProps {
@@ -35,13 +37,28 @@ export function formatDate(isoStr: string | null | undefined): string {
 }
 
 export function UsersTable({ users, onDetail, onDelete }: UsersTableProps) {
+  const [showAllNik, setShowAllNik] = useState(false);
+
   return (
     <div className="users-table-responsive-wrapper" tabIndex={0} aria-label="Tabel Daftar Pengguna">
       <table className="users-table">
         <thead>
           <tr>
             <th scope="col" className="col-user">Pengguna</th>
-            <th scope="col" className="col-nik">NIK</th>
+            <th scope="col" className="col-nik">
+              <div className="th-nik-wrapper">
+                <span>NIK</span>
+                <button
+                  type="button"
+                  className="btn-nik-toggle"
+                  onClick={() => setShowAllNik((prev) => !prev)}
+                  title={showAllNik ? 'Sembunyikan semua NIK' : 'Perlihatkan semua NIK'}
+                  aria-label={showAllNik ? 'Sembunyikan semua NIK' : 'Perlihatkan semua NIK'}
+                >
+                  {showAllNik ? <IconEyeOff size={13} aria-hidden="true" /> : <IconEye size={13} aria-hidden="true" />}
+                </button>
+              </div>
+            </th>
             <th scope="col" className="col-email">Email</th>
             <th scope="col" className="col-user-status">Status akun</th>
             <th scope="col" className="col-cert-status">Sertifikat</th>
@@ -71,7 +88,9 @@ export function UsersTable({ users, onDetail, onDelete }: UsersTableProps) {
                       )}
                       <div className="user-mobile-subinfo" aria-label={`Email dan NIK ${user.name}`}>
                         <span className="user-mobile-email">{user.email}</span>
-                        <span className="user-mobile-nik font-mono">{maskNik(user.nik)}</span>
+                        <span className="user-mobile-nik font-mono">
+                          {showAllNik ? (user.nik || '-') : maskNik(user.nik)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -79,7 +98,9 @@ export function UsersTable({ users, onDetail, onDelete }: UsersTableProps) {
 
                 {/* NIK: Masked Monospace */}
                 <td className="col-nik">
-                  <span className="masked-nik-text font-mono">{maskNik(user.nik)}</span>
+                  <span className="masked-nik-text font-mono">
+                    {showAllNik ? (user.nik || '-') : maskNik(user.nik)}
+                  </span>
                 </td>
 
                 {/* Email */}

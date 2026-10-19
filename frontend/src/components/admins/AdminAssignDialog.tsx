@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { AdminItem } from '../../types/admins';
-import { maskNik } from '../users/UsersTable';
+import { NikDisplay } from '../ui/NikDisplay';
 import {
   IconShield,
   IconClose,
@@ -108,7 +108,9 @@ export function AdminAssignDialog({
             </div>
             <div className="delete-target-row">
               <span className="delete-target-label">NIK</span>
-              <span className="delete-target-value font-mono">{maskNik(candidate.nik)}</span>
+              <span className="delete-target-value">
+                <NikDisplay nik={candidate.nik} />
+              </span>
             </div>
             <div className="delete-target-row">
               <span className="delete-target-label">Perubahan peran</span>

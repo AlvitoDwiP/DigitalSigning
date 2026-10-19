@@ -10,6 +10,8 @@ import {
   IconUsers,
   IconAlertTriangle,
   IconRefresh,
+  IconEye,
+  IconEyeOff,
 } from '../icons/Icons';
 
 interface AdminCandidatesModalProps {
@@ -30,6 +32,7 @@ export function AdminCandidatesModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAllNik, setShowAllNik] = useState(false);
 
   const loadCandidates = async () => {
     setIsLoading(true);
@@ -191,7 +194,20 @@ export function AdminCandidatesModal({
                 <thead>
                   <tr>
                     <th scope="col">Pengguna</th>
-                    <th scope="col">NIK</th>
+                    <th scope="col">
+                      <div className="th-nik-wrapper">
+                        <span>NIK</span>
+                        <button
+                          type="button"
+                          className="btn-nik-toggle"
+                          onClick={() => setShowAllNik((prev) => !prev)}
+                          title={showAllNik ? 'Sembunyikan semua NIK' : 'Tampilkan semua NIK'}
+                          aria-label={showAllNik ? 'Sembunyikan semua NIK' : 'Tampilkan semua NIK'}
+                        >
+                          {showAllNik ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                        </button>
+                      </div>
+                    </th>
                     <th scope="col">Email</th>
                     <th scope="col">Status</th>
                     <th scope="col" className="text-right">Aksi</th>
@@ -218,7 +234,11 @@ export function AdminCandidatesModal({
                             </div>
                           </div>
                         </td>
-                        <td className="font-mono">{maskNik(candidate.nik)}</td>
+                        <td>
+                          <span className="masked-nik-text font-mono">
+                            {showAllNik ? (candidate.nik || '-') : maskNik(candidate.nik)}
+                          </span>
+                        </td>
                         <td>{candidate.email}</td>
                         <td>
                           <StatusChip

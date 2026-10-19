@@ -15,7 +15,7 @@ import { RegenerateDialog } from '../components/users/detail/RegenerateDialog';
 import { ChangePfxDialog } from '../components/users/detail/ChangePfxDialog';
 import { UserDeleteDialog } from '../components/users/UserDeleteDialog';
 import { StatusChip } from '../components/ui/StatusChip';
-import { maskNik } from '../components/users/UsersTable';
+import { NikDisplay } from '../components/ui/NikDisplay';
 import { statusAkun } from '../lib/labels';
 import {
   IconCheckCircle,
@@ -349,7 +349,9 @@ export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
                     />
                   </div>
                   <div className="user-hero-meta-row">
-                    <span className="user-hero-meta-item font-mono">{maskNik(user.nik)}</span>
+                    <span className="user-hero-meta-item">
+                      <NikDisplay nik={user.nik} />
+                    </span>
                     <span className="meta-separator">•</span>
                     <span className="user-hero-meta-item">{user.email}</span>
                     {user.organization && (

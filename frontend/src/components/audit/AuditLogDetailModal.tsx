@@ -103,14 +103,14 @@ export function AuditLogDetailModal({
         {/* Header */}
         <div className="dialog-header">
           <div className="dialog-header-title-group">
-            <div className="dialog-warning-icon" style={{ backgroundColor: 'var(--c-red-bg)', color: 'var(--primary)' }}>
+            <div className="dialog-warning-icon" style={{ backgroundColor: 'var(--active-tint)', color: 'var(--accent-text)' }}>
               <IconAudit size={20} aria-hidden="true" />
             </div>
             <div>
-              <h2 id="audit-detail-title" className="dialog-title" style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>
+              <h2 id="audit-detail-title" className="dialog-title">
                 Rincian Catatan Audit
               </h2>
-              <p className="dialog-subtitle" style={{ fontSize: '13px', color: 'var(--muted)', margin: '2px 0 0 0' }}>
+              <p className="dialog-subtitle" style={{ fontSize: '12.5px', color: 'var(--text-2)', margin: '2px 0 0 0' }}>
                 Metadata lengkap dan keterlacakan aktivitas sistem.
               </p>
             </div>

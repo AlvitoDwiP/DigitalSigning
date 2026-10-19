@@ -10,7 +10,7 @@ import {
   IconShield,
   IconClock,
 } from '../icons/Icons';
-import { maskNik } from '../users/UsersTable';
+import { NikDisplay } from '../ui/NikDisplay';
 import { formatWaktuIndonesia, statusSertifikat } from '../../lib/labels';
 
 interface UserDashboardViewProps {
@@ -55,7 +55,7 @@ export function UserDashboardView({
       {/* Page Header */}
       <div className="page-header-row">
         <div className="page-header">
-          <h1 className="page-title">Dashboard</h1>
+          <h1 className="page-title">Dashboard User</h1>
           <p className="page-subtitle">
             Selamat datang, <strong className="user-welcome-name">{user.name}</strong>. Ringkasan sertifikat dan informasi akun Anda.
           </p>
@@ -182,7 +182,7 @@ export function UserDashboardView({
               <div className="user-info-row">
                 <dt className="user-info-term">NIK</dt>
                 <dd className="user-info-desc">
-                  <code>{maskNik(user.nik)}</code>
+                  <NikDisplay nik={user.nik} />
                 </dd>
               </div>
 
@@ -216,22 +216,27 @@ export function UserDashboardView({
       </div>
 
       {/* Kartu 3: Layanan Penandatanganan Dokumen */}
-      <div className="card user-sign-placeholder-card" aria-labelledby="user-sign-title">
-        <div className="user-sign-content">
-          <div className="user-sign-icon-circle">
-            <IconSignature size={28} />
-          </div>
-          <div className="user-sign-text">
-            <div className="user-sign-title-row">
-              <h2 id="user-sign-title" className="user-sign-title">Penandatanganan Dokumen</h2>
-              <StatusChip status="ACTIVE" label="Aktif" />
+      <div className="card user-sign-card" aria-labelledby="user-sign-title">
+        <div className="user-card-header">
+          <div className="user-card-title-group">
+            <div className="user-card-icon-badge sign-icon-badge">
+              <IconSignature size={22} />
             </div>
-            <p className="user-sign-description">
-              Layanan penandatanganan dokumen elektronik terverifikasi menggunakan sertifikat digital tersimpan akun Anda.
-            </p>
+            <div>
+              <h2 id="user-sign-title" className="user-card-title">Penandatanganan Dokumen</h2>
+              <p className="user-card-subtitle">Layanan verifikasi dan penandatanganan elektronik</p>
+            </div>
           </div>
+          <StatusChip status="ACTIVE" label="Aktif" />
         </div>
-        <div className="user-sign-action">
+
+        <div className="user-card-body">
+          <p className="user-sign-description">
+            Layanan penandatanganan dokumen elektronik terverifikasi menggunakan sertifikat digital tersimpan akun Anda.
+          </p>
+        </div>
+
+        <div className="user-card-footer">
           <Button
             variant="primary"
             size="sm"

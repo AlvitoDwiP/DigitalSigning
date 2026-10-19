@@ -58,11 +58,17 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     return <DashboardSkeleton />;
   }
 
+  const dashboardTitle = authUser?.role === 'SUPER_ADMIN'
+    ? 'Dashboard Super Admin'
+    : authUser?.role === 'ADMIN'
+    ? 'Dashboard Admin'
+    : 'Dashboard User';
+
   if (error || (isUserRole ? !userData : !adminData)) {
     return (
       <div className="dashboard-page">
         <div className="page-header">
-          <h1 className="page-title">Dashboard</h1>
+          <h1 className="page-title">{dashboardTitle}</h1>
           <p className="page-subtitle">
             {isUserRole ? 'Ringkasan sertifikat dan informasi akun.' : 'Ringkasan sertifikat dan pengguna.'}
           </p>
@@ -96,7 +102,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       {/* Page Header */}
       <div className="page-header-row">
         <div className="page-header">
-          <h1 className="page-title">Dashboard</h1>
+          <h1 className="page-title">{dashboardTitle}</h1>
           <p className="page-subtitle">Ringkasan sertifikat dan pengguna.</p>
         </div>
         <div className="page-header-actions">

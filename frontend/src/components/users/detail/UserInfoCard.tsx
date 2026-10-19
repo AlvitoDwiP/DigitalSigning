@@ -1,5 +1,6 @@
 import type { UserDetailData } from '../../../types/users';
-import { maskNik, formatDate } from '../UsersTable';
+import { formatDate } from '../UsersTable';
+import { NikDisplay } from '../../ui/NikDisplay';
 import { StatusChip } from '../../ui/StatusChip';
 import { IconUser, IconTrash, IconAlertTriangle } from '../../icons/Icons';
 import { statusAkun, peran } from '../../../lib/labels';
@@ -35,7 +36,9 @@ export function UserInfoCard({ user, onDeleteUser }: UserInfoCardProps) {
 
                 <div className="user-detail-item">
                   <dt className="user-detail-label">NIK</dt>
-                  <dd className="user-detail-value font-mono">{maskNik(user.nik)}</dd>
+                  <dd className="user-detail-value">
+                    <NikDisplay nik={user.nik} />
+                  </dd>
                 </div>
 
                 <div className="user-detail-item">

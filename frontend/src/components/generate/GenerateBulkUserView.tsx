@@ -2,8 +2,8 @@ import { useState, useRef } from 'react';
 import type { BulkGenerateData } from '../../types/users';
 import { generateBulkUsers } from '../../services/users';
 import { validateCsvContent, type ClientCsvValidationResult } from '../../utils/csvParser';
-import { maskNik } from '../users/UsersTable';
 import { StatusChip } from '../ui/StatusChip';
+import { maskNik } from '../users/UsersTable';
 import {
   IconAlertTriangle,
   IconCheckCircle,
@@ -13,6 +13,8 @@ import {
   IconFileText,
   IconCopy,
   IconShield,
+  IconEye,
+  IconEyeOff,
 } from '../icons/Icons';
 
 interface GenerateBulkUserViewProps {
@@ -33,6 +35,10 @@ export function GenerateBulkUserView({ onNavigateUsers }: GenerateBulkUserViewPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [bulkResult, setBulkResult] = useState<BulkGenerateData | null>(null);
+
+  // NIK Visibility state
+  const [showAllResultsNik, setShowAllResultsNik] = useState(false);
+  const [showAllPreviewNik, setShowAllPreviewNik] = useState(false);
 
   const processFile = (file: File) => {
     setParseError(null);
@@ -243,7 +249,20 @@ export function GenerateBulkUserView({ onNavigateUsers }: GenerateBulkUserViewPr
                 <thead>
                   <tr>
                     <th scope="col" style={{ width: '80px' }}>Baris</th>
-                    <th scope="col">NIK</th>
+                    <th scope="col">
+                      <div className="th-nik-wrapper">
+                        <span>NIK</span>
+                        <button
+                          type="button"
+                          className="btn-nik-toggle"
+                          onClick={() => setShowAllResultsNik((prev) => !prev)}
+                          title={showAllResultsNik ? 'Sembunyikan semua NIK' : 'Tampilkan semua NIK'}
+                          aria-label={showAllResultsNik ? 'Sembunyikan semua NIK' : 'Tampilkan semua NIK'}
+                        >
+                          {showAllResultsNik ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                        </button>
+                      </div>
+                    </th>
                     <th scope="col" style={{ width: '120px' }}>Status</th>
                     <th scope="col">Keterangan</th>
                   </tr>
@@ -252,7 +271,11 @@ export function GenerateBulkUserView({ onNavigateUsers }: GenerateBulkUserViewPr
                   {bulkResult.results.map((item) => (
                     <tr key={item.row} className="bulk-row">
                       <td className="font-mono">#{item.row}</td>
-                      <td className="font-mono">{maskNik(item.nik)}</td>
+                      <td>
+                        <span className="masked-nik-text font-mono">
+                          {showAllResultsNik ? (item.nik || '-') : maskNik(item.nik)}
+                        </span>
+                      </td>
                       <td>
                         <StatusChip
                           status={item.status === 'SUCCESS' ? 'SUCCESS' : 'FAILED'}
@@ -413,7 +436,20 @@ export function GenerateBulkUserView({ onNavigateUsers }: GenerateBulkUserViewPr
                     <tr>
                       <th scope="col" style={{ width: '70px' }}>Baris</th>
                       <th scope="col">Nama</th>
-                      <th scope="col">NIK</th>
+                      <th scope="col">
+                        <div className="th-nik-wrapper">
+                          <span>NIK</span>
+                          <button
+                            type="button"
+                            className="btn-nik-toggle"
+                            onClick={() => setShowAllPreviewNik((prev) => !prev)}
+                            title={showAllPreviewNik ? 'Sembunyikan semua NIK' : 'Tampilkan semua NIK'}
+                            aria-label={showAllPreviewNik ? 'Sembunyikan semua NIK' : 'Tampilkan semua NIK'}
+                          >
+                            {showAllPreviewNik ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                          </button>
+                        </div>
+                      </th>
                       <th scope="col">Email</th>
                       <th scope="col">Instansi / Unit kerja</th>
                       <th scope="col" style={{ width: '120px' }}>Validasi</th>
@@ -425,7 +461,11 @@ export function GenerateBulkUserView({ onNavigateUsers }: GenerateBulkUserViewPr
                       <tr key={row.rowNumber} className={row.isValid ? 'row-valid' : 'row-invalid'}>
                         <td className="font-mono">#{row.rowNumber}</td>
                         <td className="user-name-text">{row.name}</td>
-                        <td className="font-mono">{maskNik(row.nik)}</td>
+                        <td>
+                          <span className="masked-nik-text font-mono">
+                            {showAllPreviewNik ? (row.nik || '-') : maskNik(row.nik)}
+                          </span>
+                        </td>
                         <td>{row.email}</td>
                         <td>
                           {row.organization}

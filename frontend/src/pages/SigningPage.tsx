@@ -187,25 +187,25 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
       )}
 
       {/* Main Form Card */}
-      <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div className="card signing-card">
         <form onSubmit={openPassphraseModal}>
           {/* Section 1: Upload PDF */}
-          <div className="form-section" style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+          <div className="form-section" style={{ marginBottom: '24px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: 'var(--text)' }}>
               1. Berkas Dokumen PDF
             </h2>
             <div
-              className={`dropzone-area ${pdfFile ? 'has-file' : ''}`}
+              className={`signing-dropzone-area ${pdfFile ? 'has-file' : ''}`}
               onClick={() => pdfInputRef.current?.click()}
-              style={{
-                border: '2px dashed var(--color-border)',
-                borderRadius: '8px',
-                padding: '2rem 1.5rem',
-                textAlign: 'center',
-                cursor: 'pointer',
-                backgroundColor: pdfFile ? 'var(--color-bg-subtle)' : 'transparent',
-                transition: 'all 0.2s ease',
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  pdfInputRef.current?.click();
+                }
               }}
+              aria-label="Area unggah berkas PDF"
             >
               <input
                 ref={pdfInputRef}
@@ -214,29 +214,29 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
                 onChange={handlePdfChange}
                 style={{ display: 'none' }}
               />
-              <IconSignature size={36} style={{ margin: '0 auto 0.75rem', opacity: 0.7 }} />
+              <IconSignature size={36} style={{ margin: '0 auto 10px', color: pdfFile ? 'var(--gold-line)' : 'var(--text-2)' }} />
               {pdfFile ? (
                 <div>
-                  <div style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{pdfFile.name}</div>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                  <div style={{ fontWeight: 600, color: 'var(--accent-text)', fontSize: '14px' }}>{pdfFile.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-2)', marginTop: '4px' }}>
                     Ukuran: {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
                   </div>
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-danger"
+                    className="btn btn-sm btn-ghost"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleReset();
                     }}
-                    style={{ marginTop: '0.75rem' }}
+                    style={{ marginTop: '12px' }}
                   >
                     Ganti Berkas
                   </button>
                 </div>
               ) : (
                 <div>
-                  <div style={{ fontWeight: 500 }}>Klik untuk memilih berkas PDF</div>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+                  <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text)' }}>Klik untuk memilih berkas PDF</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-2)', marginTop: '4px' }}>
                     Hanya menerima format PDF (maks. 20 MB)
                   </div>
                 </div>
@@ -245,14 +245,14 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
           </div>
 
           {/* Section 2: Penempatan Halaman & Stempel */}
-          <div className="form-section" style={{ marginBottom: '1.5rem', borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem' }}>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+          <div className="form-section" style={{ marginBottom: '24px', borderTop: '1px solid var(--line)', paddingTop: '20px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '14px', color: 'var(--text)' }}>
               2. Pengaturan Posisi & Stempel Visual
             </h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '16px' }}>
               <div>
-                <label className="form-label" htmlFor="page-number-input">
+                <label className="input-label" htmlFor="page-number-input">
                   Nomor Halaman
                 </label>
                 <input
@@ -264,12 +264,12 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
                   onChange={(e) => setPageNumber(Math.max(1, parseInt(e.target.value) || 1))}
                   required
                 />
-                <span className="form-hint">Halaman target tempat tanda tangan dibubuhkan.</span>
+                <span className="form-hint" style={{ marginTop: '4px', display: 'block' }}>Halaman target tempat tanda tangan dibubuhkan.</span>
               </div>
 
               {isAdmin && (
                 <div>
-                  <label className="form-label" htmlFor="admin-nik-input">
+                  <label className="input-label" htmlFor="admin-nik-input">
                     NIK Pemilik Sertifikat (Opsional)
                   </label>
                   <input
@@ -281,27 +281,28 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
                     value={adminTargetNik}
                     onChange={(e) => setAdminTargetNik(e.target.value)}
                   />
-                  <span className="form-hint">Khusus Admin jika menandatangani atas nama pengguna lain.</span>
+                  <span className="form-hint" style={{ marginTop: '4px', display: 'block' }}>Khusus Admin jika menandatangani atas nama pengguna lain.</span>
                 </div>
               )}
             </div>
 
             {/* Toggle Visual Stamp */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 500 }}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '13px', color: 'var(--text)' }}>
                 <input
                   type="checkbox"
                   checked={useStamp}
                   onChange={(e) => setUseStamp(e.target.checked)}
+                  style={{ accentColor: 'var(--accent)', width: '16px', height: '16px' }}
                 />
                 Bubuhkan Stempel Visual / Tanda Tangan Gambar (PNG/JPG)
               </label>
             </div>
 
             {useStamp && (
-              <div style={{ backgroundColor: 'var(--color-bg-subtle)', padding: '1rem', borderRadius: '8px' }}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label className="form-label" htmlFor="stamp-file-input">
+              <div className="signing-coords-box">
+                <div style={{ marginBottom: '12px' }}>
+                  <label className="input-label" htmlFor="stamp-file-input">
                     Berkas Stempel / Tanda Tangan (PNG / JPG)
                   </label>
                   <input
@@ -311,64 +312,136 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
                     accept="image/png,image/jpeg,image/jpg"
                     className="form-control"
                     onChange={handleStampChange}
+                    style={{ marginTop: '4px' }}
                   />
                   {stampFile && (
-                    <div style={{ fontSize: '0.85rem', color: 'var(--color-success)', marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--ok)', marginTop: '4px', fontWeight: 500 }}>
                       Stempel terpilih: <strong>{stampFile.name}</strong>
                     </div>
                   )}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+                {/* Section 7: Grid Layout dengan Pratinjau A4 di Sebelah Kolom Posisi */}
+                <div className="signing-layout-container">
+                  {/* Kolom Koordinat Dikelompokkan */}
                   <div>
-                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Lower-Left X</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={llx}
-                      onChange={(e) => setLlx(parseFloat(e.target.value) || 0)}
-                    />
+                    {/* Kelompok 1: Sudut kiri bawah stempel */}
+                    <div style={{ marginBottom: '14px' }}>
+                      <div className="signing-coords-group-title">
+                        Sudut kiri bawah stempel
+                      </div>
+                      <div className="signing-coords-row">
+                        <div>
+                          <label className="sub" style={{ display: 'block', marginBottom: '3px' }}>Posisi X (Poin)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={llx}
+                            min={0}
+                            max={595}
+                            onChange={(e) => setLlx(parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                        <div>
+                          <label className="sub" style={{ display: 'block', marginBottom: '3px' }}>Posisi Y (Poin)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={lly}
+                            min={0}
+                            max={842}
+                            onChange={(e) => setLly(parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Kelompok 2: Sudut kanan atas stempel */}
+                    <div style={{ marginBottom: '12px' }}>
+                      <div className="signing-coords-group-title">
+                        Sudut kanan atas stempel
+                      </div>
+                      <div className="signing-coords-row">
+                        <div>
+                          <label className="sub" style={{ display: 'block', marginBottom: '3px' }}>Posisi X (Poin)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={urx}
+                            min={0}
+                            max={595}
+                            onChange={(e) => setUrx(parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                        <div>
+                          <label className="sub" style={{ display: 'block', marginBottom: '3px' }}>Posisi Y (Poin)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={ury}
+                            min={0}
+                            max={842}
+                            onChange={(e) => setUry(parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-hint" style={{ lineHeight: 1.4 }}>
+                      Sistem koordinat PDF Points (A4: 595 x 842 pt). Klik atau geser kotak stempel pada pratinjau di samping untuk memindahkannya.
+                    </div>
                   </div>
-                  <div>
-                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Lower-Left Y</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={lly}
-                      onChange={(e) => setLly(parseFloat(e.target.value) || 0)}
-                    />
+
+                  {/* Pratinjau Halaman A4 Interaktif (210px x 297px) */}
+                  <div className="signing-a4-preview-wrapper">
+                    <div
+                      className="signing-a4-paper"
+                      title="Klik di kertas untuk memindahkan stempel"
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const clickX = e.clientX - rect.left;
+                        const clickY = e.clientY - rect.top;
+                        const stampW = Math.max(10, urx - llx);
+                        const stampH = Math.max(10, ury - lly);
+                        const normX = Math.max(0, Math.min(1, clickX / rect.width));
+                        const normY = Math.max(0, Math.min(1, 1 - clickY / rect.height));
+                        const targetX = Math.round(normX * 595 - stampW / 2);
+                        const targetY = Math.round(normY * 842 - stampH / 2);
+                        const clampedLlx = Math.max(0, Math.min(595 - stampW, targetX));
+                        const clampedLly = Math.max(0, Math.min(842 - stampH, targetY));
+                        setLlx(clampedLlx);
+                        setLly(clampedLly);
+                        setUrx(clampedLlx + stampW);
+                        setUry(clampedLly + stampH);
+                      }}
+                    >
+                      <div className="signing-a4-paper-grid" />
+                      <div
+                        className="signing-a4-stamp-box"
+                        style={{
+                          left: `${Math.max(0, Math.min(100, (llx / 595) * 100))}%`,
+                          bottom: `${Math.max(0, Math.min(100, (lly / 842) * 100))}%`,
+                          width: `${Math.max(5, Math.min(100, ((urx - llx) / 595) * 100))}%`,
+                          height: `${Math.max(4, Math.min(100, ((ury - lly) / 842) * 100))}%`,
+                        }}
+                      >
+                        Stempel
+                      </div>
+                    </div>
+                    <span className="signing-a4-hint">
+                      Pratinjau A4 (595 × 842 pt)
+                    </span>
                   </div>
-                  <div>
-                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Upper-Right X</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={urx}
-                      onChange={(e) => setUrx(parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Upper-Right Y</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={ury}
-                      onChange={(e) => setUry(parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                </div>
-                <div className="form-hint" style={{ marginTop: '0.5rem' }}>
-                  Koordinat bounding box sistem PDF Points (standar: 218, 393, 258, 433).
                 </div>
               </div>
             )}
           </div>
 
           {/* Submit Action */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-ghost"
               onClick={handleReset}
               disabled={!pdfFile}
             >
@@ -377,7 +450,7 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={!pdfFile}
+              disabled={!pdfFile || (useStamp && (llx < 0 || lly < 0 || urx <= llx || ury <= lly))}
             >
               Lanjutkan ke Penandatanganan
             </button>

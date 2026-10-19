@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { AccountData } from '../../types/account';
 import { updateAccount } from '../../services/account';
 import { setAuthUser, getAuthUser } from '../../services/api';
-import { maskNik } from '../users/UsersTable';
+import { NikDisplay } from '../ui/NikDisplay';
 import { StatusChip } from '../ui/StatusChip';
 import { IconUser, IconAlertTriangle, IconEdit, IconCheckCircle, IconClose } from '../icons/Icons';
 import { peran, statusAkun } from '../../lib/labels';
@@ -286,7 +286,9 @@ export function AccountProfileCard({
 
             <div className="cert-detail-item">
               <dt className="cert-detail-label">NIK</dt>
-              <dd className="cert-detail-value font-mono">{maskNik(account.nik)}</dd>
+              <dd className="cert-detail-value">
+                <NikDisplay nik={account.nik} />
+              </dd>
             </div>
 
             <div className="cert-detail-item">
