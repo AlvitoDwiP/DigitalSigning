@@ -1,10 +1,10 @@
 import React from 'react';
-import { IconSearch, IconFilter, IconSort } from '../icons/Icons';
+import { IconSearch, IconFilter, IconSort, IconRefresh } from '../icons/Icons';
 import { statusAkun, statusSertifikat } from '../../lib/labels';
 
 interface UsersToolbarProps {
-  search: string;
-  onSearchChange: (value: string) => void;
+  search?: string;
+  onSearchChange?: (value: string) => void;
   status: string;
   onStatusChange: (value: string) => void;
   certificateStatus: string;
@@ -12,6 +12,8 @@ interface UsersToolbarProps {
   sort: string;
   order: 'asc' | 'desc';
   onSortChange: (sort: string, order: 'asc' | 'desc') => void;
+  onReset?: () => void;
+  isFiltered?: boolean;
   disabled?: boolean;
 }
 
@@ -25,6 +27,8 @@ export function UsersToolbar({
   sort,
   order,
   onSortChange,
+  onReset,
+  isFiltered = false,
   disabled = false,
 }: UsersToolbarProps) {
   const currentSortKey = `${sort}_${order}`;
@@ -39,31 +43,35 @@ export function UsersToolbar({
       onSortChange('nearest_expiry', 'asc');
     } else if (val === 'nearest_expiry_desc') {
       onSortChange('nearest_expiry', 'desc');
+    } else if (val === 'created_at_desc') {
+      onSortChange('created_at', 'desc');
     }
   };
 
   return (
-    <section className="users-toolbar-container" aria-label="Alat Penyaringan dan Pencarian Pengguna">
+    <section className="users-toolbar-container" aria-label="Alat Penyaringan Pengguna">
       <div className="users-toolbar">
-        {/* Search Bar */}
-        <div className="users-search-field">
-          <div className="search-input-wrapper">
-            <span className="search-input-icon" aria-hidden="true">
-              <IconSearch size={18} />
-            </span>
-            <input
-              id="users-search-input"
-              type="search"
-              className="users-search-input"
-              placeholder="Cari nama, NIK, atau email"
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              disabled={disabled}
-              autoComplete="off"
-              aria-label="Cari nama, NIK, atau email"
-            />
+        {/* Optional Search Bar inside toolbar if provided */}
+        {search !== undefined && onSearchChange && (
+          <div className="users-search-field">
+            <div className="search-input-wrapper">
+              <span className="search-input-icon" aria-hidden="true">
+                <IconSearch size={18} />
+              </span>
+              <input
+                id="users-search-input"
+                type="search"
+                className="users-search-input"
+                placeholder="Cari nama, NIK, atau email"
+                value={search}
+                onChange={(e) => onSearchChange(e.target.value)}
+                disabled={disabled}
+                autoComplete="off"
+                aria-label="Cari nama, NIK, atau email"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Filters and Sort */}
         <div className="users-filters-group">
@@ -108,7 +116,7 @@ export function UsersToolbar({
           </div>
 
           {/* Sorting Control */}
-          <div className="filter-select-wrapper">
+          <div className="filter-select-wrapper filter-select-sort">
             <label htmlFor="users-sort-select" className="filter-label">
               <IconSort size={14} className="filter-icon" aria-hidden="true" />
               <span>Urutan:</span>
@@ -120,11 +128,27 @@ export function UsersToolbar({
               onChange={handleSortSelectChange}
               disabled={disabled}
             >
+              <option value="created_at_desc">Paling baru</option>
               <option value="name_asc">Nama A-Z</option>
               <option value="name_desc">Nama Z-A</option>
               <option value="nearest_expiry_asc">Paling cepat berakhir</option>
             </select>
           </div>
+
+          {/* Reset Filters button if any filter is active */}
+          {isFiltered && onReset && (
+            <button
+              type="button"
+              className="btn-audit-reset-filter"
+              onClick={onReset}
+              disabled={disabled}
+              title="Reset semua filter"
+              aria-label="Reset semua filter"
+            >
+              <IconRefresh size={13} aria-hidden="true" />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
       </div>
     </section>

@@ -8,7 +8,7 @@ import { UsersPagination } from '../components/users/UsersPagination';
 import { UsersSkeleton } from '../components/users/UsersSkeleton';
 import { UsersEmpty } from '../components/users/UsersEmpty';
 import { UsersError } from '../components/users/UsersError';
-import { IconCheckCircle } from '../components/icons/Icons';
+import { IconCheckCircle, IconSearch, IconClose } from '../components/icons/Icons';
 
 interface UsersPageProps {
   onNavigate: (path: string) => void;
@@ -22,8 +22,8 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [userStatus, setUserStatus] = useState('');
   const [certificateStatus, setCertificateStatus] = useState('');
-  const [sortField, setSortField] = useState(initialSort || 'name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialOrder || 'asc');
+  const [sortField, setSortField] = useState(initialSort || 'created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialOrder || 'desc');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -130,8 +130,8 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
     setDebouncedSearch('');
     setUserStatus('');
     setCertificateStatus('');
-    setSortField('name');
-    setSortOrder('asc');
+    setSortField('created_at');
+    setSortOrder('desc');
     setCurrentPage(1);
   };
 
@@ -181,7 +181,7 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
     }
   };
 
-  const isFiltered = Boolean(debouncedSearch || userStatus || certificateStatus || sortField !== 'name' || sortOrder !== 'asc');
+  const isFiltered = Boolean(debouncedSearch || userStatus || certificateStatus || sortField !== 'created_at' || sortOrder !== 'desc');
 
   return (
     <div className="users-page-container">
@@ -203,12 +203,41 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
         </div>
       )}
 
+      {/* Standalone Search Bar (di luar kotak card tabel, konsisten dengan Admin & Audit Log) */}
+      <div className="audit-search-standalone-wrapper">
+        <div className="audit-search-box">
+          <span className="audit-search-icon" aria-hidden="true">
+            <IconSearch size={18} />
+          </span>
+          <input
+            id="users-search-input"
+            type="search"
+            className="audit-search-input"
+            placeholder="Cari pengguna berdasarkan nama, NIK, atau email..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            disabled={isLoading && users.length === 0}
+            autoComplete="off"
+            aria-label="Cari nama, NIK, atau email"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              className="audit-search-clear-btn"
+              onClick={() => setSearchInput('')}
+              title="Hapus pencarian"
+              aria-label="Hapus teks pencarian"
+            >
+              <IconClose size={15} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <div className="users-content-card">
-        {/* Toolbar */}
+        {/* Toolbar (Hanya Filter & Urutan, tanpa search yang bertumpuk) */}
         <UsersToolbar
-          search={searchInput}
-          onSearchChange={setSearchInput}
           status={userStatus}
           onStatusChange={handleUserStatusChange}
           certificateStatus={certificateStatus}
@@ -216,6 +245,8 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
           sort={sortField}
           order={sortOrder}
           onSortChange={handleSortChange}
+          onReset={handleResetFilters}
+          isFiltered={isFiltered}
           disabled={isLoading && users.length === 0}
         />
 

@@ -8,7 +8,7 @@ import { AdminRemoveDialog } from '../components/admins/AdminRemoveDialog';
 import { AdminsSkeleton } from '../components/admins/AdminsSkeleton';
 import { AdminsEmpty } from '../components/admins/AdminsEmpty';
 import { AdminsError } from '../components/admins/AdminsError';
-import { IconCheckCircle, IconSearch, IconShield } from '../components/icons/Icons';
+import { IconCheckCircle, IconSearch, IconPlus, IconClose } from '../components/icons/Icons';
 
 interface AdminsPageProps {
   onNavigate: (path: string) => void;
@@ -149,9 +149,11 @@ export function AdminsPage({ onNavigate: _onNavigate }: AdminsPageProps) {
   };
 
   const filteredAdmins = useMemo(() => {
-    if (!searchQuery.trim()) return admins;
+    let list = [...admins];
+    list.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase();
-    return admins.filter(
+    return list.filter(
       (a) =>
         a.name.toLowerCase().includes(q) ||
         a.email.toLowerCase().includes(q) ||
@@ -173,17 +175,6 @@ export function AdminsPage({ onNavigate: _onNavigate }: AdminsPageProps) {
             Kelola daftar akun Administrator sistem dan tetapkan peran Admin kepada pengguna terdaftar.
           </p>
         </div>
-        <div className="page-header-actions">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => setIsCandidatesModalOpen(true)}
-            disabled={isLoading}
-          >
-            <IconShield size={18} aria-hidden="true" />
-            <span>Tambah Admin</span>
-          </button>
-        </div>
       </header>
 
       {/* Success Toast */}
@@ -194,27 +185,50 @@ export function AdminsPage({ onNavigate: _onNavigate }: AdminsPageProps) {
         </div>
       )}
 
-      {/* Main Content Card */}
-      <div className="users-content-card">
-        {/* Toolbar */}
-        <div className="users-toolbar-container">
-          <div className="users-toolbar">
-            <div className="users-search-field">
-              <span className="search-icon" aria-hidden="true">
-                <IconSearch size={18} />
-              </span>
-              <input
-                type="search"
-                className="users-search-input"
-                placeholder="Cari admin berdasarkan nama, email, atau NIK..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                disabled={isLoading && admins.length === 0}
-                aria-label="Cari admin"
-              />
-            </div>
-          </div>
+      {/* Standalone Search Bar (di luar kotak card tabel) */}
+      <div className="audit-search-standalone-wrapper">
+        <div className="audit-search-box">
+          <span className="audit-search-icon" aria-hidden="true">
+            <IconSearch size={18} />
+          </span>
+          <input
+            type="search"
+            className="audit-search-input"
+            placeholder="Cari admin berdasarkan nama, email, atau NIK..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={isLoading && admins.length === 0}
+            aria-label="Cari admin"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="audit-search-clear-btn"
+              onClick={() => setSearchQuery('')}
+              title="Hapus pencarian"
+              aria-label="Hapus teks pencarian"
+            >
+              <IconClose size={15} />
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Actions Row (di bawah pencarian, di sebelah kanan) */}
+      <div className="admins-actions-row">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setIsCandidatesModalOpen(true)}
+          disabled={isLoading}
+        >
+          <IconPlus size={18} aria-hidden="true" />
+          <span>Tambah Admin</span>
+        </button>
+      </div>
+
+      {/* Main Content Card (Tabel) */}
+      <div className="users-content-card">
 
         {/* Content States */}
         {isLoading && admins.length === 0 ? (

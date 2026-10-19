@@ -309,7 +309,7 @@ def get_user(
         raise HTTPException(status_code=404, detail="User not found")
         
     active_cert = db.query(Certificate).filter(Certificate.user_id == user_id, Certificate.status == "ACTIVE").first()
-    cert_history = db.query(Certificate).filter(Certificate.user_id == user_id).all()
+    cert_history = db.query(Certificate).filter(Certificate.user_id == user_id).order_by(Certificate.created_at.desc()).all()
     
     user_data = UserSchema.model_validate(user).model_dump()
     user_data["active_certificate"] = CertificateResponse.model_validate(active_cert).model_dump() if active_cert else None

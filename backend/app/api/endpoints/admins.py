@@ -20,7 +20,7 @@ def get_admins(
     Mengambil daftar user yang saat ini memiliki role ADMIN.
     Hanya dapat diakses oleh SUPER_ADMIN.
     """
-    admins = db.query(User).filter(User.role == "ADMIN").order_by(User.name.asc()).all()
+    admins = db.query(User).filter(User.role == "ADMIN").order_by(User.created_at.desc()).all()
     formatted_admins = [UserSchema.model_validate(u).model_dump() for u in admins]
     return {
         "success": True,
@@ -43,7 +43,7 @@ def get_admin_candidates(
     candidates = (
         db.query(User)
         .filter(User.role == "USER", User.status == "ACTIVE")
-        .order_by(User.name.asc())
+        .order_by(User.created_at.desc())
         .all()
     )
     formatted_candidates = [UserSchema.model_validate(u).model_dump() for u in candidates]

@@ -43,6 +43,10 @@ export function AdminsTable({ admins, onRemoveAdmin, disabled = false }: AdminsT
                           {admin.organization}{admin.ou ? ` / ${admin.ou}` : ''}
                         </span>
                       )}
+                      <div className="user-mobile-subinfo" aria-label={`Email dan NIK ${admin.name}`}>
+                        <span className="user-mobile-email">{admin.email}</span>
+                        <span className="user-mobile-nik font-mono">{maskNik(admin.nik)}</span>
+                      </div>
                     </div>
                   </div>
                 </td>

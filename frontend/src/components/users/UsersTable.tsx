@@ -69,6 +69,10 @@ export function UsersTable({ users, onDetail, onDelete }: UsersTableProps) {
                           {user.organization}{user.ou ? ` / ${user.ou}` : ''}
                         </span>
                       )}
+                      <div className="user-mobile-subinfo" aria-label={`Email dan NIK ${user.name}`}>
+                        <span className="user-mobile-email">{user.email}</span>
+                        <span className="user-mobile-nik font-mono">{maskNik(user.nik)}</span>
+                      </div>
                     </div>
                   </div>
                 </td>

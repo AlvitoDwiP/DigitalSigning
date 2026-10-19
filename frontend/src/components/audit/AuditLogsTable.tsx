@@ -68,6 +68,16 @@ export function AuditLogsTable({ logs, onSelectLog }: AuditLogsTableProps) {
                     <span className="audit-activity-title font-semibold">
                       {labelAktivitas(log.action)}
                     </span>
+                    {/* Mobile-only info: Waktu & Pelaku */}
+                    <div className="audit-mobile-meta">
+                      <span className="audit-mobile-time">
+                        {formatWaktuIndonesia(log.created_at)}
+                      </span>
+                      <span className="audit-mobile-dot">&bull;</span>
+                      <span className="audit-mobile-actor">
+                        oleh {actorDisplay}
+                      </span>
+                    </div>
                     <span className="audit-activity-desc text-muted text-xs">
                       {deskripsiAktivitas(log.action, log.status)}
                     </span>
