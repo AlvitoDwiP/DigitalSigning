@@ -17,7 +17,7 @@ from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
 from app.schemas.user import User as UserSchema, GenerateUserRequest, GenerateUserResponse, GenerateUserResponseData
 from app.schemas.certificate import CertificateResponse, RegenerateCertificateRequest, RegenerateCertificateResponse
-from app.services.pki_client import pki_client
+from app.services import pki_engine
 from app.core.security import get_password_hash, verify_password
 from app.core.config import settings
 
@@ -357,7 +357,7 @@ def generate_user(
         "pfx_password": req.pfx_password
     }
     
-    pki_res = pki_client.generate_single(pki_req)
+    pki_res = pki_engine.generate_single(pki_req)
     cert_metadata = pki_res
     
     # 2. Database Transaction
@@ -432,7 +432,7 @@ def generate_user(
         db.rollback()
         # Cleanup PKI materials if DB fails
         try:
-            pki_client.delete_user_materials(req.nik)
+            pki_engine.delete_user_materials(req.nik)
         except Exception:
             pass
         raise HTTPException(status_code=500, detail={"code": "INTERNAL_ERROR", "message": "Database transaction failed"})
@@ -527,7 +527,7 @@ async def generate_bulk_users(
     pki_results_by_nik = {}
     if valid_pki_requests:
         try:
-            pki_res = pki_client.generate_bulk(valid_pki_requests)
+            pki_res = pki_engine.generate_bulk(valid_pki_requests)
             for res_item in pki_res.get("results", []):
                 pki_results_by_nik[res_item["nik"]] = res_item
         except Exception as exc:
@@ -634,7 +634,7 @@ async def generate_bulk_users(
         except Exception:
             db.rollback()
             try:
-                pki_client.delete_user_materials(nik)
+                pki_engine.delete_user_materials(nik)
             except Exception:
                 pass
             results.append({
@@ -689,7 +689,7 @@ def change_user_pfx_password(
             raise HTTPException(status_code=400, detail={"code": "INVALID_INPUT", "message": "Password baru tidak boleh sama dengan password lama"})
             
         try:
-            pki_client.change_p12_passphrase_user(
+            pki_engine.change_p12_passphrase_user(
                 nik=target_user.nik,
                 old_password=req.old_password,
                 new_password=req.new_password
@@ -709,7 +709,7 @@ def change_user_pfx_password(
     else:
         # ADMIN / SUPER_ADMIN
         try:
-            pki_client.change_p12_passphrase_admin(
+            pki_engine.change_p12_passphrase_admin(
                 nik=target_user.nik,
                 new_password=req.new_password
             )
@@ -750,7 +750,7 @@ def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
         
     try:
-        pki_client.delete_user_materials(user.nik)
+        pki_engine.delete_user_materials(user.nik)
     except Exception as e:
         audit_fail = AuditLog(
             id=uuid.uuid4(),
@@ -874,7 +874,7 @@ def regenerate_user_certificate(
     target_archive_p12 = None
 
     try:
-        stage_res = pki_client.regenerate_stage(pki_payload)
+        stage_res = pki_engine.regenerate_stage(pki_payload)
         staging_token = stage_res.get("staging_token")
         target_user_dir = stage_res.get("target_user_dir")
         target_archive_p12 = stage_res.get("target_archive_p12")
@@ -902,7 +902,7 @@ def regenerate_user_certificate(
         if not cert_metadata.get(k):
             if staging_token:
                 try:
-                    pki_client.regenerate_cleanup(staging_token)
+                    pki_engine.regenerate_cleanup(staging_token)
                 except Exception:
                     pass
             audit_fail = AuditLog(
@@ -967,7 +967,7 @@ def regenerate_user_certificate(
         # Commit staged artifacts to active directory
         if staging_token and target_user_dir and target_archive_p12:
             try:
-                pki_client.regenerate_commit(staging_token, target_user_dir, target_archive_p12)
+                pki_engine.regenerate_commit(staging_token, target_user_dir, target_archive_p12)
             except Exception:
                 pass
 
@@ -988,7 +988,7 @@ def regenerate_user_certificate(
         db.rollback()
         if staging_token:
             try:
-                pki_client.regenerate_cleanup(staging_token)
+                pki_engine.regenerate_cleanup(staging_token)
             except Exception:
                 pass
         try:

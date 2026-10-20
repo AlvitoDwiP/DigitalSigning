@@ -681,15 +681,23 @@ Antarmuka harus sederhana, administratif, dan berorientasi pada pengelolaan data
 Struktur utama:
 
 ```text
-Sidebar
-├── Dashboard
-├── Pengguna
-├── Generate
-├── Management Admin      [Super Admin]
-├── Audit Log             [Super Admin/Admin]
-├── Penandatanganan       [Admin/User]
-└── Kelola Akun            [User]
+Sidebar (Mode Admin - Default)
+├── Dashboard Admin
+├── Pengguna               [Super Admin/Admin]
+├── Generate               [Super Admin/Admin]
+├── Management Admin       [Super Admin]
+├── Audit Log              [Super Admin/Admin]
+├── Kelola Akun Saya       [Khusus Super Admin]
+└── [Kontrol: Beralih ke Mode Pengguna - Khusus Admin]
+
+Sidebar (Mode Pengguna - User & Admin yang Beralih)
+├── Dashboard User
+├── Penandatanganan (TTE)  [User / Admin dalam Mode Pengguna]
+├── Kelola Akun Saya       [User / Admin dalam Mode Pengguna]
+└── [Kontrol: Kembali ke Mode Admin - Khusus Admin]
 ```
+
+Catatan: Menu Penandatanganan (TTE) dan Kelola Akun tidak ditampilkan pada sidebar Mode Admin bagi role Admin. Admin mengakses Kelola Akun dan TTE melalui fitur Beralih ke Mode Pengguna tanpa membuat role atau akun baru. Super Admin dilarang mengakses Mode Pengguna dan TTE.
 
 Detail halaman, komponen, state, dan user flow dirujuk ke `DESIGN.md`.
 

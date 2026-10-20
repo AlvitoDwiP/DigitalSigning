@@ -13,11 +13,13 @@ import { signPdfDocument } from '../services/signatures';
 
 interface SigningPageProps {
   onNavigate?: (path: string) => void;
+  viewMode?: 'admin' | 'user';
 }
 
-export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
+export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPageProps) {
   const authUser = getAuthUser();
   const isAdmin = authUser?.role === 'ADMIN';
+  const showAdminNikField = isAdmin && viewMode !== 'user';
 
   // Form states
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -100,7 +102,7 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
         urx: useStamp ? urx : undefined,
         ury: useStamp ? ury : undefined,
         passphrase: passphrase.trim(),
-        nik: isAdmin && adminTargetNik.trim() ? adminTargetNik.trim() : undefined,
+        nik: showAdminNikField && adminTargetNik.trim() ? adminTargetNik.trim() : undefined,
       });
 
       // Buat URL unduhan lokal
@@ -267,7 +269,7 @@ export function SigningPage({ onNavigate: _onNavigate }: SigningPageProps) {
                 <span className="form-hint" style={{ marginTop: '4px', display: 'block' }}>Halaman target tempat tanda tangan dibubuhkan.</span>
               </div>
 
-              {isAdmin && (
+              {showAdminNikField && (
                 <div>
                   <label className="input-label" htmlFor="admin-nik-input">
                     NIK Pemilik Sertifikat (Opsional)

@@ -8,6 +8,8 @@ interface AppShellProps {
   currentPath: string;
   onNavigate: (path: string) => void;
   onLogout?: () => void;
+  viewMode?: 'admin' | 'user';
+  onToggleViewMode?: () => void;
 }
 
 export function AppShell({
@@ -15,6 +17,8 @@ export function AppShell({
   currentPath,
   onNavigate,
   onLogout,
+  viewMode = 'admin',
+  onToggleViewMode,
 }: AppShellProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -27,6 +31,8 @@ export function AppShell({
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         onLogout={onLogout}
+        viewMode={viewMode}
+        onToggleViewMode={onToggleViewMode}
       />
 
       {/* Main App Container */}
@@ -34,6 +40,8 @@ export function AppShell({
         <Topbar
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onNavigate={onNavigate}
+          viewMode={viewMode}
+          onToggleViewMode={onToggleViewMode}
           onSearch={(_query) => {
             // UI search query handler placeholder
           }}

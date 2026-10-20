@@ -35,7 +35,7 @@ def test_user_forbidden_on_administrative_endpoints(client: TestClient, auth_hea
     assert res_detail.status_code == 403
 
     # 3. POST /api/v1/users/generate (single generation)
-    with patch("app.api.endpoints.users.pki_client.generate_single") as mock_pki:
+    with patch("app.api.endpoints.users.pki_engine.generate_single") as mock_pki:
         res_gen = client.post(
             "/api/v1/users/generate",
             json={
@@ -62,7 +62,7 @@ def test_user_forbidden_on_administrative_endpoints(client: TestClient, auth_hea
     assert res_val_bulk.status_code == 403
 
     # 5. POST /api/v1/users/generate-bulk
-    with patch("app.api.endpoints.users.pki_client.generate_bulk") as mock_bulk_pki:
+    with patch("app.api.endpoints.users.pki_engine.generate_bulk") as mock_bulk_pki:
         csv_file_exec = io.BytesIO(b"name,nik,email,organization,ou,password,pfx_password\nTest,1234567890123456,test@mkri.go.id,MK,IT,Pass123!,Pfx123!\n")
         res_bulk = client.post(
             "/api/v1/users/generate-bulk",
@@ -73,7 +73,7 @@ def test_user_forbidden_on_administrative_endpoints(client: TestClient, auth_hea
         mock_bulk_pki.assert_not_called()
 
     # 6. DELETE /api/v1/users/{id}
-    with patch("app.api.endpoints.users.pki_client.delete_user_materials") as mock_del_pki:
+    with patch("app.api.endpoints.users.pki_engine.delete_user_materials") as mock_del_pki:
         res_del = client.delete(f"/api/v1/users/{target_id}", headers=user_headers)
         assert res_del.status_code == 403
         mock_del_pki.assert_not_called()
@@ -89,8 +89,8 @@ def test_user_cannot_change_other_user_pfx_password_idor(client: TestClient, aut
     PKI Engine tidak boleh dieksekusi.
     """
     other_user = seed_users["admin"]
-    with patch("app.api.endpoints.users.pki_client.change_p12_passphrase_user") as mock_pki_user, \
-         patch("app.api.endpoints.users.pki_client.change_p12_passphrase_admin") as mock_pki_admin:
+    with patch("app.api.endpoints.users.pki_engine.change_p12_passphrase_user") as mock_pki_user, \
+         patch("app.api.endpoints.users.pki_engine.change_p12_passphrase_admin") as mock_pki_admin:
         res = client.post(
             f"/api/v1/users/{other_user.id}/pfx-password",
             json={
@@ -157,8 +157,8 @@ def test_user_can_access_own_account_endpoints(client: TestClient, auth_headers:
         headers=user_headers
     )
 
-    # 4. POST /api/v1/account/pfx-password (dengan mock pki_client)
-    with patch("app.api.endpoints.account.pki_client.change_p12_passphrase_user") as mock_pfx_user:
+    # 4. POST /api/v1/account/pfx-password (dengan mock pki_engine)
+    with patch("app.api.endpoints.account.pki_engine.change_p12_passphrase_user") as mock_pfx_user:
         res_pfx = client.post(
             "/api/v1/account/pfx-password",
             json={
@@ -268,8 +268,8 @@ def test_regenerate_permissions_and_password_verification(client: TestClient, au
     target_user = seed_users["user"]
 
     # 1. USER mencoba regenerate -> 403, PKI tidak dipanggil
-    with patch("app.api.endpoints.users.pki_client.regenerate_stage") as mock_stage_u, \
-         patch("app.api.endpoints.users.pki_client.regenerate_commit") as mock_commit_u:
+    with patch("app.api.endpoints.users.pki_engine.regenerate_stage") as mock_stage_u, \
+         patch("app.api.endpoints.users.pki_engine.regenerate_commit") as mock_commit_u:
         res_u = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "Password123!"},
@@ -280,8 +280,8 @@ def test_regenerate_permissions_and_password_verification(client: TestClient, au
         mock_commit_u.assert_not_called()
 
     # 2. ADMIN mencoba regenerate dengan password salah -> 400 INVALID_CREDENTIALS, PKI tidak dipanggil
-    with patch("app.api.endpoints.users.pki_client.regenerate_stage") as mock_stage_w, \
-         patch("app.api.endpoints.users.pki_client.regenerate_commit") as mock_commit_w:
+    with patch("app.api.endpoints.users.pki_engine.regenerate_stage") as mock_stage_w, \
+         patch("app.api.endpoints.users.pki_engine.regenerate_commit") as mock_commit_w:
         res_w = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "WrongPassword999!"},
@@ -308,8 +308,8 @@ def test_regenerate_permissions_and_password_verification(client: TestClient, au
             "expires_at": "2028-10-01T00:00:00Z",
         }
     }
-    with patch("app.api.endpoints.users.pki_client.regenerate_stage", return_value=mock_stage_res) as mock_stage_s, \
-         patch("app.api.endpoints.users.pki_client.regenerate_commit", return_value={"status": "SUCCESS"}) as mock_commit_s:
+    with patch("app.api.endpoints.users.pki_engine.regenerate_stage", return_value=mock_stage_res) as mock_stage_s, \
+         patch("app.api.endpoints.users.pki_engine.regenerate_commit", return_value={"status": "SUCCESS"}) as mock_commit_s:
         res_s = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "Password123!"},
@@ -319,3 +319,49 @@ def test_regenerate_permissions_and_password_verification(client: TestClient, au
         assert res_s.json()["success"] is True
         mock_stage_s.assert_called_once()
         mock_commit_s.assert_called_once()
+
+
+def test_dashboard_view_mode_and_role_safety(client: TestClient, auth_headers: dict, seed_users: dict):
+    """
+    Mode Pengguna untuk Admin:
+    - ADMIN mode=user mendapatkan personal user dashboard data
+    - ADMIN default (tanpa mode) tetap mendapatkan admin dashboard data
+    - SUPER_ADMIN mode=user ditolak 403 Forbidden (Super Admin tidak diizinkan user mode/TTE)
+    - USER mode=admin ditolak 403 Forbidden
+    - ADMIN mode=invalid ditolak 400 Bad Request
+    """
+    admin_headers = auth_headers["admin"]
+    super_admin_headers = auth_headers["super_admin"]
+    user_headers = auth_headers["user"]
+
+    # 1. ADMIN default -> admin dashboard
+    res_admin_default = client.get("/api/v1/dashboard/", headers=admin_headers)
+    assert res_admin_default.status_code == 200
+    data_admin = res_admin_default.json()["data"]
+    assert "statistics" in data_admin
+    assert "total_user" in data_admin["statistics"]
+    assert "recent_activities" in data_admin
+
+    # 2. ADMIN mode=user -> user dashboard
+    res_admin_user_mode = client.get("/api/v1/dashboard/?mode=user", headers=admin_headers)
+    assert res_admin_user_mode.status_code == 200
+    data_user_mode = res_admin_user_mode.json()["data"]
+    assert "user" in data_user_mode
+    assert data_user_mode["user"]["id"] == str(seed_users["admin"].id)
+    assert "has_active_certificate" in data_user_mode
+    assert "total_users" not in data_user_mode
+
+    # 3. SUPER_ADMIN mode=user -> ditolak 403
+    res_sa_user_mode = client.get("/api/v1/dashboard/?mode=user", headers=super_admin_headers)
+    assert res_sa_user_mode.status_code == 403
+    assert res_sa_user_mode.json()["error"]["code"] == "FORBIDDEN"
+
+    # 4. USER mode=admin -> ditolak 403
+    res_user_admin_mode = client.get("/api/v1/dashboard/?mode=admin", headers=user_headers)
+    assert res_user_admin_mode.status_code == 403
+    assert res_user_admin_mode.json()["error"]["code"] == "FORBIDDEN"
+
+    # 5. ADMIN mode=invalid -> ditolak 400
+    res_invalid_mode = client.get("/api/v1/dashboard/?mode=unknown", headers=admin_headers)
+    assert res_invalid_mode.status_code == 400
+

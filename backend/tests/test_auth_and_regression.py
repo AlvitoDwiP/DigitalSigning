@@ -1,3 +1,4 @@
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -43,22 +44,117 @@ def test_auth_invalid_token_returns_401(client: TestClient):
     assert "WWW-Authenticate" in response.headers
 
 
+def test_auth_verify_password_endpoint(client: TestClient, auth_headers: dict):
+    # 1. Correct password returns 200
+    res_ok = client.post(
+        "/api/v1/auth/verify-password",
+        json={"password": "Password123!"},
+        headers=auth_headers["admin"]
+    )
+    assert res_ok.status_code == 200
+    assert res_ok.json()["success"] is True
+
+    # 2. Wrong password returns 400
+    res_wrong = client.post(
+        "/api/v1/auth/verify-password",
+        json={"password": "WrongPassword999!"},
+        headers=auth_headers["admin"]
+    )
+    assert res_wrong.status_code == 400
+    assert res_wrong.json()["error"]["code"] == "INVALID_PASSWORD"
+
+    # 3. Unauthenticated returns 401
+    res_unauth = client.post(
+        "/api/v1/auth/verify-password",
+        json={"password": "Password123!"}
+    )
+    assert res_unauth.status_code == 401
+
+
 def test_production_config_rejects_default_secrets():
-    # Production mode harus menolak default/insecure SECRET_KEY
+    # 1. Production mode harus menolak default/insecure SECRET_KEY
     with pytest.raises(ValueError, match="SECRET_KEY"):
         Settings(
             ENVIRONMENT="production",
             SECRET_KEY="dev-secret-key-digital-signature-platform-2026",
+            INTER_CA_PASS="ProductionSecurePassphrase2026!",
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
 
-    # Production mode menerima SECRET_KEY yang kuat tanpa memerlukan legacy PKI_SERVICE_TOKEN
+    # 2. Production mode harus menolak default INTER_CA_PASS ("InterPass!ChangeMe123")
+    with pytest.raises(ValueError, match="INTER_CA_PASS"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+            INTER_CA_PASS="InterPass!ChangeMe123",
+            DATABASE_URL="postgresql://user:pass@localhost:5432/db",
+        )
+
+    # 3. Production mode harus menolak INTER_CA_PASS kosong atau whitespace
+    with pytest.raises(ValueError, match="INTER_CA_PASS"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+            INTER_CA_PASS="   ",
+            DATABASE_URL="postgresql://user:pass@localhost:5432/db",
+        )
+
+    # 4. Production mode harus menolak INTER_CA_PASS yang terlalu pendek (< 8 karakter)
+    with pytest.raises(ValueError, match="INTER_CA_PASS"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+            INTER_CA_PASS="short",
+            DATABASE_URL="postgresql://user:pass@localhost:5432/db",
+        )
+
+    # 5. Production mode berhasil jika konfigurasi secret valid dan non-default
     prod_settings = Settings(
         ENVIRONMENT="production",
         SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+        INTER_CA_PASS="ProductionSecurePassphrase2026!",
         DATABASE_URL="postgresql://user:pass@localhost:5432/db",
     )
     assert prod_settings.SECRET_KEY == "strong-random-secret-key-production-32bytes-long"
+    assert prod_settings.INTER_CA_PASS == "ProductionSecurePassphrase2026!"
+
+
+def test_pki_script_production_rejects_ca_secret_fallback():
+    import subprocess
+    from pathlib import Path
+    script_path = Path("pki/scripts/issue_cert_single.sh").resolve()
+
+    # Skenario 1: Production dengan default INTER_CA_PASS harus gagal
+    env_default = os.environ.copy()
+    env_default["ENVIRONMENT"] = "production"
+    env_default["INTER_CA_PASS"] = "InterPass!ChangeMe123"
+
+    res_default = subprocess.run(
+        ["bash", str(script_path)],
+        input="Univ\nOU\nUser\nuser@univ.ac.id\n730\n1234567890123456\n",
+        capture_output=True,
+        text=True,
+        env=env_default
+    )
+    assert res_default.returncode != 0
+    assert "tidak boleh menggunakan secret default pada mode production" in res_default.stderr
+    # Pastikan tidak ada secret yang bocor di stderr
+    assert "InterPass!ChangeMe123" not in res_default.stderr
+
+    # Skenario 2: Production tanpa INTER_CA_PASS harus gagal
+    env_empty = os.environ.copy()
+    env_empty["ENVIRONMENT"] = "production"
+    env_empty.pop("INTER_CA_PASS", None)
+
+    res_empty = subprocess.run(
+        ["bash", str(script_path)],
+        input="Univ\nOU\nUser\nuser@univ.ac.id\n730\n1234567890123456\n",
+        capture_output=True,
+        text=True,
+        env=env_empty
+    )
+    assert res_empty.returncode != 0
+    assert "wajib dikonfigurasi pada mode production" in res_empty.stderr
 
 
 def test_auth_me(client: TestClient, auth_headers: dict, seed_users: dict):

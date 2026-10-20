@@ -132,13 +132,61 @@ Mengambil informasi user yang sedang login.
 
 ---
 
+## POST `/api/v1/auth/verify-password`
+
+Memverifikasi password akun pengguna yang sedang terotentikasi (Bearer Token). Digunakan sebagai konfirmasi keamanan sebelum beralih ke Mode Admin.
+
+### Request Body
+
+```json
+{
+  "password": "Password123!"
+}
+```
+
+### Response Success (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Password berhasil diverifikasi."
+}
+```
+
+### Response Error (400 Bad Request)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PASSWORD",
+    "message": "Password akun salah. Masukkan password yang benar."
+  }
+}
+```
+
+---
+
 # 4. Dashboard
 
 ## GET `/api/v1/dashboard`
 
-Mengembalikan data dashboard berdasarkan role.
+Mengembalikan data dashboard berdasarkan role dan mode tampilan.
 
-### Admin / Super Admin
+### Query Parameters
+
+| Parameter | Type | Required | Default | Deskripsi |
+|---|---|---|---|---|
+| `mode` | `string` | Tidak | Sesuai role | Mode tampilan: `'admin'` atau `'user'`. Digunakan oleh role `ADMIN` untuk beralih ke Mode Pengguna. |
+
+**Aturan Otorisasi Mode:**
+- Role `ADMIN` tanpa query `mode` atau `mode=admin`: Mengembalikan data dashboard Admin.
+- Role `ADMIN` dengan `mode=user`: Mengembalikan data personal user dashboard milik akun Admin yang sedang login (`has_active_certificate`, `user`, `active_certificate`).
+- Role `SUPER_ADMIN` dengan `mode=user`: Ditolak `403 Forbidden` (`SUPER_ADMIN` tidak diizinkan masuk Mode Pengguna / TTE).
+- Role `USER` dengan `mode=admin`: Ditolak `403 Forbidden` (`USER` tidak diizinkan mengakses data dashboard Admin).
+- Nilai `mode` selain `'admin'` atau `'user'`: Ditolak `400 Bad Request`.
+
+### Admin / Super Admin (Mode Admin)
 
 Data utama:
 
@@ -149,11 +197,11 @@ Data utama:
 - expiry buckets;
 - aktivitas terbaru.
 
-### User
+### User / Admin (Mode Pengguna)
 
 Data utama:
 
-- certificate milik user;
+- certificate milik user / admin;
 - status;
 - expires_at;
 - sisa masa berlaku;
@@ -188,6 +236,34 @@ Data utama:
 ```
 
 `expiring_certificates` maksimal 5 user dan hanya certificate yang masa berlakunya kurang dari 30 hari.
+
+### Response Mode Pengguna (User / Admin in User Mode)
+
+```json
+{
+  "success": true,
+  "data": {
+    "has_active_certificate": true,
+    "user": {
+      "id": "20387e9d-...",
+      "name": "Administrator",
+      "nik": "1234567890123456",
+      "email": "admin@mkri.go.id",
+      "organization": "Mahkamah Konstitusi",
+      "ou": "Pusat TI",
+      "role": "ADMIN",
+      "status": "ACTIVE"
+    },
+    "active_certificate": {
+      "id": "c1f7a...",
+      "serial_number": "...",
+      "status": "ACTIVE",
+      "issued_at": "2026-10-01T00:00:00Z",
+      "expires_at": "2028-10-01T00:00:00Z"
+    }
+  }
+}
+```
 
 ---
 
@@ -789,11 +865,11 @@ Header Opsional:
 
 ---
 
-# 15. Internal PKI Adapter Contract (In-Process)
+# 15. Internal PKI Engine Service Contract (In-Process)
 
-Pada arsitektur Monolith, PKI Engine dipanggil langsung secara *in-process* melalui internal Python adapter (`app.services.pki_engine` yang dibungkus oleh `app.services.pki_client`), bukan melalui service HTTP terpisah atau port terbuka di luar backend.
+Pada arsitektur Monolith, PKI Engine dipanggil langsung secara *in-process* melalui internal Python service (`app.services.pki_engine`), bukan melalui service HTTP terpisah atau port terbuka di luar backend.
 
-Lapisan adapter ini memastikan:
+Lapisan engine service ini memastikan:
 1. Router/controller tidak pernah mengeksekusi shell/OpenSSL secara langsung.
 2. Tidak ada endpoint HTTP publik maupun port internal yang mengekspos pemanggilan subprocess bash.
 3. Seluruh argumen disanitasi menggunakan array parameter aman (`subprocess.run(["bash", script, ...])`) tanpa `shell=True`.

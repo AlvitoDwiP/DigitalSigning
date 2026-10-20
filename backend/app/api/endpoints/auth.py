@@ -71,3 +71,27 @@ def read_users_me(current_user: User = Depends(deps.get_current_user)):
             "status": current_user.status
         }
     }
+
+
+class VerifyPasswordRequest(UserLogin.__base__):
+    password: str
+
+
+@router.post("/verify-password", response_model=dict)
+def verify_password_current_user(
+    data: VerifyPasswordRequest,
+    current_user: User = Depends(deps.get_current_user)
+):
+    """
+    Verifikasi password akun yang sedang login untuk konfirmasi masuk ke Mode Admin.
+    """
+    if not security.verify_password(data.password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_PASSWORD", "message": "Password akun salah. Masukkan password yang benar."}
+        )
+    return {
+        "success": True,
+        "message": "Password berhasil diverifikasi."
+    }
+

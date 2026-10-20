@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeo pipefail
 umask 077
-trap 'echo "❌ Error pada baris $LINENO: $BASH_COMMAND" >&2' ERR
+trap 'echo "❌ Error pada baris $LINENO" >&2' ERR
 
 # ==================== DEFAULTS ====================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +15,23 @@ DEFAULT_CN="Nama Penandatangan"
 DEFAULT_EMAIL="penandatangan@univ-b.ac.id"
 DEFAULT_DAYS="730"
 DEFAULT_PFX_PASS="${DEFAULT_PFX_PASS:-Mkri006!}"
-INTER_CA_PASS="${INTER_CA_PASS:-InterPass!ChangeMe123}"
+
+# ==================== ENVIRONMENT & CA SECRET ====================
+ENV_MODE="$(printf '%s' "${ENVIRONMENT:-development}" | tr '[:upper:]' '[:lower:]')"
+
+if [[ "$ENV_MODE" == "production" ]]; then
+  if [[ -z "${INTER_CA_PASS:-}" ]]; then
+    echo "ERROR: INTER_CA_PASS wajib dikonfigurasi pada mode production" >&2
+    exit 1
+  fi
+  if [[ "$INTER_CA_PASS" == "InterPass!ChangeMe123" ]]; then
+    echo "ERROR: INTER_CA_PASS tidak boleh menggunakan secret default pada mode production" >&2
+    exit 1
+  fi
+else
+  INTER_CA_PASS="${INTER_CA_PASS:-InterPass!ChangeMe123}"
+fi
+export INTER_CA_PASS
 
 # ==================== CA PATH ====================
 INT_DIR="$H/pki/intermediate"
@@ -35,12 +51,13 @@ read -r EMAIL;      EMAIL="${EMAIL:-$DEFAULT_EMAIL}"
 read -r DAYS;       DAYS="${DAYS:-$DEFAULT_DAYS}"
 read -r NIK_RAW
 read -r PFX_PASS;   PFX_PASS="${PFX_PASS:-$DEFAULT_PFX_PASS}"
+export PFX_PASS
 
 NIK_SAFE="$(printf '%s' "$NIK_RAW" | tr -cd '0-9')"
 [[ -n "$NIK_SAFE" ]] || { echo "ERROR: NIK wajib"; exit 1; }
 
 # ==================== VALIDASI CA ====================
-openssl pkey -in "$INTER_KEY" -passin "pass:$INTER_CA_PASS" -noout >/dev/null
+openssl pkey -in "$INTER_KEY" -passin env:INTER_CA_PASS -noout >/dev/null
 
 # ==================== SLUG & OUTDIR (IDENTIK) ====================
 slugify () {
@@ -83,17 +100,17 @@ openssl req -new -key "$KEY" -out "$CSR" -subj "$SUBJ" -addext "subjectAltName =
 # ==================== SIGN ====================
 openssl ca -config "$INT_CNF" -in "$CSR" -out "$CRT" \
   -extensions pdfsign -extfile "$EXTFILE" \
-  -days "$DAYS" -batch -passin "pass:$INTER_CA_PASS"
+  -days "$DAYS" -batch -passin env:INTER_CA_PASS
 
 openssl verify -CAfile "$CHAIN" "$CRT"
 
 # ==================== EXPORT ====================
 openssl pkcs12 -export -inkey "$KEY" -in "$CRT" -certfile "$CHAIN" \
-  -name "$CN – $ORG_NAME (TTE)" -passout "pass:$PFX_PASS" -out "$PFX"
+  -name "$CN – $ORG_NAME (TTE)" -passout env:PFX_PASS -out "$PFX"
 
 openssl pkcs12 -export -inkey "$KEY" -in "$CRT" -certfile "$CHAIN" \
   -legacy -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha256 \
-  -name "$CN – $ORG_NAME (TTE)" -passout "pass:$PFX_PASS" -out "$P12_NIK"
+  -name "$CN – $ORG_NAME (TTE)" -passout env:PFX_PASS -out "$P12_NIK"
 
 # ==================== ARCHIVE (IDENTIK) ====================
 mkdir -p "$P12_ARCHIVE_DIR"

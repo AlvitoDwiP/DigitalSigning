@@ -11,6 +11,7 @@ import {
   IconClose,
 } from '../icons/Icons';
 import { getAuthUser } from '../../services/api';
+import logoImg from '../../assets/logo.png';
 
 export interface NavItem {
   id: string;
@@ -21,7 +22,7 @@ export interface NavItem {
   reservedBadge?: string;
 }
 
-export function getNavItemsForRole(role: string): NavItem[] {
+export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'admin'): NavItem[] {
   if (role === 'SUPER_ADMIN') {
     return [
       {
@@ -54,10 +55,41 @@ export function getNavItemsForRole(role: string): NavItem[] {
         label: 'Audit Log',
         icon: IconAudit,
       },
+      {
+        id: 'account',
+        path: '/account',
+        label: 'Kelola Akun',
+        icon: IconUser,
+      },
     ];
   }
 
   if (role === 'ADMIN') {
+    if (viewMode === 'user') {
+      // Admin pada Mode Pengguna: Menampilkan navigasi User yang sudah ada
+      return [
+        {
+          id: 'dashboard',
+          path: '/dashboard',
+          label: 'Dashboard',
+          icon: IconDashboard,
+        },
+        {
+          id: 'account',
+          path: '/account',
+          label: 'Kelola Akun',
+          icon: IconUser,
+        },
+        {
+          id: 'signing',
+          path: '/signing',
+          label: 'Penandatanganan',
+          icon: IconSignature,
+        },
+      ];
+    }
+
+    // Admin pada Mode Admin: Menu administrasi tanpa menu Penandatanganan TTE dan tanpa Kelola Akun (tersedia di Mode Pengguna)
     return [
       {
         id: 'dashboard',
@@ -82,12 +114,6 @@ export function getNavItemsForRole(role: string): NavItem[] {
         path: '/audit-log',
         label: 'Audit Log',
         icon: IconAudit,
-      },
-      {
-        id: 'signing',
-        path: '/signing',
-        label: 'Penandatanganan',
-        icon: IconSignature,
       },
     ];
   }
@@ -121,6 +147,8 @@ interface SidebarProps {
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
   onLogout?: () => void;
+  viewMode?: 'admin' | 'user';
+  onToggleViewMode?: () => void;
 }
 
 export function Sidebar({
@@ -129,10 +157,12 @@ export function Sidebar({
   isOpenMobile = false,
   onCloseMobile,
   onLogout,
+  viewMode = 'admin',
+  onToggleViewMode,
 }: SidebarProps) {
   const authUser = getAuthUser();
   const currentRole = authUser?.role || 'ADMIN';
-  const navItems = getNavItemsForRole(currentRole);
+  const navItems = getNavItemsForRole(currentRole, viewMode);
 
   // Lock scroll and handle escape key when mobile drawer is open
   useEffect(() => {
@@ -177,11 +207,14 @@ export function Sidebar({
       >
         {/* Brand Header */}
         <div className="sidebar-brand">
-          <div className="brand-logo" aria-hidden="true">
-            <span>DS</span>
-          </div>
+          <img src={logoImg} alt="Logo" className="brand-logo" />
           <div className="brand-text">
             <span className="brand-title">Digital Signature</span>
+            {currentRole === 'ADMIN' && (
+              <span className={`sidebar-mode-tag ${viewMode === 'user' ? 'sidebar-mode-tag-user' : 'sidebar-mode-tag-admin'}`}>
+                {viewMode === 'user' ? 'Mode Pengguna' : 'Mode Admin'}
+              </span>
+            )}
           </div>
           {isOpenMobile && (
             <button
@@ -233,6 +266,27 @@ export function Sidebar({
 
         {/* Sidebar Footer */}
         <div className="sidebar-footer">
+          {currentRole === 'ADMIN' && onToggleViewMode && (
+            <button
+              type="button"
+              className={`sidebar-mode-btn ${viewMode === 'user' ? 'sidebar-mode-btn-user' : 'sidebar-mode-btn-admin'}`}
+              onClick={onToggleViewMode}
+              aria-label={viewMode === 'user' ? 'Kembali ke Mode Admin' : 'Beralih ke Mode Pengguna'}
+            >
+              {viewMode === 'user' ? (
+                <>
+                  <IconShield size={18} aria-hidden="true" />
+                  <span>Kembali ke Mode Admin</span>
+                </>
+              ) : (
+                <>
+                  <IconUser size={18} aria-hidden="true" />
+                  <span>Mode Pengguna</span>
+                </>
+              )}
+            </button>
+          )}
+
           {onLogout && (
             <button
               type="button"

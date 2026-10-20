@@ -8,10 +8,18 @@ import uuid
 from pathlib import Path
 from app.core.config import settings
 
-class PKIEngineError(Exception):
-    def __init__(self, message: str, code: str = "PKI_ENGINE_ERROR"):
-        super().__init__(message)
-        self.code = code
+from app.core.exceptions import AppException
+
+class PKIEngineError(AppException):
+    def __init__(self, message: str, code: str = "PKI_ENGINE_ERROR", status_code: int = None):
+        if status_code is None:
+            if code in ["INVALID_INPUT", "INVALID_IDENTIFIER"]:
+                status_code = 400
+            elif code in ["PKI_GENERATION_FAILED", "PKI_ENGINE_ERROR", "TIMEOUT", "ARTIFACT_ERROR", "CERTIFICATE_VALIDATION_FAILED", "P12_VALIDATION_FAILED", "P12_NOT_FOUND"]:
+                status_code = 502
+            else:
+                status_code = 500
+        super().__init__(code=code, message=message, status_code=status_code)
 
 def slugify(text: str) -> str:
     text = text.lower()
@@ -71,6 +79,7 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
     run_env["ISSUED_ROOT"] = str(issued_dir)
     run_env["P12_ARCHIVE_DIR"] = str(p12_archive_dir)
     run_env["CHAIN_PATH"] = str(chain_path)
+    run_env["ENVIRONMENT"] = getattr(settings, "ENVIRONMENT", os.getenv("ENVIRONMENT", "development"))
     run_env["INTER_CA_PASS"] = getattr(settings, "INTER_CA_PASS", os.getenv("INTER_CA_PASS", "InterPass!ChangeMe123"))
     run_env["DEFAULT_PFX_PASS"] = getattr(settings, "DEFAULT_PFX_PASS", os.getenv("DEFAULT_PFX_PASS", "Mkri006!"))
     if env:
@@ -114,15 +123,31 @@ def validate_p12_file(p12_path: Path, pfx_password: str):
     except subprocess.CalledProcessError:
         raise PKIEngineError("Failed to validate generated P12 credential", "P12_VALIDATION_FAILED")
 
-def generate_single(name: str, nik: str, email: str, organization: str, ou: str, pfx_password: str):
+def generate_single(name: str = None, nik: str = None, email: str = None, organization: str = None, ou: str = None, pfx_password: str = None, data: dict = None) -> dict:
+    if data is not None:
+        name = data.get("name", name)
+        nik = data.get("nik", nik)
+        email = data.get("email", email)
+        organization = data.get("organization", organization)
+        ou = data.get("ou", ou)
+        pfx_password = data.get("pfx_password", pfx_password)
+    elif name is not None and isinstance(name, dict):
+        d = name
+        name = d.get("name")
+        nik = d.get("nik")
+        email = d.get("email")
+        organization = d.get("organization")
+        ou = d.get("ou")
+        pfx_password = d.get("pfx_password")
+
     lines = [
-        organization,
-        ou,
-        name,
-        email,
+        organization or "",
+        ou or "",
+        name or "",
+        email or "",
         "",
-        nik,
-        pfx_password
+        nik or "",
+        pfx_password or ""
     ]
     input_data = "\n".join(lines) + "\n"
     
@@ -180,7 +205,23 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
         "p12_reference": str(p12_file)
     }
 
-def generate_staged(name: str, nik: str, email: str, organization: str, ou: str, pfx_password: str) -> dict:
+def generate_staged(name: str = None, nik: str = None, email: str = None, organization: str = None, ou: str = None, pfx_password: str = None, data: dict = None) -> dict:
+    if data is not None:
+        name = data.get("name", name)
+        nik = data.get("nik", nik)
+        email = data.get("email", email)
+        organization = data.get("organization", organization)
+        ou = data.get("ou", ou)
+        pfx_password = data.get("pfx_password", pfx_password)
+    elif name is not None and isinstance(name, dict):
+        d = name
+        name = d.get("name")
+        nik = d.get("nik")
+        email = d.get("email")
+        organization = d.get("organization")
+        ou = d.get("ou")
+        pfx_password = d.get("pfx_password")
+
     pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path = get_pki_paths()
     
     person_slug = f"{slugify(organization)}--{slugify(name)}"
@@ -195,13 +236,13 @@ def generate_staged(name: str, nik: str, email: str, organization: str, ou: str,
     staging_archive.mkdir(parents=True, exist_ok=True)
     
     lines = [
-        organization,
-        ou,
-        name,
-        email,
+        organization or "",
+        ou or "",
+        name or "",
+        email or "",
         "",
-        nik,
-        pfx_password
+        nik or "",
+        pfx_password or ""
     ]
     input_data = "\n".join(lines) + "\n"
     
@@ -382,7 +423,7 @@ def generate_bulk(requests: list) -> list:
             except json.JSONDecodeError:
                 continue
                 
-        return results
+        return {"results": results}
     finally:
         if temp_path.exists():
             try:
@@ -458,3 +499,9 @@ def delete_user_pki_materials(nik: str) -> dict:
         raise PKIEngineError("Partial cleanup failure", "PARTIAL_CLEANUP_FAILURE")
         
     return {"success": True, "deleted": deleted_files}
+
+# Direct aliases for service layer
+delete_user_materials = delete_user_pki_materials
+regenerate_stage = generate_staged
+regenerate_commit = commit_staged
+regenerate_cleanup = cleanup_staged

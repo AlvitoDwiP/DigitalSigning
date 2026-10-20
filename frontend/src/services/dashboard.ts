@@ -15,7 +15,7 @@ export async function fetchAdminDashboard(): Promise<DashboardAdminData> {
 }
 
 export async function fetchUserDashboard(): Promise<DashboardUserData> {
-  const res = await requestApi<DashboardUserApiResponse>('/api/v1/dashboard/');
+  const res = await requestApi<DashboardUserApiResponse>('/api/v1/dashboard/?mode=user');
   if (!res.success || !res.data) {
     throw new Error(res.message || 'Gagal mengambil data dashboard pengguna');
   }

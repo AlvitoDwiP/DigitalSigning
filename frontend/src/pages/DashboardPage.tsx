@@ -14,11 +14,12 @@ import type { DashboardAdminData, DashboardUserData } from '../types/dashboard';
 
 interface DashboardPageProps {
   onNavigate: (path: string) => void;
+  viewMode?: 'admin' | 'user';
 }
 
-export function DashboardPage({ onNavigate }: DashboardPageProps) {
+export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageProps) {
   const authUser = getAuthUser();
-  const isUserRole = authUser?.role === 'USER';
+  const isUserView = authUser?.role === 'USER' || (authUser?.role === 'ADMIN' && viewMode === 'user');
 
   const [adminData, setAdminData] = useState<DashboardAdminData | null>(null);
   const [userData, setUserData] = useState<DashboardUserData | null>(null);
@@ -35,7 +36,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     setError(null);
 
     try {
-      if (isUserRole) {
+      if (isUserView) {
         const result = await fetchUserDashboard();
         setUserData(result);
       } else {
@@ -48,7 +49,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [isUserRole]);
+  }, [isUserView]);
 
   useEffect(() => {
     loadDashboard();
@@ -58,19 +59,19 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     return <DashboardSkeleton />;
   }
 
-  const dashboardTitle = authUser?.role === 'SUPER_ADMIN'
+  const dashboardTitle = isUserView
+    ? 'Dashboard User'
+    : authUser?.role === 'SUPER_ADMIN'
     ? 'Dashboard Super Admin'
-    : authUser?.role === 'ADMIN'
-    ? 'Dashboard Admin'
-    : 'Dashboard User';
+    : 'Dashboard Admin';
 
-  if (error || (isUserRole ? !userData : !adminData)) {
+  if (error || (isUserView ? !userData : !adminData)) {
     return (
       <div className="dashboard-page">
         <div className="page-header">
           <h1 className="page-title">{dashboardTitle}</h1>
           <p className="page-subtitle">
-            {isUserRole ? 'Ringkasan sertifikat dan informasi akun.' : 'Ringkasan sertifikat dan pengguna.'}
+            {isUserView ? 'Ringkasan sertifikat dan informasi akun.' : 'Ringkasan sertifikat dan pengguna.'}
           </p>
         </div>
         <DashboardError
@@ -82,8 +83,8 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     );
   }
 
-  // 1. Role USER View
-  if (isUserRole && userData) {
+  // 1. User View (Role USER atau ADMIN pada Mode Pengguna)
+  if (isUserView && userData) {
     return (
       <UserDashboardView
         data={userData}

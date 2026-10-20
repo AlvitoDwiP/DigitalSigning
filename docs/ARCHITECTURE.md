@@ -14,7 +14,7 @@ Pada evaluasi awal, backend sempat dipisahkan menjadi dua container: `backend` (
 
 1. **Efisiensi Sumber Daya & Operasional:** Menghilangkan overhead pengelolaan 2 aplikasi FastAPI, 2 Dockerfile, latensi jaringan HTTP internal, dan alokasi RAM ganda pada container engine.
 2. **Eliminasi Kerapuhan Jaringan Internal:** Pemanggilan PKI dieksekusi secara *in-process* melalui modul Python bawaan (`subprocess.run`), menghilangkan risiko kegagalan koneksi antar-container serta mengeliminasi ketergantungan konfigurasi token internal (`PKI_SERVICE_TOKEN`) dan URL service internal (`PKI_SERVICE_URL`).
-3. **Pemisahan Tanggung Jawab Tetap Terjaga:** Secara struktural di tingkat kode, router controller (`app/api/endpoints/`) tetap terpisah dari adapter PKI (`app/services/pki_engine.py` dan `pki_client.py`). Kode tetap modular dan mudah diekstrak kembali jika kebutuhan skala besar di masa mendatang menuntutnya.
+3. **Pemisahan Tanggung Jawab Tetap Terjaga:** Secara struktural di tingkat kode, router controller (`app/api/endpoints/`) tetap terpisah dari service engine PKI (`app/services/pki_engine.py`). Kode tetap modular dan bersih tanpa wrapper berlebih.
 
 ---
 
@@ -38,7 +38,7 @@ Arsitektur Phase 1 terdiri dari komponen-komponen berikut:
    - Menegakkan integritas data melalui foreign keys, unique constraints, dan partial indexes (misal: hanya 1 sertifikat `ACTIVE` per user).
    - **Prinsip Keamanan:** Database **tidak pernah menyimpan** private key, binary bundle PFX/P12, plaintext password, atau passphrase.
 
-4. **Internal PKI Adapter (`app/services/pki_engine.py` & `pki_client.py`)**
+4. **Internal PKI Engine Service (`app/services/pki_engine.py`)**
    - Modul internal di dalam backend yang bertugas sebagai orkestrator dan jembatan ke skrip Bash PKI.
    - Menjalankan skrip Bash via Python `subprocess.run` dengan argumen aman (tanpa `shell=True`) dan batasan timeout ketat.
    - Memvalidasi keberadaan dan integritas file output (`.crt` dan `.p12`) menggunakan OpenSSL CLI sebelum metadata disimpan ke database.
@@ -96,7 +96,7 @@ Arsitektur Phase 1 terdiri dari komponen-komponen berikut:
 - Memanggil internal service adapter untuk operasi PKI.
 - **Batasan:** Tidak berisi baris kode OpenSSL, pemanggilan subprocess, atau pembacaan path fisik berkas PKI.
 
-### C. Internal Service Adapter (`app/services/pki_engine.py` & `pki_client.py`)
+### C. Internal Service Engine (`app/services/pki_engine.py`)
 - Menerjemahkan kebutuhan bisnis menjadi parameter input skrip Bash.
 - Menjalankan subprocess OpenSSL dengan penanganan timeout dan penangkapan exit code/stderr.
 - Melakukan verifikasi artefak fisik: memastikan sertifikat `.crt` dan file kredensial `.p12` terbentuk serta dapat dibuka dengan passphrase.
@@ -131,7 +131,7 @@ Frontend React
        6. Commit DB transaction
   -> Jika DB gagal:
        - Rollback DB transaction
-       - Panggil pki_client.delete_user_materials(nik) untuk membersihkan artefak fisik
+       - Panggil pki_engine.delete_user_materials(nik) untuk membersihkan artefak fisik
   -> Return 200 OK dengan metadata user & sertifikat ke React
 ```
 
@@ -197,6 +197,24 @@ Frontend -> POST /api/v1/users/{user_id}/pfx-password atau /api/v1/account/pfx-p
   -> AuditLog dicatat (tanpa mencatat nilai passphrase)
   -> Serial number, fingerprint, dan masa berlaku sertifikat TETAP SAMA
 ```
+
+### 6.5. Mode Pengguna untuk Akun Admin (Dual-View Navigation)
+
+Fitur Mode Pengguna memungkinkan akun dengan role `ADMIN` beralih antarmuka navigasi dan dashboard antara Mode Admin dan Mode Pengguna:
+
+1. **Prinsip Otorisasi & Sesi:**
+   - Role asli di database tetap `ADMIN`. Tidak ada perubahan role DB, token JWT baru, atau akun duplikat.
+   - Sesi autentikasi tetap sama (`Bearer <token>`).
+   - Mode tampilan disimpan pada client-side state (`localStorage: ds_admin_view_mode`) sebagai preferensi tampilan.
+2. **Pemisahan Tampilan:**
+   - **Mode Admin:** Menampilkan dashboard operasional sistem, Pengguna, Generate, dan Audit Log. Menu Penandatanganan (TTE) dan Kelola Akun **tidak ditampilkan** (Kelola Akun diakses melalui Mode Pengguna).
+   - **Mode Pengguna:** Menggunakan layout dan navigasi User yang sudah ada (Dashboard User personal, Penandatanganan TTE, Kelola Akun Saya). Menu administrasi Pengguna, Generate, dan Audit Log disembunyikan.
+3. **Keamanan & Otorisasi Endpoint:**
+   - **Verifikasi Masuk Mode Admin:** Saat Admin beralih dari Mode Pengguna ke Mode Admin, sistem memunculkan popup verifikasi password. Password divalidasi melalui endpoint `POST /api/v1/auth/verify-password`.
+   - Client meminta dashboard personal via `GET /api/v1/dashboard/?mode=user`. Backend memverifikasi identitas admin dan menyajikan metrik sertifikat personal milik admin sendiri.
+   - Penandatanganan TTE (`POST /api/v1/signatures/sign`) menandatangani dokumen menggunakan sertifikat personal milik akun Admin.
+   - Otorisasi endpoint tetap dievaluasi di sisi backend; manipulasi state frontend tidak dapat melewati permission backend.
+   - Akun `SUPER_ADMIN` dilarang beralih ke Mode Pengguna atau mengakses TTE (`403 Forbidden`).
 
 ---
 

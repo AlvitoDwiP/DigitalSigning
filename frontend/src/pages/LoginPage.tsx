@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { IconMail } from '../components/icons/Icons';
 import { loginUser } from '../services/api';
+import logoImg from '../assets/logo.png';
 
 interface LoginPageProps {
   onLoginSuccess: (email: string) => void;
@@ -82,9 +83,7 @@ export function LoginPage({
         <div className="card login-card">
           {/* Identity & Branding */}
           <div className="login-brand-header">
-            <div className="brand-logo login-logo" aria-hidden="true">
-              <span>DS</span>
-            </div>
+            <img src={logoImg} alt="Logo" className="brand-logo login-logo" />
             <h1 className="login-title">Digital Signature</h1>
             <p className="login-subtitle">Masuk ke Portal Administrasi Platform</p>
           </div>

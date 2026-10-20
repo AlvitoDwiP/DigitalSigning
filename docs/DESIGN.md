@@ -67,9 +67,10 @@ Aturan pakai: merah bukan hiasan. Merah dipakai untuk sidebar, tombol utama, dan
 
 ## Susunan
 
-- **Kerangka**: sidebar 250px (210px di tablet), topbar, lalu isi. Tanpa panel kanan.
-- **Topbar**: pencarian pengguna (Enter membuka Pengguna dengan hasil pencarian), tombol ganti tema, profil Admin.
-- **Sidebar Super Admin**: Dashboard, Pengguna, Generate, Management Admin, Audit Log.\n- **Sidebar Admin**: Dashboard, Pengguna, Generate, Audit Log, Penandatanganan (reserved, berlabel "Segera").\n- **Sidebar User**: Dashboard, Penandatanganan, Kelola Akun.
+- **Topbar**: pencarian pengguna (Enter membuka Pengguna dengan hasil pencarian), tombol toggle mode (khusus Admin: "Mode Pengguna" / "Kembali ke Mode Admin"), tombol ganti tema, dan chip profil pengguna/Admin.
+- **Sidebar Super Admin**: Dashboard Admin, Pengguna, Generate, Management Admin, Audit Log, Kelola Akun Saya. Super Admin tidak memiliki akses ke Mode Pengguna.
+- **Sidebar Admin (Mode Admin)**: Dashboard Admin, Pengguna, Generate, Audit Log, serta kontrol "Beralih ke Mode Pengguna" di footer sidebar. Menu Penandatanganan (TTE) dan Kelola Akun tidak ditampilkan pada Mode Admin (Kelola Akun diakses melalui Mode Pengguna).
+- **Sidebar Mode Pengguna (User & Admin yang beralih)**: Dashboard User, Penandatanganan (TTE), Kelola Akun Saya. Khusus akun Admin yang berada di Mode Pengguna, ditampilkan badge status "Mode Pengguna" dan tombol "Kembali ke Mode Admin" pada footer sidebar dan topbar. Menu administrasi tidak ditampilkan pada Mode Pengguna.
 - **Dashboard** adalah dashboard operasional, bukan analytics. Urutan prioritas visual:
   1. **Statistik utama**: Total User (biru), Active (hijau, paling besar), Expired (kuning). Active dan Expired menghitung sertifikat dengan status efektif tersebut.
   2. **Sertifikat Paling Dekat Berakhir**: maksimal 5 pengguna dengan sertifikat ACTIVE yang paling dekat kedaluwarsa, berisi inisial, nama, "Berlaku sampai", dan sisa hari berwarna menurut urgensi (merah 30 hari atau kurang, kuning sampai 90 hari, hijau selebihnya). Tanpa tombol Regenerate atau Lihat detail. Satu tombol "Lihat Pengguna" membuka Pengguna yang diurutkan berdasarkan sertifikat paling dekat berakhir.

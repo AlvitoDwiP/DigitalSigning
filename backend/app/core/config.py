@@ -14,6 +14,13 @@ INSECURE_DEV_KEYS = {
     "changeme",
 }
 
+KNOWN_DEFAULT_INTER_CA_PASS = {
+    "InterPass!ChangeMe123",
+    "changeme",
+    "secret",
+    "password",
+}
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Digital Signature Platform API"
     VERSION: str = "1.0.0"
@@ -81,6 +88,18 @@ class Settings(BaseSettings):
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(
                     "Production environment must not use wildcard '*' in CORS_ORIGINS when credentials are enabled."
+                )
+            if not self.INTER_CA_PASS or not self.INTER_CA_PASS.strip():
+                raise ValueError(
+                    "Production environment requires INTER_CA_PASS to be configured."
+                )
+            if self.INTER_CA_PASS in KNOWN_DEFAULT_INTER_CA_PASS:
+                raise ValueError(
+                    "Production environment cannot use default or insecure INTER_CA_PASS."
+                )
+            if len(self.INTER_CA_PASS.strip()) < 8:
+                raise ValueError(
+                    "Production environment requires INTER_CA_PASS to be at least 8 characters."
                 )
         return self
 

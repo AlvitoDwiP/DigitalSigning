@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button } from '../ui/Button';
+import logoImg from '../../assets/logo.png';
 
 export interface ErrorStateCardAction {
   label: string;
@@ -93,9 +94,7 @@ export function ErrorStateCard({
     return (
       <div className="error-standalone-container">
         <div className="error-standalone-header">
-          <div className="brand-logo" aria-hidden="true">
-            <span>DS</span>
-          </div>
+          <img src={logoImg} alt="Logo" className="brand-logo" />
           <span className="error-standalone-brand-text">Digital Signature Platform</span>
         </div>
         <div className="error-standalone-card-wrapper card">

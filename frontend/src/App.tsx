@@ -11,6 +11,7 @@ import { ForbiddenPage } from './pages/ForbiddenPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SigningPage } from './pages/SigningPage';
 import { AppShell } from './components/layout/AppShell';
+import { AdminPasswordModal } from './components/layout/AdminPasswordModal';
 import { getAuthToken, getAuthUser, clearAuthSession } from './services/api';
 
 function normalizePath(rawPath: string): string {
@@ -162,15 +163,73 @@ export default function App() {
   const authUser = getAuthUser();
   const currentRole = authUser?.role || 'USER';
 
+  // Mode state for Admin accounts ('admin' | 'user')
+  const [adminViewMode, setAdminViewMode] = useState<'admin' | 'user'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ds_admin_view_mode');
+      if (saved === 'user' || saved === 'admin') return saved;
+    }
+    return 'admin';
+  });
+
+  // Password confirmation modal state for switching into Mode Admin
+  const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
+
+  // Effective view mode: SUPER_ADMIN is always 'admin', USER is always 'user', ADMIN follows state
+  const effectiveViewMode: 'admin' | 'user' =
+    currentRole === 'ADMIN' ? adminViewMode : currentRole === 'SUPER_ADMIN' ? 'admin' : 'user';
+
+  const executeSwitchToMode = (nextMode: 'admin' | 'user') => {
+    setAdminViewMode(nextMode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ds_admin_view_mode', nextMode);
+    }
+    // If switching to user mode and on an administrative page, route to /dashboard
+    const p = normalizePath(currentPath);
+    if (
+      nextMode === 'user' &&
+      (p === '/users' ||
+        p.startsWith('/users/') ||
+        p === '/generate' ||
+        p === '/admins' ||
+        p === '/audit-log' ||
+        p === '/audit-logs')
+    ) {
+      navigateTo('/dashboard');
+    }
+    // If switching to admin mode and on /signing or /account, route to /dashboard
+    if (nextMode === 'admin' && (p === '/signing' || p === '/account')) {
+      navigateTo('/dashboard');
+    }
+  };
+
+  const handleToggleViewMode = () => {
+    if (currentRole !== 'ADMIN') return;
+
+    // Saat sedang di Mode Pengguna dan ingin masuk ke Mode Admin: tampilkan popup password
+    if (effectiveViewMode === 'user') {
+      setIsAdminPasswordModalOpen(true);
+      return;
+    }
+
+    // Saat sedang di Mode Admin dan ingin beralih ke Mode Pengguna: langsung beralih
+    executeSwitchToMode('user');
+  };
+
+  const handleAdminPasswordSuccess = () => {
+    setIsAdminPasswordModalOpen(false);
+    executeSwitchToMode('admin');
+  };
+
   const renderContent = () => {
     const path = normalizePath(currentPath);
 
     if (path === '/dashboard') {
-      return <DashboardPage onNavigate={navigateTo} />;
+      return <DashboardPage onNavigate={navigateTo} viewMode={effectiveViewMode} />;
     }
 
     if (path === '/users') {
-      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+      if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <UsersPage onNavigate={navigateTo} />;
@@ -181,14 +240,14 @@ export default function App() {
       if (!userId) {
         return <UsersPage onNavigate={navigateTo} />;
       }
-      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+      if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <UserDetailPage userId={userId} onNavigate={navigateTo} />;
     }
 
     if (path === '/generate') {
-      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+      if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <GeneratePage onNavigate={navigateTo} />;
@@ -202,21 +261,24 @@ export default function App() {
     }
 
     if (path === '/audit-log' || path === '/audit-logs') {
-      if (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN') {
+      if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <AuditLogsPage onNavigate={navigateTo} />;
     }
 
     if (path === '/account') {
+      if (currentRole === 'ADMIN' && effectiveViewMode === 'admin') {
+        return <ForbiddenPage onNavigate={navigateTo} />;
+      }
       return <AccountPage onNavigate={navigateTo} />;
     }
 
     if (path === '/signing') {
-      if (currentRole === 'SUPER_ADMIN') {
+      if (currentRole === 'SUPER_ADMIN' || effectiveViewMode === 'admin') {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
-      return <SigningPage onNavigate={navigateTo} />;
+      return <SigningPage onNavigate={navigateTo} viewMode={effectiveViewMode} />;
     }
 
     // Fallback 404 for unknown authenticated routes, preserving sidebar & topbar
@@ -224,12 +286,22 @@ export default function App() {
   };
 
   return (
-    <AppShell
-      currentPath={currentPath}
-      onNavigate={navigateTo}
-      onLogout={handleLogout}
-    >
-      {renderContent()}
-    </AppShell>
+    <>
+      <AppShell
+        currentPath={currentPath}
+        onNavigate={navigateTo}
+        onLogout={handleLogout}
+        viewMode={effectiveViewMode}
+        onToggleViewMode={handleToggleViewMode}
+      >
+        {renderContent()}
+      </AppShell>
+
+      <AdminPasswordModal
+        isOpen={isAdminPasswordModalOpen}
+        onClose={() => setIsAdminPasswordModalOpen(false)}
+        onSuccess={handleAdminPasswordSuccess}
+      />
+    </>
   );
 }

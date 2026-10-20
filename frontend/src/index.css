@@ -406,16 +406,10 @@ h2 {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 2px solid #FFFFFF;
-  background-color: transparent;
-  color: #FFFFFF;
-  font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  object-fit: cover;
   flex-shrink: 0;
-  box-shadow: none;
+  display: block;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .brand-text {
@@ -586,6 +580,115 @@ h2 {
 .sidebar-logout-btn:focus-visible {
   outline: 2px solid #FFFFFF;
   outline-offset: 1px;
+}
+
+/* ==========================================================================
+   Mode Switcher (Admin <-> Mode Pengguna)
+   ========================================================================== */
+.sidebar-mode-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-top: 6px;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.sidebar-mode-tag.mode-user {
+  background: rgba(16, 185, 129, 0.25);
+  color: #A7F3D0;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.sidebar-mode-tag.mode-admin {
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.mode-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.sidebar-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #FFFFFF;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.sidebar-mode-btn:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 1px;
+}
+
+.topbar-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.topbar-mode-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary, #094067);
+}
+
+.topbar-mode-btn.mode-user {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #065F46;
+}
+
+[data-theme='dark'] .topbar-mode-btn.mode-user {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #6EE7B7;
+}
+
+.topbar-mode-btn .mode-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+}
+
+.topbar-mode-btn.mode-admin .mode-dot {
+  background: #3B82F6;
 }
 
 /* ==========================================================================
@@ -1145,18 +1248,13 @@ textarea.form-control:focus {
 }
 
 .login-logo {
-  width: 48px;
-  height: 48px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-  border: 2px solid var(--accent);
-  background-color: transparent;
-  color: var(--accent);
-  font-size: 18px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  object-fit: cover;
+  display: block;
   margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.22));
 }
 
 .login-title {

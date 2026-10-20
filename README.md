@@ -34,7 +34,7 @@ Arsitektur aplikasi menggunakan pendekatan **Monolith Backend Terpadu** yang dir
 [ Platform API (FastAPI Monolith) ] (Port 8000)
     │                       │
     ▼ (SQLAlchemy/Alembic)   ▼ (In-Process Adapter Call)
-[ PostgreSQL DB ]       [ Internal PKI Adapter: pki_client.py & pki_engine.py ]
+[ PostgreSQL DB ]       [ Internal PKI Engine: pki_engine.py ]
   (Port 5432)               │
                             ▼ (Secure Subprocess Execution / OpenSSL)
                         [ Existing PKI Engine Scripts (pki/scripts/) ]
@@ -46,8 +46,8 @@ Arsitektur aplikasi menggunakan pendekatan **Monolith Backend Terpadu** yang dir
 
 ### Karakteristik Arsitektur:
 1. **Frontend Isolation:** Frontend tidak pernah mengakses file privat, database, atau skrip bash secara langsung. Seluruh interaksi melewati REST API.
-2. **Controller/Router Separation:** Endpoint FastAPI (`app/api/endpoints/`) tidak memanggil skrip bash OpenSSL secara langsung, melainkan mendelegasikannya ke internal service adapter (`app/services/pki_client.py` dan `pki_engine.py`).
-3. **In-Process PKI Adapter:** Adapter menangani validasi input/output, sanitasi format, batas timeout proses, verifikasi integritas artefak sertifikat via OpenSSL, serta mekanisme rollback jika terjadi kegagalan transaksi database.
+2. **Controller/Router Separation:** Endpoint FastAPI (`app/api/endpoints/`) mendelegasikan pemrosesan kriptografi langsung ke service engine Python (`app/services/pki_engine.py`) tanpa wrapper berlebih.
+3. **In-Process PKI Engine:** Engine menangani validasi input/output, sanitasi format, batas timeout proses, verifikasi integritas artefak sertifikat via OpenSSL, serta mekanisme rollback/staging jika terjadi kegagalan transaksi database.
 4. **Data vs Artifact Separation:** PostgreSQL hanya menyimpan metadata identitas dan metadata sertifikat (serial number, subject, issuer, fingerprint, status, masa berlaku). File privat dan bundle `.p12` tersimpan secara terisolasi di volume sistem berkas.
 
 ---

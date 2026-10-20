@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from app.api import deps
 from app.models.user import User
@@ -13,13 +13,33 @@ router = APIRouter()
 @router.get("", response_model=dict)
 @router.get("/", response_model=dict)
 def get_dashboard(
+    mode: Optional[str] = Query(None, description="Mode tampilan dashboard: 'admin' atau 'user'"),
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user)
 ) -> Dict[str, Any]:
     now = datetime.now(timezone.utc)
+    mode_clean = mode.lower().strip() if mode else None
 
-    # 1. Admin / Super Admin Dashboard
-    if current_user.role in ["SUPER_ADMIN", "ADMIN"]:
+    if mode_clean and mode_clean not in ["admin", "user"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "BAD_REQUEST", "message": f"Mode tidak valid: '{mode}'. Gunakan 'admin' atau 'user'."}
+        )
+
+    # Validasi batasan mode sesuai role
+    if mode_clean == "user" and current_user.role == "SUPER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Role SUPER_ADMIN tidak memiliki akses ke mode pengguna."}
+        )
+    if mode_clean == "admin" and current_user.role == "USER":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Role USER tidak memiliki akses ke mode admin."}
+        )
+
+    # 1. Admin / Super Admin Dashboard (hanya jika bukan permintaan mode user)
+    if current_user.role in ["SUPER_ADMIN", "ADMIN"] and mode_clean != "user":
         total_user = db.query(User).count()
         active_certs_count = db.query(Certificate).filter(Certificate.status == "ACTIVE").count()
         expired_certs_count = db.query(Certificate).filter(Certificate.status == "EXPIRED").count()
