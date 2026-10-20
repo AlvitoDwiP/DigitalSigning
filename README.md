@@ -98,7 +98,7 @@ digital-signature-platform/
 │   ├── root/               # Root Certificate Authority
 │   ├── intermediate/       # Intermediate Certificate Authority
 │   └── issued/             # Penyimpanan artefak sertifikat per pengguna
-├── sign-api/               # Direktori arsip P12 runtime dan signing engine Phase 2 (alias: sign-api(well3))
+├── sign-api/               # Direktori arsip P12 kanonis untuk verifikasi dan penandatanganan dokumen
 │   └── p12/                # Arsip kredensial .p12 aktif
 ├── docker/                 # Dockerfiles untuk backend dan frontend
 ├── docs/                   # Spesifikasi teknis dan dokumentasi arsitektur

@@ -35,18 +35,17 @@ React (+ TypeScript + Vite) merupakan antarmuka web dan konsumen utama dari Plat
 10. **Audit Logging:** Pencatatan riwayat aktivitas operasional penting (generate, regenerate, delete user, ubah passphrase, assign/remove admin) ke tabel `audit_logs` tanpa mengekspos passphrase atau kredensial sensitif. Aktivitas autentikasi/login/sesi maupun navigasi tidak dicatat. Kapasitas log dibatasi maksimal 5.000 entri dengan mekanisme FIFO/Circular Pruning otomatis.
 11. **Dashboard Operasional:** Metrik statistik operasional sistem (Total User, Active, Expired), peringatan sertifikat mendekati kedaluwarsa, dan ringkasan aktivitas terbaru.
 12. **Monolith Platform API:** Satu backend terpadu (FastAPI) yang memanggil engine PKI secara internal (*in-process*) via `app/services/pki_engine.py` tanpa container microservice terpisah.
+13. **Integrated PDF Digital Signing:** Penandatanganan dokumen PDF digital terpadu via web (`POST /api/v1/signatures/sign` dan UI `/signing`), dengan proteksi passphrase P12, IDOR enforcement (USER hanya dapat menandatangani dokumennya sendiri), opsi stempel visual, serta pembatasan hak akses (SUPER_ADMIN dibatasi).
 
 #### B. Disiapkan untuk Penguatan (In Progress / Future Phase 1 Enhancement)
 1. **Revocation Workflow UI:** Status enum `REVOKED` sudah disiapkan pada skema PostgreSQL dan database constraint, namun alur UI pencabutan sertifikat belum diimplementasikan di Phase 1.
 2. **Two-Factor Authentication (OTP):** Arsitektur login disiapkan untuk mendukung verifikasi OTP di tahap production.
 
-#### C. Direncanakan untuk Phase 2 (Planned)
-1. Upload dokumen PDF untuk penandatanganan digital.
-2. Eksekusi PDF signing aktif melalui integrasi `sign-api(well3)`.
-3. Penempatan QR signature dan signature appearance pada PDF.
-4. Portal verifikasi keabsahan dokumen bertanda tangan digital.
-5. Alur persetujuan dokumen (*approval workflow*).
-6. Aplikasi mobile dan dukungan multi-tenant.
+#### C. Direncanakan untuk Phase 2 (Advanced Roadmap)
+1. Portal verifikasi publik keabsahan dokumen PDF yang telah ditandatangani.
+2. Alur persetujuan dokumen bertingkat (*multi-party approval workflow*).
+3. Dukungan tanda tangan batch dokumen PDF.
+4. Aplikasi mobile dan arsitektur multi-tenant.
 
 ---
 
@@ -537,12 +536,11 @@ GET /api/v1/audit-logs
 ### Signing
 
 ```text
-POST /api/v1/signatures
+POST /api/v1/signatures        (Reserved / 501 Not Implemented)
+POST /api/v1/signatures/sign   (Active Document Signing Endpoint)
 ```
 
-Pada Phase 1 endpoint signing disediakan sebagai route yang belum diimplementasikan dan dapat mengembalikan `501 Not Implemented`.
-
-Detail request/response API menjadi tanggung jawab `API.md`.
+Route root `POST /api/v1/signatures` disediakan sebagai route reserved (mengembalikan `501 Not Implemented`), sedangkan fungsi penandatanganan aktif dilayani via `POST /api/v1/signatures/sign`. Detail request/response API dijelaskan pada `API.md`.
 
 ---
 
@@ -699,19 +697,14 @@ Detail halaman, komponen, state, dan user flow dirujuk ke `DESIGN.md`.
 
 ## 22. Phase 2
 
-Phase 2 mengembangkan fungsi:
+Phase 2 berfokus pada pengembangan fitur lanjutan dan integrasi ekosistem:
 
-- Upload PDF.
-- Signing.
-- Signed PDF.
-- Verification.
-- Signature appearance.
-- QR/signature visual.
-- Integrasi existing sign-api.
+- Portal verifikasi publik keabsahan dokumen PDF yang telah ditandatangani.
+- Alur persetujuan dokumen bertingkat (*multi-party document approval workflow*).
+- Penandatanganan batch dokumen PDF (*bulk PDF signing*).
+- Aplikasi mobile client dan dukungan multi-tenant.
 
-Existing `sign-api(well3)` menjadi kandidat engine signing karena sudah memiliki endpoint `/sign`.
-
-Phase 2 tidak mengubah prinsip provisioning certificate pada Phase 1.
+Catatan: Penandatanganan dokumen PDF digital tunggal via web (`POST /api/v1/signatures/sign`) dengan opsi visual stamp dan proteksi IDOR telah diintegrasikan langsung pada platform backend monolith Phase 1 menggunakan service `pdf_signer.py` dan arsip P12 kanonis `sign-api/p12/`.
 
 ---
 

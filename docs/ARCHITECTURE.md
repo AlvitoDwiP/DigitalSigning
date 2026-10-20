@@ -51,11 +51,12 @@ Arsitektur Phase 1 terdiri dari komponen-komponen berikut:
      - `change_p12_passphrase-admin.sh`: Reset passphrase P12 oleh Admin.
      - `change_p12_passphrase-user.sh`: Ganti passphrase P12 oleh User mandiri.
    - Struktur CA runtime: Root CA (`pki/root/`) dan Intermediate CA (`pki/intermediate/`).
-   - Direktori penyimpanan sertifikat: `pki/issued/` dan arsip kredensial `sign-api(well3)/p12/`.
+   - Direktori penyimpanan sertifikat: `pki/issued/` dan arsip kredensial kanonis `sign-api/p12/`.
 
-6. **Existing Sign API (`sign-api(well3)`)**
-   - Disiapkan untuk kebutuhan PDF signing pada Phase 2.
-   - Tidak diaktifkan atau diintegrasikan ke alur signing pada Phase 1.
+6. **Integrated PDF Signing Service (`pdf_signer.py`)**
+   - Diintegrasikan langsung ke dalam backend monolith melalui endpoint `/api/v1/signatures/sign` dan UI `/signing`.
+   - Menggunakan sertifikat PKCS#12 yang tersimpan di `sign-api/p12/` dengan validasi passphrase dan opsi stempel visual.
+   - Fitur lanjutan Phase 2 difokuskan pada portal verifikasi publik dan approval workflow.
 
 ---
 

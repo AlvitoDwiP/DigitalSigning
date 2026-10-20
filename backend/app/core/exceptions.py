@@ -9,3 +9,8 @@ class AppException(Exception):
 class DatabaseConnectionException(AppException):
     def __init__(self, message: str = "Database connection error"):
         super().__init__(code="INTERNAL_ERROR", message=message, status_code=500)
+
+
+class PKIServiceException(AppException):
+    def __init__(self, code: str, message: str, status_code: int = 500):
+        super().__init__(code=code, message=message, status_code=status_code)

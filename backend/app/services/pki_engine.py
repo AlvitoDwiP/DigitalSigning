@@ -71,6 +71,8 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
     run_env["ISSUED_ROOT"] = str(issued_dir)
     run_env["P12_ARCHIVE_DIR"] = str(p12_archive_dir)
     run_env["CHAIN_PATH"] = str(chain_path)
+    run_env["INTER_CA_PASS"] = getattr(settings, "INTER_CA_PASS", os.getenv("INTER_CA_PASS", "InterPass!ChangeMe123"))
+    run_env["DEFAULT_PFX_PASS"] = getattr(settings, "DEFAULT_PFX_PASS", os.getenv("DEFAULT_PFX_PASS", "Mkri006!"))
     if env:
         run_env.update(env)
         
@@ -412,9 +414,6 @@ def change_p12_passphrase_admin(nik: str, new_password: str) -> bool:
     input_data = f"{nik_safe}\n{new_password}\n"
     execute_script("change_p12_passphrase_admin.sh", input_data=input_data)
     return True
-
-def change_p12_passphrase(nik: str, new_password: str):
-    return change_p12_passphrase_admin(nik, new_password)
 
 def delete_user_pki_materials(nik: str) -> dict:
     nik_safe = re.sub(r'[^0-9]', '', nik)

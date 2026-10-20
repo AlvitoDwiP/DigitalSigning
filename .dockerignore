@@ -13,5 +13,19 @@ frontend/node_modules
 dist
 frontend/dist
 .env
-.env.local
+.env.*
+*.env
 *.log
+
+# Sensitive Archives, Databases & Backups
+archive/
+*.sql
+*.csv
+backup*
+
+# PKI Keys & Private Materials
+*.key
+*.pem
+*.p12
+*.pfx
+**/private/

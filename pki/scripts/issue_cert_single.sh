@@ -14,8 +14,8 @@ DEFAULT_OU="TTE"
 DEFAULT_CN="Nama Penandatangan"
 DEFAULT_EMAIL="penandatangan@univ-b.ac.id"
 DEFAULT_DAYS="730"
-DEFAULT_PFX_PASS="Mkri006!"
-INTER_CA_PASS="InterPass!ChangeMe123"
+DEFAULT_PFX_PASS="${DEFAULT_PFX_PASS:-Mkri006!}"
+INTER_CA_PASS="${INTER_CA_PASS:-InterPass!ChangeMe123}"
 
 # ==================== CA PATH ====================
 INT_DIR="$H/pki/intermediate"

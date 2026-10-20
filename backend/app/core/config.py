@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     PKI_TIMEOUT: int = int(os.getenv("PKI_TIMEOUT", "30"))
     MAX_AUDIT_LOGS: int = int(os.getenv("MAX_AUDIT_LOGS", "5000"))
 
+    # PKI Secrets & Default Passphrases
+    INTER_CA_PASS: str = os.getenv("INTER_CA_PASS", "InterPass!ChangeMe123")
+    DEFAULT_PFX_PASS: str = os.getenv("DEFAULT_PFX_PASS", "Mkri006!")
+    DEFAULT_USER_PASS: str = os.getenv("DEFAULT_USER_PASS", "Konstitusi100%")
+
     @model_validator(mode="after")
     def validate_production_security(self):
         if self.ENVIRONMENT.lower() == "production":

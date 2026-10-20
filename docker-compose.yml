@@ -33,6 +33,9 @@ services:
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - PKI_ENGINE_DIR=/app/pki/scripts
       - P12_ARCHIVE_DIR=/app/sign-api/p12
+      - INTER_CA_PASS=${INTER_CA_PASS:-InterPass!ChangeMe123}
+      - DEFAULT_PFX_PASS=${DEFAULT_PFX_PASS:-Mkri006!}
+      - DEFAULT_USER_PASS=${DEFAULT_USER_PASS:-Konstitusi100%}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
       - PORT=8000
     volumes:
@@ -40,7 +43,6 @@ services:
       - ./backend/alembic:/app/alembic
       - ./pki:/app/pki
       - ./sign-api:/app/sign-api
-      - ./sign-api:/app/sign-api(well3)
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       postgres:

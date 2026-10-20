@@ -19,6 +19,7 @@ from app.schemas.user import User as UserSchema, GenerateUserRequest, GenerateUs
 from app.schemas.certificate import CertificateResponse, RegenerateCertificateRequest, RegenerateCertificateResponse
 from app.services.pki_client import pki_client
 from app.core.security import get_password_hash, verify_password
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -132,9 +133,9 @@ def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
             
         # Automatic default credentials when empty
         if not password:
-            password = "Konstitusi100%"
+            password = settings.DEFAULT_USER_PASS
         if not pfx_pass:
-            pfx_pass = "Mkri006!"
+            pfx_pass = settings.DEFAULT_PFX_PASS
             
         # NIK format
         if nik and not re.match(r"^[0-9]{16}$", nik):
@@ -849,7 +850,7 @@ def regenerate_user_certificate(
             detail={"code": "INVALID_CREDENTIALS", "message": "Password admin salah. Verifikasi gagal."}
         )
 
-    pfx_pass = "Mkri006!"
+    pfx_pass = settings.DEFAULT_PFX_PASS
     if req:
         if req.pfx_password:
             if req.confirm_pfx_password is not None and req.pfx_password != req.confirm_pfx_password:
