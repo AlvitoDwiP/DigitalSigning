@@ -229,3 +229,36 @@ def test_change_user_pfx_passphrase(client: TestClient, auth_headers: dict, seed
         assert data["message"] == "Passphrase berhasil diubah"
         assert "NewSecretPass123!" not in res.text
 
+
+def test_single_generate_failure_leaves_database_clean(client: TestClient, auth_headers: dict, db_session):
+    """Memastikan jika PKI engine gagal saat generate user/cert tunggal, user & cert tidak tersimpan di database."""
+    from app.services.pki_api_client import PKIEngineError
+    str_suffix = uuid.uuid4().hex[:6]
+    test_nik = f"9988776655{random.randint(100000, 999999):06d}"
+    payload = {
+        "name": f"Fail User {str_suffix}",
+        "nik": test_nik,
+        "email": f"fail_user_{str_suffix}@mkri.go.id",
+        "organization": "Mahkamah Konstitusi",
+        "ou": "TTE",
+        "password": "Password123!",
+        "pfx_password": "PfxPassword123!",
+        "confirm_pfx_password": "PfxPassword123!"
+    }
+
+    with patch("app.api.endpoints.users.pki_api_client.generate_single", side_effect=PKIEngineError("PKI Service Crash", "PKI_ENGINE_ERROR", 502)):
+        response = client.post("/api/v1/users/generate", json=payload, headers=auth_headers["admin"])
+        assert response.status_code == 502
+        data = response.json()
+        assert data["success"] is False
+        assert data["error"]["code"] == "PKI_ENGINE_ERROR"
+
+    # Pastikan database tetap bersih
+    from app.models.user import User
+    from app.models.certificate import Certificate
+    user_in_db = db_session.query(User).filter(User.nik == test_nik).first()
+    assert user_in_db is None
+    cert_in_db = db_session.query(Certificate).filter(Certificate.subject.contains(payload["name"])).first()
+    assert cert_in_db is None
+
+

@@ -35,9 +35,8 @@ export function Topbar({ onOpenMobileMenu, onNavigate, viewMode = 'admin', onTog
         {authUser?.role === 'ADMIN' && onToggleViewMode && (
           <button
             type="button"
-            className={`topbar-mode-btn ${viewMode === 'user' ? 'topbar-mode-btn-user' : 'topbar-mode-btn-admin'}`}
+            className={`topbar-mode-btn ${viewMode === 'user' ? 'topbar-mode-btn-user mode-user' : 'topbar-mode-btn-admin mode-admin'}`}
             onClick={onToggleViewMode}
-            title={viewMode === 'user' ? 'Beralih kembali ke Mode Admin' : 'Beralih ke Mode Pengguna'}
             aria-label={viewMode === 'user' ? 'Kembali ke Mode Admin' : 'Beralih ke Mode Pengguna'}
           >
             <span className={`mode-dot ${viewMode === 'user' ? 'mode-dot-user' : 'mode-dot-admin'}`} />

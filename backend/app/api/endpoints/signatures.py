@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api import deps
+from app.core.config import settings
 from app.models.user import User
 from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
@@ -16,9 +17,24 @@ from app.services import pdf_signer
 router = APIRouter()
 
 
+@router.post("")
+@router.post("/")
+def signing_root_reserved(current_user: User = Depends(deps.get_current_user)):
+    """
+    Route root dicadangkan untuk Phase 2 (mengembalikan 501 Not Implemented).
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail={
+            "code": "RESERVED_ENDPOINT",
+            "message": "Endpoint penandatanganan PDF (TTE) dicadangkan untuk Phase 2 (501 Not Implemented)."
+        }
+    )
+
+
 @router.post("/sign", response_class=StreamingResponse)
 async def sign_document(
-    pdf: UploadFile = File(..., description="Dokumen PDF yang akan ditandatangani"),
+    pdf: Optional[UploadFile] = File(default=None, description="Dokumen PDF yang akan ditandatangani"),
     stamp: Optional[UploadFile] = File(default=None, description="Berkas stempel visual (PNG/JPG) opsional"),
     page: int = Form(default=1, description="Nomor halaman (1-based)"),
     llx: Optional[float] = Form(default=None, description="Lower-Left X coordinate (points)"),
@@ -36,7 +52,25 @@ async def sign_document(
     - USER menandatangani secara mandiri menggunakan sertifikat aktif miliknya (NIK dipaksa dari sesi).
     - ADMIN dapat menandatangani atas nama dokumen pengguna lain sesuai kewenangannya.
     - SUPER_ADMIN dibatasi dan tidak memiliki akses ke fitur penandatanganan.
+    - Pada Phase 1: Fitur dinonaktifkan secara aman dan mengembalikan 501 Not Implemented.
     """
+    # Batas Phase 1 vs Phase 2: TTE dinonaktifkan pada Phase 1
+    if not settings.ENABLE_PDF_SIGNING:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail={
+                "code": "FEATURE_DISABLED_PHASE_1",
+                "message": "Fitur penandatanganan PDF (TTE) belum aktif pada konfigurasi Phase 1 (direncanakan untuk Phase 2)."
+            }
+        )
+
+    # Validasi input untuk Phase 2
+    if not pdf or not pdf.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_INPUT", "message": "Berkas PDF wajib diunggah."}
+        )
+
     # SUPER_ADMIN dilarang menandatangani dokumen
     if current_user.role == "SUPER_ADMIN":
         raise HTTPException(

@@ -248,9 +248,11 @@ def get_users(
         query = query.filter(User.status == status)
 
     if certificate_status:
-        query = query.join(Certificate, Certificate.user_id == User.id).filter(
-            Certificate.status == certificate_status
-        ).distinct()
+        query = query.filter(
+            User.id.in_(
+                db.query(Certificate.user_id).filter(Certificate.status == certificate_status)
+            )
+        )
 
     # Sorting
     is_asc = (order.lower() == "asc") if order else False

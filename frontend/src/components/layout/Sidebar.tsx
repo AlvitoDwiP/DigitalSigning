@@ -5,9 +5,9 @@ import {
   IconUsers,
   IconGenerate,
   IconAudit,
-  IconSignature,
   IconShield,
   IconUser,
+  IconSignature,
   IconClose,
 } from '../icons/Icons';
 import { getAuthUser } from '../../services/api';
@@ -61,12 +61,20 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
         label: 'Kelola Akun',
         icon: IconUser,
       },
+      {
+        id: 'signing',
+        path: '/signing',
+        label: 'Penandatanganan',
+        icon: IconSignature,
+        isReserved: true,
+        reservedBadge: 'Soon',
+      },
     ];
   }
 
   if (role === 'ADMIN') {
     if (viewMode === 'user') {
-      // Admin pada Mode Pengguna: Menampilkan navigasi User yang sudah ada
+      // Admin pada Mode Pengguna: Menampilkan navigasi User dengan penanda Soon untuk Penandatanganan
       return [
         {
           id: 'dashboard',
@@ -85,11 +93,13 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
           path: '/signing',
           label: 'Penandatanganan',
           icon: IconSignature,
+          isReserved: true,
+          reservedBadge: 'Soon',
         },
       ];
     }
 
-    // Admin pada Mode Admin: Menu administrasi tanpa menu Penandatanganan TTE dan tanpa Kelola Akun (tersedia di Mode Pengguna)
+    // Admin pada Mode Admin: Menu administrasi dengan penanda Soon untuk Penandatanganan
     return [
       {
         id: 'dashboard',
@@ -115,10 +125,18 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
         label: 'Audit Log',
         icon: IconAudit,
       },
+      {
+        id: 'signing',
+        path: '/signing',
+        label: 'Penandatanganan',
+        icon: IconSignature,
+        isReserved: true,
+        reservedBadge: 'Soon',
+      },
     ];
   }
 
-  // Role: USER
+  // Role: USER (Phase 1: Dashboard, Kelola Akun, Penandatanganan Soon)
   return [
     {
       id: 'dashboard',
@@ -137,6 +155,8 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
       path: '/signing',
       label: 'Penandatanganan',
       icon: IconSignature,
+      isReserved: true,
+      reservedBadge: 'Soon',
     },
   ];
 }
@@ -210,11 +230,6 @@ export function Sidebar({
           <img src={logoImg} alt="Logo" className="brand-logo" />
           <div className="brand-text">
             <span className="brand-title">Digital Signature</span>
-            {currentRole === 'ADMIN' && (
-              <span className={`sidebar-mode-tag ${viewMode === 'user' ? 'sidebar-mode-tag-user' : 'sidebar-mode-tag-admin'}`}>
-                {viewMode === 'user' ? 'Mode Pengguna' : 'Mode Admin'}
-              </span>
-            )}
           </div>
           {isOpenMobile && (
             <button
@@ -251,10 +266,10 @@ export function Sidebar({
                     <span className="nav-icon-wrapper" aria-hidden="true">
                       <Icon size={20} />
                     </span>
-                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, minWidth: 0, textAlign: 'left' }}>
                       <span className="nav-label">{item.label}</span>
                       {item.isReserved && (
-                        <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)', lineHeight: 1.2 }}>Segera</span>
+                        <span className="sidebar-badge-soon">{item.reservedBadge || 'Soon'}</span>
                       )}
                     </div>
                   </button>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { changeAccountLoginPassword } from '../../services/account';
+import { getAuthUser, setAuthUser } from '../../services/api';
 import { PasswordInput } from '../ui/PasswordInput';
 import { IconLock, IconAlertTriangle } from '../icons/Icons';
 
@@ -62,6 +63,14 @@ export function AccountPasswordCard({ onSuccess }: AccountPasswordCardProps) {
         setNewPassword('');
         setConfirmPassword('');
         setError(null);
+        try {
+          const user = getAuthUser();
+          if (user) {
+            setAuthUser({ ...user, must_change_password: false });
+          }
+        } catch {
+          // ignore
+        }
         onSuccess('Password login berhasil diubah.');
       } else {
         const msg = typeof res.detail === 'string'
@@ -92,72 +101,78 @@ export function AccountPasswordCard({ onSuccess }: AccountPasswordCardProps) {
           Perbarui kata sandi akun Anda untuk autentikasi masuk ke platform.
         </p>
 
-        <form onSubmit={handleSubmit} className="account-form-stack">
-          <PasswordInput
-            id="account-old-login-password"
-            name="old_password"
-            label="Password Lama"
-            placeholder="Ketik password saat ini"
-            value={oldPassword}
-            onChange={(e) => {
-              setOldPassword(e.target.value);
-              setError(null);
-            }}
-            disabled={isProcessing}
-            autoComplete="current-password"
-            required
-          />
+        <form onSubmit={handleSubmit} className="account-two-col-form">
+          <div className="account-form-cols">
+            <div className="account-form-col">
+              <PasswordInput
+                id="account-old-login-password"
+                name="old_password"
+                label="Password Lama"
+                placeholder="Ketik password saat ini"
+                value={oldPassword}
+                onChange={(e) => {
+                  setOldPassword(e.target.value);
+                  setError(null);
+                }}
+                disabled={isProcessing}
+                autoComplete="current-password"
+                required
+              />
 
-          {(() => {
-            const isNewPassValid = Boolean(newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[^a-zA-Z0-9]/.test(newPassword));
-            const isConfirmPassValid = Boolean(newPassword && confirmPassword && confirmPassword === newPassword && isNewPassValid);
+              <div className="password-policy-hints">
+                <span className="policy-hint-title">Ketentuan Password:</span>
+                <ul className="policy-hints-list">
+                  <li>Minimal 8 karakter</li>
+                  <li>Mengandung minimal 1 huruf besar (uppercase)</li>
+                  <li>Mengandung minimal 1 simbol / karakter non-alfanumerik</li>
+                </ul>
+              </div>
+            </div>
 
-            return (
-              <>
-                <PasswordInput
-                  id="account-new-login-password"
-                  name="new_password"
-                  label="Password Baru"
-                  placeholder="Min. 8 karakter, 1 huruf besar, 1 simbol"
-                  helperText={isNewPassValid ? 'Password baru memenuhi syarat' : undefined}
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(e.target.value);
-                    setError(null);
-                  }}
-                  isValid={isNewPassValid}
-                  disabled={isProcessing}
-                  autoComplete="new-password"
-                  required
-                />
+            <div className="account-form-col">
+              {(() => {
+                const isNewPassValid = Boolean(newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[^a-zA-Z0-9]/.test(newPassword));
+                const isConfirmPassValid = Boolean(newPassword && confirmPassword && confirmPassword === newPassword && isNewPassValid);
 
-                <PasswordInput
-                  id="account-confirm-login-password"
-                  name="confirm_password"
-                  label="Konfirmasi Password Baru"
-                  placeholder="Ketik ulang password baru"
-                  helperText={isConfirmPassValid ? 'Konfirmasi password cocok' : undefined}
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    setError(null);
-                  }}
-                  isValid={isConfirmPassValid}
-                  disabled={isProcessing}
-                  autoComplete="new-password"
-                  required
-                />
-              </>
-            );
-          })()}
+                return (
+                  <>
+                    <PasswordInput
+                      id="account-new-login-password"
+                      name="new_password"
+                      label="Password Baru"
+                      placeholder="Min. 8 karakter, 1 huruf besar, 1 simbol"
+                      helperText={isNewPassValid ? 'Password baru memenuhi syarat' : undefined}
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        setError(null);
+                      }}
+                      isValid={isNewPassValid}
+                      disabled={isProcessing}
+                      autoComplete="new-password"
+                      required
+                    />
 
-          <div className="password-policy-hints">
-            <span className="policy-hint-title">Ketentuan Password:</span>
-            <ul className="policy-hints-list">
-              <li>Minimal 8 karakter</li>
-              <li>Mengandung minimal 1 huruf besar (uppercase)</li>
-              <li>Mengandung minimal 1 simbol / karakter non-alfanumerik</li>
-            </ul>
+                    <PasswordInput
+                      id="account-confirm-login-password"
+                      name="confirm_password"
+                      label="Konfirmasi Password Baru"
+                      placeholder="Ketik ulang password baru"
+                      helperText={isConfirmPassValid ? 'Konfirmasi password cocok' : undefined}
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        setError(null);
+                      }}
+                      isValid={isConfirmPassValid}
+                      disabled={isProcessing}
+                      autoComplete="new-password"
+                      required
+                    />
+                  </>
+                );
+              })()}
+            </div>
           </div>
 
           {error && (

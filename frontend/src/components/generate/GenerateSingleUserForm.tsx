@@ -322,6 +322,15 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <IconLock size={16} aria-hidden="true" />
             <span>Akun login</span>
           </h3>
+          <p className="form-section-desc">
+            Dipakai untuk autentikasi masuk pengguna ke platform.
+          </p>
+          <div className="passphrase-default-hint">
+            <IconLock size={18} className="hint-icon" aria-hidden="true" />
+            <span>
+              Jika kata sandi tidak diisi, maka akan otomatis terisi dengan password basic.
+            </span>
+          </div>
         </div>
 
         <div className="form-grid">
@@ -329,6 +338,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-password"
               label="Kata sandi"
+              placeholder="Otomatis terisi password basic jika kosong"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -339,10 +349,9 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
               helperText={
                 isPasswordValid
                   ? 'Kata sandi memenuhi syarat keamanan (minimal 8 karakter, huruf kapital, dan simbol).'
-                  : 'Minimal 8 karakter, ada satu huruf kapital dan satu simbol.'
+                  : (password ? 'Minimal 8 karakter, ada satu huruf kapital dan satu simbol.' : 'Kosongkan untuk otomatis menggunakan password basic')
               }
               disabled={isSubmitting}
-              required
             />
           </div>
 
@@ -350,6 +359,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-confirm-password"
               label="Konfirmasi kata sandi"
+              placeholder="Otomatis terisi password basic jika kosong"
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
@@ -360,10 +370,9 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
               helperText={
                 isConfirmPasswordValid
                   ? 'Konfirmasi kata sandi cocok'
-                  : (password ? 'Ketik ulang kata sandi yang diinputkan' : undefined)
+                  : (password ? 'Ketik ulang kata sandi yang diinputkan' : 'Kosongkan untuk otomatis menggunakan password basic')
               }
               disabled={isSubmitting}
-              required
             />
           </div>
         </div>

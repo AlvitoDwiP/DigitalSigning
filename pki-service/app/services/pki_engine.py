@@ -123,13 +123,16 @@ def validate_p12_file(p12_path: Path, pfx_password: str):
     if not p12_path.is_file() or p12_path.stat().st_size == 0:
         raise PKIEngineError(f"P12 credential file not found: {p12_path.name}", "P12_NOT_FOUND", 502)
     try:
+        run_env = os.environ.copy()
+        run_env["P12_VALIDATE_PASS"] = pfx_password or ""
         res = subprocess.run(
-            ["openssl", "pkcs12", "-in", str(p12_path), "-passin", f"pass:{pfx_password}", "-noout", "-nokeys"],
+            ["openssl", "pkcs12", "-in", str(p12_path), "-passin", "env:P12_VALIDATE_PASS", "-noout", "-nokeys"],
             capture_output=True,
-            text=True
+            text=True,
+            env=run_env
         )
         if res.returncode != 0:
-            raise PKIEngineError(f"P12 credential file validation failed: {res.stderr.strip()}", "P12_VALIDATION_FAILED", 502)
+            raise PKIEngineError("P12 credential file validation failed: invalid passphrase or corrupt archive", "P12_VALIDATION_FAILED", 502)
     except subprocess.CalledProcessError:
         raise PKIEngineError("Failed to validate generated P12 credential", "P12_VALIDATION_FAILED", 502)
 

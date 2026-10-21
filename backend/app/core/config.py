@@ -12,6 +12,20 @@ INSECURE_DEV_KEYS = {
     "dev-secret-key-digital-signature-platform-2026",
     "secret",
     "changeme",
+    "default",
+}
+
+INSECURE_DEV_TOKENS = {
+    "dev-internal-pki-secret-token-2026",
+    "secret",
+    "changeme",
+    "default",
+}
+
+INSECURE_DEV_DB_URLS = {
+    "postgresql://postgres:postgres@localhost:5432/digital_signature_db",
+    "postgresql://postgres:postgrespassword@postgres:5432/digital_signature_db",
+    "postgresql://postgres:postgres@db:5432/digital_signature_db",
 }
 
 
@@ -75,16 +89,32 @@ class Settings(BaseSettings):
     DEFAULT_PFX_PASS: str = os.getenv("DEFAULT_PFX_PASS", "Mkri006!")
     DEFAULT_USER_PASS: str = os.getenv("DEFAULT_USER_PASS", "Konstitusi100%")
 
+    # Feature Flags (Phase 1 vs Phase 2)
+    # TTE PDF is part of Phase 2 roadmap and is disabled by default in Phase 1.
+    ENABLE_PDF_SIGNING: bool = os.getenv("ENABLE_PDF_SIGNING", "false").lower() in ("true", "1")
+
     @model_validator(mode="after")
     def validate_production_security(self):
         if self.ENVIRONMENT.lower() == "production":
-            if self.SECRET_KEY in INSECURE_DEV_KEYS or len(self.SECRET_KEY) < 32:
+            if not self.SECRET_KEY or self.SECRET_KEY in INSECURE_DEV_KEYS or len(self.SECRET_KEY) < 32:
                 raise ValueError(
                     "Production environment requires a strong and non-default SECRET_KEY (at least 32 characters)."
                 )
-            if self.PKI_SERVICE_TOKEN in {"secret", "changeme", "default"} or (self.PKI_SERVICE_TOKEN != "dev-internal-pki-secret-token-2026" and len(self.PKI_SERVICE_TOKEN) < 16):
+            if (
+                not self.PKI_SERVICE_TOKEN
+                or self.PKI_SERVICE_TOKEN in INSECURE_DEV_TOKENS
+                or len(self.PKI_SERVICE_TOKEN) < 32
+            ):
                 raise ValueError(
-                    "Production environment requires a strong and non-default PKI_SERVICE_TOKEN."
+                    "Production environment requires a strong and non-default PKI_SERVICE_TOKEN (at least 32 characters)."
+                )
+            if (
+                not self.DATABASE_URL
+                or self.DATABASE_URL in INSECURE_DEV_DB_URLS
+                or "postgres:postgres@" in self.DATABASE_URL
+            ):
+                raise ValueError(
+                    "Production environment requires a secure and non-default DATABASE_URL / POSTGRES_PASSWORD."
                 )
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(

@@ -185,11 +185,3 @@ export async function loginUser(email: string, password: string): Promise<LoginR
 
   return res;
 }
-
-export async function verifyCurrentPassword(password: string): Promise<boolean> {
-  const res = await requestApi<{ success: boolean; message?: string }>('/api/v1/auth/verify-password', {
-    method: 'POST',
-    body: JSON.stringify({ password }),
-  });
-  return res.success;
-}

@@ -132,41 +132,6 @@ Mengambil informasi user yang sedang login.
 
 ---
 
-## POST `/api/v1/auth/verify-password`
-
-Memverifikasi password akun pengguna yang sedang terotentikasi (Bearer Token). Digunakan sebagai konfirmasi keamanan sebelum beralih ke Mode Admin.
-
-### Request Body
-
-```json
-{
-  "password": "Password123!"
-}
-```
-
-### Response Success (200 OK)
-
-```json
-{
-  "success": true,
-  "message": "Password berhasil diverifikasi."
-}
-```
-
-### Response Error (400 Bad Request)
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "INVALID_PASSWORD",
-    "message": "Password akun salah. Masukkan password yang benar."
-  }
-}
-```
-
----
-
 # 4. Dashboard
 
 ## GET `/api/v1/dashboard`
@@ -865,56 +830,53 @@ Header Opsional:
 
 ---
 
-# 15. Internal PKI Service API Contract (Container-to-Container)
+# 15. Internal PKI Adapter Contract (In-Process)
 
-Pada arsitektur 2 container aplikasi, Platform API berkomunikasi dengan PKI Service secara internal via HTTP REST di port internal 8001 (tidak diekspos ke host publik). Seluruh permintaan dilindungi header autentikasi `X-Internal-Token`.
+Pada arsitektur Monolith, PKI Engine dipanggil langsung secara *in-process* melalui internal Python adapter (`app.services.pki_engine` yang dibungkus oleh `app.services.pki_client`), bukan melalui service HTTP terpisah atau port terbuka di luar backend.
 
-### Internal Endpoints
+Lapisan adapter ini memastikan:
+1. Router/controller tidak pernah mengeksekusi shell/OpenSSL secara langsung.
+2. Tidak ada endpoint HTTP publik maupun port internal yang mengekspos pemanggilan subprocess bash.
+3. Seluruh argumen disanitasi menggunakan array parameter aman (`subprocess.run(["bash", script, ...])`) tanpa `shell=True`.
 
-| Method | Endpoint | Fungsi | Auth Header |
-|---|---|---|---|
-| `GET` | `/health` | Health check PKI daemon | Public internal |
-| `POST` | `/internal/v1/pki/certificates/single` | Penerbitan sertifikat tunggal | `X-Internal-Token` |
-| `POST` | `/internal/v1/pki/certificates/bulk` | Penerbitan sertifikat massal | `X-Internal-Token` |
-| `POST` | `/internal/v1/pki/certificates/regenerate/stage` | Pembuatan sertifikat staging isolasi | `X-Internal-Token` |
-| `POST` | `/internal/v1/pki/certificates/regenerate/commit` | Commit arsip hasil staging | `X-Internal-Token` |
-| `POST` | `/internal/v1/pki/certificates/regenerate/cleanup` | Pembersihan direktori staging | `X-Internal-Token` |
-| `POST` | `/internal/v1/pki/passphrase/user` | Ganti passphrase P12 oleh User | `X-Internal-Token` |
-| `POST` | `/internal/v1/pki/passphrase/admin` | Reset passphrase P12 oleh Admin | `X-Internal-Token` |
-| `DELETE` | `/internal/v1/pki/materials/{nik}` | Pembersihan berkas kredensial & sertifikat | `X-Internal-Token` |
+### Python Adapter Interface (`pki_engine.py`)
 
-### Input Schema (`SingleCertRequest`)
+Fungsi utama adapter internal:
+- `generate_certificate(request: PKIGenerateRequest) -> PKIGenerateResult`
+- `change_pfx_password(nik: str, current_passphrase: str, new_passphrase: str) -> None`
+- `verify_p12(p12_path: Path, passphrase: str) -> bool`
+- `check_health() -> Dict[str, Any]`
 
-```json
+### Input Schema (`PKIGenerateRequest`)
+
+```python
 {
-  "name": "Budi Santoso",
-  "nik": "3201123456789012",
-  "email": "budi@mkri.go.id",
-  "organization": "Mahkamah Konstitusi",
-  "ou": "Kepaniteraan",
-  "pfx_password": "Passphrase123!"
+    "name": "Budi Santoso",
+    "nik": "327xxxxxxxxxxxxx",
+    "email": "budi@mkri.go.id",
+    "organization": "Mahkamah Konstitusi Republik Indonesia",
+    "ou": "TTE",
+    "pfx_password": "********",
+    "custom_env": {}  # Optional untuk staging / regenerate
 }
 ```
 
-### Output Response (`200 OK`)
+### Output Metadata (`PKIGenerateResult`)
 
-```json
+```python
 {
-  "success": true,
-  "data": {
-    "serial_number": "1188",
-    "subject": "/C=ID/O=Mahkamah Konstitusi/OU=Kepaniteraan/CN=Budi Santoso/emailAddress=budi@mkri.go.id",
-    "issuer": "Intermediate CA",
-    "fingerprint_sha256": "abcdef...",
-    "issued_at": "2026-10-20T07:00:00Z",
-    "expires_at": "2028-10-19T07:00:00Z",
-    "certificate_path": "/app/pki/issued/mahkamah-konstitusi--budi-santoso/mahkamah-konstitusi--budi-santoso.crt",
-    "p12_reference": "/app/sign-api/p12/3201123456789012.p12"
-  }
+    "serial_number": "1173",
+    "subject": "/C=ID/ST=DKI Jakarta/L=Jakarta Pusat/O=Mahkamah Konstitusi Republik Indonesia/OU=TTE/CN=Budi Santoso/UID=327xxxxxxxxxxxxx",
+    "issuer": "/C=ID/ST=DKI Jakarta/O=Mahkamah Konstitusi Republik Indonesia/OU=TTE/CN=MKRI Intermediate CA",
+    "fingerprint_sha256": "...",
+    "issued_at": "2026-10-14T07:44:35Z",
+    "expires_at": "2028-10-13T07:44:35Z",
+    "certificate_path": "/app/pki/issued/budi_santoso_327xxxxxxxxxxxxx.crt",
+    "p12_reference": "/app/sign-api/p12/327xxxxxxxxxxxxx.p12"
 }
 ```
 
-*Catatan Keamanan:* Passphrase dan secret token tidak pernah disimpan di database, metadata, atau audit log.
+*Catatan Keamanan:* Passphrase tidak pernah disimpan di database, metadata, atau audit log.
 
 ---
 

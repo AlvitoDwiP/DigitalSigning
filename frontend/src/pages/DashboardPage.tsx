@@ -35,6 +35,7 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
     }
     setError(null);
 
+    const startTime = Date.now();
     try {
       if (isUserView) {
         const result = await fetchUserDashboard();
@@ -46,8 +47,16 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat memuat data dashboard.');
     } finally {
-      setLoading(false);
-      setIsRefreshing(false);
+      if (isManualRefresh) {
+        const elapsed = Date.now() - startTime;
+        const delay = Math.max(0, 650 - elapsed);
+        setTimeout(() => {
+          setIsRefreshing(false);
+        }, delay);
+      } else {
+        setLoading(false);
+        setIsRefreshing(false);
+      }
     }
   }, [isUserView]);
 
@@ -111,8 +120,8 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
             variant="ghost"
             size="sm"
             onClick={() => loadDashboard(true)}
-            loading={isRefreshing}
-            icon={<IconRefresh size={16} />}
+            disabled={isRefreshing}
+            icon={<IconRefresh size={16} className={isRefreshing ? 'spin-animation' : ''} />}
             aria-label="Segarkan data dashboard"
           >
             Segarkan

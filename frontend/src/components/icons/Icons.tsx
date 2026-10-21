@@ -362,3 +362,13 @@ export function IconPlus({ size = 18, className, ...props }: IconProps) {
     </svg>
   );
 }
+
+export function IconKey({ size = 18, className, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
+      <circle cx="7.5" cy="15.5" r="4.5" stroke="currentColor" strokeWidth="1.75" fill="currentColor" fillOpacity="0.2" />
+      <path d="M10.5 12.5L20 3M20 3H16M20 3V7M16 7L18 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+

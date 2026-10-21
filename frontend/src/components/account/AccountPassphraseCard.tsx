@@ -74,75 +74,89 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
         <div className="card-title-group">
           <IconLock size={20} className="card-title-icon" aria-hidden="true" />
           <h2 id="account-passphrase-title" className="detail-card-title">
-            Ubah passphrase
+            Ubah Passphrase
           </h2>
         </div>
       </div>
 
       <div className="detail-card-body">
-        <p className="dialog-main-text mb-3">
-          Ganti passphrase untuk membuka berkas sertifikat Anda.
+        <p className="dialog-main-text mb-4">
+          Ganti passphrase untuk membuka berkas sertifikat digital (.p12/.pfx) Anda.
         </p>
 
-        <p className="text-muted text-xs mb-4">
-          Hanya passphrase yang berganti. Sertifikat dan masa berlakunya tetap sama.
-        </p>
+        <form onSubmit={handleSubmit} className="account-two-col-form">
+          <div className="account-form-cols">
+            <div className="account-form-col">
+              <PasswordInput
+                id="account-old-pfx-passphrase"
+                name="old_passphrase"
+                label="Passphrase Lama"
+                placeholder="Ketik passphrase saat ini"
+                value={oldPassphrase}
+                onChange={(e) => {
+                  setOldPassphrase(e.target.value);
+                  setError(null);
+                }}
+                disabled={isProcessing}
+                autoComplete="current-password"
+                required
+              />
 
-        <form onSubmit={handleSubmit} className="account-form-stack">
-          <PasswordInput
-            id="account-old-pfx-passphrase"
-            name="old_passphrase"
-            label="Passphrase lama"
-            value={oldPassphrase}
-            onChange={(e) => {
-              setOldPassphrase(e.target.value);
-              setError(null);
-            }}
-            disabled={isProcessing}
-            autoComplete="current-password"
-            required
-          />
+              <div className="password-policy-hints">
+                <span className="policy-hint-title">Ketentuan Passphrase:</span>
+                <ul className="policy-hints-list">
+                  <li>Minimal 8 karakter</li>
+                  <li>Digunakan untuk mengamankan sertifikat digital Anda</li>
+                  <li>Hanya passphrase yang berganti, sertifikat & masa berlaku tetap sama</li>
+                </ul>
+              </div>
+            </div>
 
-          {(() => {
-            const isNewPfxValid = newPassphrase.length >= 8;
-            const isConfirmPfxValid = Boolean(newPassphrase && confirmPassphrase && confirmPassphrase === newPassphrase && isNewPfxValid);
+            <div className="account-form-col">
+              {(() => {
+                const isNewPfxValid = newPassphrase.length >= 8;
+                const isConfirmPfxValid = Boolean(newPassphrase && confirmPassphrase && confirmPassphrase === newPassphrase && isNewPfxValid);
 
-            return (
-              <>
-                <PasswordInput
-                  id="account-new-pfx-passphrase"
-                  name="new_passphrase"
-                  label="Passphrase baru"
-                  helperText={isNewPfxValid ? 'Passphrase memenuhi syarat (min. 8 karakter)' : 'Minimal 8 karakter'}
-                  value={newPassphrase}
-                  onChange={(e) => {
-                    setNewPassphrase(e.target.value);
-                    setError(null);
-                  }}
-                  isValid={isNewPfxValid}
-                  disabled={isProcessing}
-                  autoComplete="new-password"
-                  required
-                />
+                return (
+                  <>
+                    <PasswordInput
+                      id="account-new-pfx-passphrase"
+                      name="new_passphrase"
+                      label="Passphrase Baru"
+                      placeholder="Min. 8 karakter"
+                      helperText={isNewPfxValid ? 'Passphrase memenuhi syarat (min. 8 karakter)' : undefined}
+                      value={newPassphrase}
+                      onChange={(e) => {
+                        setNewPassphrase(e.target.value);
+                        setError(null);
+                      }}
+                      isValid={isNewPfxValid}
+                      disabled={isProcessing}
+                      autoComplete="new-password"
+                      required
+                    />
 
-                <PasswordInput
-                  id="account-confirm-pfx-passphrase"
-                  name="confirm_passphrase"
-                  label="Ulangi passphrase baru"
-                  helperText={isConfirmPfxValid ? 'Konfirmasi passphrase cocok' : undefined}
-                  value={confirmPassphrase}
-                  onChange={(e) => {
-                    setConfirmPassphrase(e.target.value);
-                    setError(null);
-                  }}
-                  isValid={isConfirmPfxValid}
-                  disabled={isProcessing}
-                  autoComplete="new-password"
-                  required
-                />
-              </>
-            );
-          })()}
+                    <PasswordInput
+                      id="account-confirm-pfx-passphrase"
+                      name="confirm_passphrase"
+                      label="Konfirmasi Passphrase Baru"
+                      placeholder="Ketik ulang passphrase baru"
+                      helperText={isConfirmPfxValid ? 'Konfirmasi passphrase cocok' : undefined}
+                      value={confirmPassphrase}
+                      onChange={(e) => {
+                        setConfirmPassphrase(e.target.value);
+                        setError(null);
+                      }}
+                      isValid={isConfirmPfxValid}
+                      disabled={isProcessing}
+                      autoComplete="new-password"
+                      required
+                    />
+                  </>
+                );
+              })()}
+            </div>
+          </div>
 
           {error && (
             <div className="dialog-error-banner form-error-banner" role="alert">
@@ -157,7 +171,7 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
               className="btn btn-primary"
               disabled={isProcessing}
             >
-              {isProcessing ? 'Menyimpan...' : 'Simpan'}
+              {isProcessing ? 'Menyimpan...' : 'Perbarui Passphrase'}
             </button>
           </div>
         </form>

@@ -38,6 +38,7 @@ def test_p12_materials(seed_users: dict, tmp_path, monkeypatch):
     test_p12_dir = tmp_path / "test_p12"
     test_p12_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(settings, "P12_ARCHIVE_DIR", str(test_p12_dir))
+    monkeypatch.setattr(settings, "ENABLE_PDF_SIGNING", True)
 
     user = seed_users["user"]
     p12_path = test_p12_dir / f"{user.nik}.p12"
@@ -98,6 +99,38 @@ def test_p12_volume_is_read_only_in_container():
     with pytest.raises((OSError, PermissionError)):
         with open(test_probe_file, "wb") as f:
             f.write(b"probe")
+
+
+def test_signing_endpoint_disabled_in_phase_1_default(client: TestClient, auth_headers: dict):
+    """
+    Pada konfigurasi Phase 1 standar (ENABLE_PDF_SIGNING=False), endpoint
+    /api/v1/signatures/sign wajib menolak eksekusi dan mengembalikan HTTP 501 Not Implemented.
+    """
+    assert settings.ENABLE_PDF_SIGNING is False
+
+    files = {"pdf": ("document.pdf", VALID_PDF, "application/pdf")}
+    data = {"passphrase": "SomePassphrase123!"}
+
+    response = client.post(
+        "/api/v1/signatures/sign",
+        headers=auth_headers["user"],
+        files=files,
+        data=data
+    )
+    assert response.status_code == 501
+    err = response.json()
+    assert err["error"]["code"] == "FEATURE_DISABLED_PHASE_1"
+    assert "Phase 1" in err["error"]["message"]
+
+
+def test_signing_root_reserved_endpoint_501(client: TestClient, auth_headers: dict):
+    """
+    Route root /api/v1/signatures dicadangkan untuk Phase 2 dan mengembalikan 501.
+    """
+    response = client.post("/api/v1/signatures", headers=auth_headers["user"])
+    assert response.status_code == 501
+    err = response.json()
+    assert err["error"]["code"] == "RESERVED_ENDPOINT"
 
 
 def create_test_stamp_png() -> bytes:
@@ -298,6 +331,7 @@ def test_corrupt_p12_file_handled_gracefully(
     test_p12_dir = tmp_path / "corrupt_p12"
     test_p12_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(settings, "P12_ARCHIVE_DIR", str(test_p12_dir))
+    monkeypatch.setattr(settings, "ENABLE_PDF_SIGNING", True)
 
     user = seed_users["user"]
     p12_path = test_p12_dir / f"{user.nik}.p12"

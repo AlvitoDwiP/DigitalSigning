@@ -5,16 +5,44 @@ import { AccountProfileCard } from '../components/account/AccountProfileCard';
 import { AccountPasswordCard } from '../components/account/AccountPasswordCard';
 import { AccountPassphraseCard } from '../components/account/AccountPassphraseCard';
 import { AccountSkeleton } from '../components/account/AccountSkeleton';
-import { IconCheckCircle, IconAlertTriangle, IconRefresh } from '../components/icons/Icons';
+import { StatusChip } from '../components/ui/StatusChip';
+import { NikDisplay } from '../components/ui/NikDisplay';
+import { statusAkun } from '../lib/labels';
+import {
+  IconCheckCircle,
+  IconAlertTriangle,
+  IconRefresh,
+  IconUser,
+  IconLock,
+  IconKey,
+} from '../components/icons/Icons';
+
+export type AccountTab = 'detail' | 'password' | 'passphrase';
 
 interface AccountPageProps {
   onNavigate?: (path: string) => void;
+  initialTab?: AccountTab;
 }
 
-export function AccountPage({ onNavigate: _onNavigate }: AccountPageProps) {
+export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPageProps) {
   const [account, setAccount] = useState<AccountData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<AccountTab>(() => {
+    if (initialTab) return initialTab;
+    if (typeof window !== 'undefined' && window.location.hash === '#password') {
+      return 'password';
+    }
+    return 'detail';
+  });
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    } else if (typeof window !== 'undefined' && window.location.hash === '#password') {
+      setActiveTab('password');
+    }
+  }, [initialTab]);
 
   // Success Feedback Toast
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -105,17 +133,106 @@ export function AccountPage({ onNavigate: _onNavigate }: AccountPageProps) {
         </div>
       ) : account ? (
         <div className="account-grid-layout">
-          {/* Profile Card */}
-          <AccountProfileCard
-            account={account}
-            onSuccess={showFeedback}
-            onRefresh={loadAccount}
-          />
+          {/* Header Card & Tab Bar (seperti Gambar 2) */}
+          <div className="user-detail-header-card">
+            <div className="user-detail-hero-top">
+              <div className="user-profile-header">
+                <div className="user-profile-avatar" aria-hidden="true">
+                  <span>{account.name ? account.name.trim().charAt(0).toUpperCase() : 'U'}</span>
+                </div>
+                <div className="user-profile-titles">
+                  <div className="user-profile-name-row">
+                    <h2 className="user-profile-name">{account.name}</h2>
+                    <StatusChip
+                      status={account.status}
+                      label={statusAkun[account.status] || account.status}
+                    />
+                  </div>
+                  <div className="user-hero-meta-row">
+                    <span className="user-hero-meta-item">
+                      <NikDisplay nik={account.nik} />
+                    </span>
+                    <span className="meta-separator">•</span>
+                    <span className="user-hero-meta-item">{account.email}</span>
+                    {account.organization && (
+                      <>
+                        <span className="meta-separator">•</span>
+                        <span className="user-hero-meta-item">
+                          {account.organization}{account.ou ? ` / ${account.ou}` : ''}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          {/* Security / Password Cards */}
-          <div className="account-security-grid">
-            <AccountPasswordCard onSuccess={showFeedback} />
-            <AccountPassphraseCard onSuccess={showFeedback} />
+            {/* Tab Navigation Bar */}
+            <div className="user-detail-tabs-bar" role="tablist" aria-label="Tab Pengaturan Akun">
+              <button
+                type="button"
+                role="tab"
+                id="tab-detail"
+                aria-selected={activeTab === 'detail'}
+                aria-controls="pane-detail"
+                className={`user-detail-tab-btn ${activeTab === 'detail' ? 'active' : ''}`}
+                onClick={() => setActiveTab('detail')}
+              >
+                <IconUser size={17} aria-hidden="true" />
+                <span>Detail Akun</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                id="tab-password"
+                aria-selected={activeTab === 'password'}
+                aria-controls="pane-password"
+                className={`user-detail-tab-btn ${activeTab === 'password' ? 'active' : ''}`}
+                onClick={() => setActiveTab('password')}
+              >
+                <IconLock size={17} aria-hidden="true" />
+                <span>Ganti Password</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                id="tab-passphrase"
+                aria-selected={activeTab === 'passphrase'}
+                aria-controls="pane-passphrase"
+                className={`user-detail-tab-btn ${activeTab === 'passphrase' ? 'active' : ''}`}
+                onClick={() => setActiveTab('passphrase')}
+              >
+                <IconKey size={17} aria-hidden="true" />
+                <span>Ganti Passphrase</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Active Tab Pane Content */}
+          <div className="user-detail-tab-pane">
+            {activeTab === 'detail' && (
+              <div id="pane-detail" role="tabpanel" aria-labelledby="tab-detail">
+                <AccountProfileCard
+                  account={account}
+                  onSuccess={showFeedback}
+                  onRefresh={loadAccount}
+                />
+              </div>
+            )}
+
+            {activeTab === 'password' && (
+              <div id="pane-password" role="tabpanel" aria-labelledby="tab-password" className="account-tab-card-wrapper">
+                <AccountPasswordCard onSuccess={showFeedback} />
+              </div>
+            )}
+
+            {activeTab === 'passphrase' && (
+              <div id="pane-passphrase" role="tabpanel" aria-labelledby="tab-passphrase" className="account-tab-card-wrapper">
+                <AccountPassphraseCard onSuccess={showFeedback} />
+              </div>
+            )}
           </div>
         </div>
       ) : null}

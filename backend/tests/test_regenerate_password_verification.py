@@ -199,9 +199,17 @@ def test_password_never_leaks_in_response_or_audit_logs(client: TestClient, db_s
         assert not hasattr(al, "admin_password")
 
 
-def test_regeneration_failure_handling_and_cleanup(client: TestClient, auth_headers: dict, seed_users: dict):
-    """6. Kegagalan regenerasi tetap ditangani sesuai mekanisme backend yang ada (cleanup dipanggil)."""
+def test_regeneration_failure_handling_and_cleanup(client: TestClient, auth_headers: dict, seed_users: dict, db_session):
+    """6. Kegagalan regenerasi tetap ditangani sesuai mekanisme backend yang ada (cleanup dipanggil dan status DB tidak berubah)."""
     target_user = seed_users["user"]
+
+    # Ambil sertifikat aktif sebelum percobaan regenerasi
+    initial_cert = db_session.query(Certificate).filter(
+        Certificate.user_id == target_user.id,
+        Certificate.status == "ACTIVE"
+    ).first()
+    assert initial_cert is not None
+    initial_cert_id = initial_cert.id
 
     with patch("app.api.endpoints.users.pki_api_client.regenerate_stage", side_effect=Exception("PKI Stage Failure")), \
          patch("app.api.endpoints.users.pki_api_client.regenerate_cleanup") as mock_cleanup:
@@ -212,3 +220,14 @@ def test_regeneration_failure_handling_and_cleanup(client: TestClient, auth_head
         )
         assert res.status_code == 500
         assert res.json()["error"]["code"] == "PKI_GENERATION_FAILED"
+
+    # Verifikasi status database: sertifikat awal tetap ACTIVE, tidak ada sertifikat baru
+    db_session.expire_all()
+    current_active = db_session.query(Certificate).filter(
+        Certificate.user_id == target_user.id,
+        Certificate.status == "ACTIVE"
+    ).first()
+    assert current_active is not None
+    assert current_active.id == initial_cert_id
+    assert current_active.status == "ACTIVE"
+    assert current_active.replaced_by is None

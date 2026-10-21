@@ -54,3 +54,12 @@ class RegenerateCertificateResponse(BaseModel):
     success: bool = True
     data: RegenerateCertificateData
 
+class PublicCertificateItem(CertificateBase):
+    id: uuid.UUID
+
+    class Config:
+        from_attributes = True
+
+class PublicCertificateDetail(PublicCertificateItem):
+    is_valid: bool
+

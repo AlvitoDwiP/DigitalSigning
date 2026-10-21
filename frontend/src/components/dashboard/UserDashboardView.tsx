@@ -4,25 +4,24 @@ import { Button } from '../ui/Button';
 import {
   IconCertificate,
   IconUser,
-  IconSignature,
   IconRefresh,
   IconCalendar,
   IconShield,
   IconClock,
+  IconSignature,
 } from '../icons/Icons';
 import { NikDisplay } from '../ui/NikDisplay';
 import { formatWaktuIndonesia, statusSertifikat } from '../../lib/labels';
 
 interface UserDashboardViewProps {
   data: DashboardUserData;
-  onNavigate: (path: string) => void;
+  onNavigate?: (path: string) => void;
   onRefresh: () => void;
   isRefreshing?: boolean;
 }
 
 export function UserDashboardView({
   data,
-  onNavigate,
   onRefresh,
   isRefreshing = false,
 }: UserDashboardViewProps) {
@@ -65,8 +64,8 @@ export function UserDashboardView({
             variant="ghost"
             size="sm"
             onClick={onRefresh}
-            loading={isRefreshing}
-            icon={<IconRefresh size={16} />}
+            disabled={isRefreshing}
+            icon={<IconRefresh size={16} className={isRefreshing ? 'spin-animation' : ''} />}
             aria-label="Segarkan data dashboard"
           >
             Segarkan
@@ -203,47 +202,31 @@ export function UserDashboardView({
             </dl>
           </div>
 
-          <div className="user-card-footer">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => onNavigate('/account')}
-            >
-              Kelola Akun
-            </Button>
-          </div>
         </div>
       </div>
 
-      {/* Kartu 3: Layanan Penandatanganan Dokumen */}
-      <div className="card user-sign-card" aria-labelledby="user-sign-title">
-        <div className="user-card-header">
-          <div className="user-card-title-group">
-            <div className="user-card-icon-badge sign-icon-badge">
-              <IconSignature size={22} />
-            </div>
-            <div>
-              <h2 id="user-sign-title" className="user-card-title">Penandatanganan Dokumen</h2>
-              <p className="user-card-subtitle">Layanan verifikasi dan penandatanganan elektronik</p>
+      {/* Kartu 3: Layanan Penandatanganan Dokumen (Soon) */}
+      <div className="card user-sign-placeholder-card" aria-labelledby="user-sign-title">
+        <div className="user-sign-content">
+          <div className="user-sign-icon-circle" aria-hidden="true">
+            <IconSignature size={26} />
+          </div>
+          <div className="user-sign-text">
+            <div className="user-sign-title-row">
+              <h2 id="user-sign-title" className="user-sign-title">Penandatanganan Dokumen</h2>
+              <span className="badge-soon">Soon</span>
             </div>
           </div>
-          <StatusChip status="ACTIVE" label="Aktif" />
         </div>
-
-        <div className="user-card-body">
-          <p className="user-sign-description">
-            Layanan penandatanganan dokumen elektronik terverifikasi menggunakan sertifikat digital tersimpan akun Anda.
-          </p>
-        </div>
-
-        <div className="user-card-footer">
+        <div className="user-sign-action">
           <Button
-            variant="primary"
+            variant="secondary"
             size="sm"
-            onClick={() => onNavigate('/signing')}
-            title="Buka halaman penandatanganan dokumen"
+            disabled
+            aria-disabled="true"
+            title="Fitur Penandatanganan dokumen akan tersedia pada Phase 2"
           >
-            Mulai Penandatanganan
+            Mulai Penandatanganan (Soon)
           </Button>
         </div>
       </div>

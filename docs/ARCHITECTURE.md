@@ -8,124 +8,103 @@ Platform berfungsi sebagai layer aplikasi, business logic, dan orkestrasi. Prose
 
 ---
 
-## 2. Rasional Keputusan Arsitektur: 3-Container Service Separation
+## 2. Rasional Keputusan Arsitektur: Monolith Backend Terpadu
 
-Arsitektur sistem menggunakan pemisahan tiga container independen untuk menegakkan prinsip **Least Privilege** dan **Defense-in-Depth**:
+Pada evaluasi awal, backend sempat dipisahkan menjadi dua container: `backend` (Platform API) dan `pki-service` (adapter eksekusi bash di port 8001). Berdasarkan tinjauan kepraktisan dan kebutuhan operasional Phase 1, arsitektur disederhanakan menjadi **Satu Backend Monolith Terpadu (FastAPI)** karena:
 
-1. **Isolasi Total Kunci Privat CA:** Kunci privat Intermediate CA (`intermediate-ca.key`) dan seluruh skrip engine CA diisolasi secara eksklusif di dalam container **PKI Service** (`digital_signature_pki`). Container Backend/Platform API **tidak memiliki akses fisik maupun mount** ke direktori `./pki`.
-2. **Mount Arsip P12 Read-Only pada Backend:** Container Backend hanya me-mount subdirektori `./sign-api/p12` dengan izin *Read-Only* (`:ro`) untuk melayani penandatanganan PDF (TTE). Backend tidak dapat memodifikasi, membuat, atau menghapus berkas pada arsip P12.
-3. **Pemberian Hak Kelola Kriptografi Hanya pada PKI Service:** Seluruh operasi pembuatan, regenerasi sertifikat, perubahan passphrase P12, dan pembersihan material pengguna dilakukan oleh PKI Service melalui API internal terotentikasi token (`X-Internal-Token`).
-4. **Keamanan Database Terisolasi:** Container PostgreSQL hanya membuka port `5432` pada jaringan bridge internal Docker (`platform_network`), tanpa mapping port publik pada host.
-5. **Lingkungan CA Khusus Testing:** Pengujian penerbitan sertifikat menggunakan Test CA terisolasi penuh (`test_ca_factory`), menjamin file `index.txt` dan `serial` pada CA utama tidak mengalami perubahan saat test dijalankan.
+1. **Efisiensi Sumber Daya & Operasional:** Menghilangkan overhead pengelolaan 2 aplikasi FastAPI, 2 Dockerfile, latensi jaringan HTTP internal, dan alokasi RAM ganda pada container engine.
+2. **Eliminasi Kerapuhan Jaringan Internal:** Pemanggilan PKI dieksekusi secara *in-process* melalui modul Python bawaan (`subprocess.run`), menghilangkan risiko kegagalan koneksi antar-container serta mengeliminasi ketergantungan konfigurasi token internal (`PKI_SERVICE_TOKEN`) dan URL service internal (`PKI_SERVICE_URL`).
+3. **Pemisahan Tanggung Jawab Tetap Terjaga:** Secara struktural di tingkat kode, router controller (`app/api/endpoints/`) tetap terpisah dari adapter PKI (`app/services/pki_engine.py` dan `pki_client.py`). Kode tetap modular dan mudah diekstrak kembali jika kebutuhan skala besar di masa mendatang menuntutnya.
 
 ---
 
 ## 3. Komponen Sistem
 
-Arsitektur terdiri dari komponen-komponen berikut:
+Arsitektur Phase 1 terdiri dari komponen-komponen berikut:
 
 1. **Frontend (React + TypeScript + Vite)**
-   - Antarmuka web pengguna untuk manajemen akun, pengajuan generate sertifikat, dan penandatanganan dokumen TTE.
-   - Berkomunikasi secara eksklusif dengan Platform API melalui HTTP REST di port 8000.
+   - Bertindak sebagai antarmuka pengguna web utama dan konsumen utama Platform API.
+   - Mengelola state interaktif, form input pengguna, rendering data dashboard, dan token sesi di localStorage (`access_token` / `ds_auth_token`).
+   - Berkomunikasi secara eksklusif dengan Platform API melalui HTTP REST (via proxy Vite di lokal atau reverse proxy di production).
    - **Isolasi Keamanan:** Frontend tidak pernah mengakses file privat, bundle P12, atau skrip PKI secara langsung.
 
-2. **Platform API / Dashboard Backend (FastAPI — Port 8000)**
-   - Menangani autentikasi JWT pengguna, RBAC (`SUPER_ADMIN`, `ADMIN`, `USER`), validasi request, audit logging, dan fitur penandatanganan PDF in-process (`pdf_signer.py`).
-   - Menerima mount arsip P12 dengan mode **Read-Only** (`./sign-api/p12:/app/sign-api/p12:ro`).
-   - Berkomunikasi dengan PKI Service via HTTP internal (`http://pki_service:8001/internal/v1/pki/`).
-   - **Bebas Secret CA:** Backend tidak menerima, menyimpan, atau memvalidasi rahasia `INTER_CA_PASS`.
+2. **Platform API / Backend Monolith (FastAPI)**
+   - Satu-satunya backend API utama untuk aplikasi.
+   - Menangani autentikasi JWT, RBAC (`SUPER_ADMIN`, `ADMIN`, `USER`), validasi Pydantic, business logic, manajemen siklus hidup sertifikat, dan audit logging.
+   - Router controller **tidak menjalankan skrip Bash PKI secara langsung**, melainkan mendelegasikannya ke service adapter internal.
 
-3. **PKI Service / Certificate Issuer (FastAPI Internal — Port 8001)**
-   - Service internal daemon tanpa eksposur ke jaringan publik (hanya `expose: 8001`).
-   - Memegang mount direktori `./pki` (Root & Intermediate CA) dan `./sign-api` (Read-Write).
-   - Menjalankan skrip Bash penerbitan sertifikat, regenerasi staging, perubahan passphrase, dan penghapusan material.
-   - Mewajibkan token internal `X-Internal-Token` untuk seluruh endpoint operasional.
-   - Memiliki proteksi *safety guard* otomatis yang menggagalkan eksekusi test jika tidak menggunakan Test CA terisolasi.
+3. **PostgreSQL**
+   - Menyimpan data operasional aplikasi: tabel `users`, `certificates`, dan `audit_logs`.
+   - Menegakkan integritas data melalui foreign keys, unique constraints, dan partial indexes (misal: hanya 1 sertifikat `ACTIVE` per user).
+   - **Prinsip Keamanan:** Database **tidak pernah menyimpan** private key, binary bundle PFX/P12, plaintext password, atau passphrase.
 
-4. **PostgreSQL (Port 5432 Internal)**
-   - Menyimpan entitas `users`, `certificates`, dan `audit_logs`.
-   - Hanya dapat diakses oleh container Backend melalui jaringan internal `platform_network`.
-   - Tidak pernah menyimpan private key, passphrase, atau binary berkas P12.
+4. **Internal PKI Adapter (`app/services/pki_engine.py` & `pki_client.py`)**
+   - Modul internal di dalam backend yang bertugas sebagai orkestrator dan jembatan ke skrip Bash PKI.
+   - Menjalankan skrip Bash via Python `subprocess.run` dengan argumen aman (tanpa `shell=True`) dan batasan timeout ketat.
+   - Memvalidasi keberadaan dan integritas file output (`.crt` dan `.p12`) menggunakan OpenSSL CLI sebelum metadata disimpan ke database.
+   - Menangani staging isolasi untuk proses regenerate serta pembersihan artefak (*cleanup/rollback*) jika terjadi kegagalan transaksi database.
 
-5. **Integrated PDF Signing Service (`pdf_signer.py`)**
-   - Berjalan in-process di dalam container Backend.
-   - Membaca berkas `.p12` pengguna secara read-only dari `/app/sign-api/p12/<nik>.p12`.
-   - Menggunakan passphrase masukan pengguna (dari header `X-P12-Password` atau form field) untuk melakukan signing digital berbasis CMS/PAdES via pustaka `endesive`.
+5. **Existing PKI Engine (`pki/scripts/`)**
+   - Skrip Bash aktif yang membungkus perintah OpenSSL:
+     - `bangkitkan_single.sh`: Penerbitan sertifikat single user.
+     - `bangkitkan_banyak.sh`: Penerbitan batch melalui input TSV/CSV.
+     - `change_p12_passphrase-admin.sh`: Reset passphrase P12 oleh Admin.
+     - `change_p12_passphrase-user.sh`: Ganti passphrase P12 oleh User mandiri.
+   - Struktur CA runtime: Root CA (`pki/root/`) dan Intermediate CA (`pki/intermediate/`).
+   - Direktori penyimpanan sertifikat: `pki/issued/` dan arsip kredensial kanonis `sign-api/p12/`.
 
-6. **Isolated Testing CA Factory (`tests/test_ca_factory.py`)**
-   - Utilitas otomatis untuk membangun Test Intermediate CA sementara di direktori terisolasi (`/tmp`).
-   - Memiliki key, cert, index.txt, dan serial sendiri untuk kebutuhan integration test.
+6. **Integrated PDF Signing Service (`pdf_signer.py`)**
+   - Diintegrasikan langsung ke dalam backend monolith melalui endpoint `/api/v1/signatures/sign` dan UI `/signing`.
+   - Menggunakan sertifikat PKCS#12 yang tersimpan di `sign-api/p12/` dengan validasi passphrase dan opsi stempel visual.
+   - Fitur lanjutan Phase 2 difokuskan pada portal verifikasi publik dan approval workflow.
 
 ---
 
-## 4. Arsitektur Komunikasi 3 Container Docker
+## 4. Arsitektur Komunikasi
 
 ```text
-[ Browser / Frontend (React + TypeScript) ]
+[ Browser / Frontend (React + Vite) ] (Port 3000)
                      │
-                     │ Port 8000 (HTTP / SPA & API) atau Port 3000 (Vite Dev Proxy)
-                     ▼
-+------------------------------------------------------------------------------------+
-| CONTAINER 1: digital_signature_backend (Platform API & Web Dashboard)              |
-| - FastAPI Web Server & SPA Static Host (Port 8000)                                 |
-| - Autentikasi JWT, RBAC, Validasi Input, Audit Log, Dokumen TTE                    |
-| - Client: PKIApiClient (httpx, X-Internal-Token)                                   |
-| - Volume Mount:                                                                    |
-|   - ./sign-api -> /app/sign-api (P12 archive kanonis)                              |
-|   - ./frontend/dist -> /app/frontend/dist (SPA statis produksi)                    |
-+------------------------------------------------------------------------------------+
-              │                                            │
-              │ Docker Network (platform_network:8001)     │ Docker Network (platform_network:5432)
-              │ Internal Only (Tanpa Port Publik)          │ Internal Only (Port 5432)
-              ▼                                            ▼
-+-------------------------------------------+  +-------------------------------------+
-| CONTAINER 2: digital_signature_pki        |  | CONTAINER 3: digital_signature_db   |
-| (PKI Service / Certificate Issuer)        |  | (PostgreSQL Database Relasional)    |
-| - FastAPI Daemon Kriptografi (Port 8001)  |  | - Port 5432 (postgres:16-alpine)    |
-| - Endpoint Terproteksi X-Internal-Token   |  | - Named Volume: postgres_data       |
-| - Engine: pki_engine.py & OpenSSL CLI     |  | - Menyimpan metadata user, cert,    |
-| - Volume Mount:                           |  |   dan audit log                     |
-|   - ./pki -> /app/pki (CA keys & issued)  |  +-------------------------------------+
-|   - ./sign-api -> /app/sign-api (Archive) |
-+-------------------------------------------+
+                     ▼ HTTP/JSON (Bearer Token & CORS)
+[ Backend Platform API (FastAPI Monolith) ] (Port 8000)
+    │                               │
+    ▼ (SQLAlchemy ORM / Alembic)     ▼ (In-Process Python Call)
+[ PostgreSQL Database ]         [ Internal PKI Adapter: pki_engine.py ]
+  (Port 5432)                       │
+                                    ▼ (Secure Subprocess / OpenSSL CLI)
+                                [ Existing PKI Engine (pki/scripts/) ]
+                                    │
+                                    ├── Private Key (.key) & CSR (.csr)
+                                    ├── Signed Certificate (.crt)
+                                    └── Encrypted PKCS#12 Bundle (.p12)
 ```
 
 ---
 
 ## 5. Batas Tanggung Jawab Komponen
 
-### A. Frontend (React + TypeScript)
+### A. Frontend (React)
 - Menangani rendering visual, formulir input, dan feedback pengguna.
 - Menyimpan dan menyertakan token otentikasi JWT pada request API.
 - Menampilkan pesan error yang telah distandardisasi oleh backend.
-- Dapat disajikan langsung oleh Container 1 melalui bundling statis (`/app/frontend/dist`) atau melalui Vite dev server di port 3000 selama masa pengembangan.
 - **Batasan:** Tidak melakukan validasi keamanan akhir dan tidak pernah memproses file kriptografi secara langsung.
 
-### B. Container 1 — Dashboard / Platform API (`backend/`)
-- Menerima request HTTP publik di port 8000, memvalidasi schema input Pydantic.
+### B. Backend Routers & Controllers (`app/api/endpoints/`)
+- Menerima request HTTP, memvalidasi schema input Pydantic.
 - Menegakkan RBAC melalui dependency injection FastAPI (`deps.py`).
-- Mengelola koneksi dan transaksi PostgreSQL (commit/rollback) serta pencatatan audit log.
-- Memanggil PKI Service melalui client HTTP internal (`pki_api_client.py`) yang terproteksi token rahasia antarlayanan (`X-Internal-Token`).
-- Melayani penandatanganan PDF (`pdf_signer.py`) menggunakan shared volume arsip `.p12` kanonis (`/app/sign-api/p12`).
-- **Batasan:** Tidak mengeksekusi subprocess Bash PKI secara langsung dan tidak memiliki akses langsung ke direktori kunci privat CA (`pki/intermediate/private/`).
+- Mengelola transaksi database (commit/rollback) dan pencatatan audit log.
+- Memanggil internal service adapter untuk operasi PKI.
+- **Batasan:** Tidak berisi baris kode OpenSSL, pemanggilan subprocess, atau pembacaan path fisik berkas PKI.
 
-### C. Container 2 — PKI Service / Certificate Issuer (`pki-service/`)
-- Menyediakan endpoint API internal terproteksi (`/internal/v1/pki/...`) di port 8001 internal.
-- Mengisolasi beban kerja komputasi berat OpenSSL (RSA keygen, CSR signing, PKCS#12 packaging) dari layanan web dashboard.
-- Menjalankan orkestrasi `pki_engine.py` untuk mengeksekusi skrip Bash OpenSSL dengan penanganan timeout, stdin piping, dan penangkapan exit code/stderr.
-- Memvalidasi artefak fisik: memastikan sertifikat `.crt` dan file kredensial `.p12` terbentuk serta dapat dibuka dengan passphrase.
+### C. Internal Service Adapter (`app/services/pki_engine.py` & `pki_client.py`)
+- Menerjemahkan kebutuhan bisnis menjadi parameter input skrip Bash.
+- Menjalankan subprocess OpenSSL dengan penanganan timeout dan penangkapan exit code/stderr.
+- Melakukan verifikasi artefak fisik: memastikan sertifikat `.crt` dan file kredensial `.p12` terbentuk serta dapat dibuka dengan passphrase.
 - Mengurai metadata sertifikat (serial number, subject, issuer, SHA-256 fingerprint, masa berlaku).
 - Menyediakan fungsi isolasi staging untuk regenerate dan fungsi cleanup jika terjadi kegagalan transaksi database.
-- **Batasan:** Tidak diekspos ke host publik, tidak terhubung langsung ke database PostgreSQL, dan tidak mengelola sesi HTTP pengguna publik.
+- **Batasan:** Tidak mengelola sesi HTTP pengguna, otorisasi role, atau rendering respons frontend.
 
-### D. Container 3 — Database Service (`postgres:16-alpine`)
-- Menyediakan basis data relasional PostgreSQL untuk Platform API.
-- Menyimpan entitas pengguna, metadata sertifikat, dan catatan audit log sesuai `DATABASE.md`.
-- Menggunakan named volume `postgres_data` untuk menjamin persistensi data saat container direstart atau di-rebuild.
-- Memiliki health check berkala (`pg_isready`) dan kebijakan `restart: always`.
-- **Batasan:** Hanya dapat diakses oleh Platform API melalui jaringan internal Docker `platform_network`. Tidak diekspos ke jaringan publik pada deployment produksi.
-
-### E. PKI Engine Scripts (`pki/scripts/`)
+### D. PKI Engine Scripts (`pki/scripts/`)
 - Mengeksekusi perintah kriptografi OpenSSL: pembuatan RSA key, CSR, penandatanganan oleh Intermediate CA, dan packaging PKCS#12.
 - Mengelola serial number CA dan index database teks CA (`index.txt`, `serial`).
 
@@ -152,7 +131,7 @@ Frontend React
        6. Commit DB transaction
   -> Jika DB gagal:
        - Rollback DB transaction
-       - Panggil pki_engine.delete_user_materials(nik) untuk membersihkan artefak fisik
+       - Panggil pki_client.delete_user_materials(nik) untuk membersihkan artefak fisik
   -> Return 200 OK dengan metadata user & sertifikat ke React
 ```
 
@@ -228,10 +207,9 @@ Fitur Mode Pengguna memungkinkan akun dengan role `ADMIN` beralih antarmuka navi
    - Sesi autentikasi tetap sama (`Bearer <token>`).
    - Mode tampilan disimpan pada client-side state (`localStorage: ds_admin_view_mode`) sebagai preferensi tampilan.
 2. **Pemisahan Tampilan:**
-   - **Mode Admin:** Menampilkan dashboard operasional sistem, Pengguna, Generate, dan Audit Log. Menu Penandatanganan (TTE) dan Kelola Akun **tidak ditampilkan** (Kelola Akun diakses melalui Mode Pengguna).
+   - **Mode Admin:** Menampilkan dashboard operasional sistem, Pengguna, Generate, Audit Log, dan Kelola Akun Saya. Menu Penandatanganan (TTE) **tidak ditampilkan**.
    - **Mode Pengguna:** Menggunakan layout dan navigasi User yang sudah ada (Dashboard User personal, Penandatanganan TTE, Kelola Akun Saya). Menu administrasi Pengguna, Generate, dan Audit Log disembunyikan.
 3. **Keamanan & Otorisasi Endpoint:**
-   - **Verifikasi Masuk Mode Admin:** Saat Admin beralih dari Mode Pengguna ke Mode Admin, sistem memunculkan popup verifikasi password. Password divalidasi melalui endpoint `POST /api/v1/auth/verify-password`.
    - Client meminta dashboard personal via `GET /api/v1/dashboard/?mode=user`. Backend memverifikasi identitas admin dan menyajikan metrik sertifikat personal milik admin sendiri.
    - Penandatanganan TTE (`POST /api/v1/signatures/sign`) menandatangani dokumen menggunakan sertifikat personal milik akun Admin.
    - Otorisasi endpoint tetap dievaluasi di sisi backend; manipulasi state frontend tidak dapat melewati permission backend.
@@ -258,39 +236,28 @@ Fitur Mode Pengguna memungkinkan akun dengan role `ADMIN` beralih antarmuka navi
 
 ## 8. Deployment via Docker Compose
 
-Arsitektur 3-container diorkestrasi melalui file `docker-compose.yml`:
+Arsitektur monolith diorkestrasi melalui file `docker-compose.yml`:
 
 ```text
 services:
   postgres:
     image: postgres:16-alpine
     container_name: digital_signature_db
-    expose: ["5432"]                     # Terisolasi pada platform_network
+    ports: ["5432:5432"]
     healthcheck: pg_isready
 
-  pki_service:
-    build: docker/Dockerfile.pki         # Python 3.9 + OpenSSL + Bash CLI
-    container_name: digital_signature_pki
-    expose: ["8001"]                     # Daemon internal tanpa port publik
-    volumes:
-      - ./pki:/app/pki                   # Kunci CA eksklusif di container ini
-      - ./sign-api:/app/sign-api         # Read-Write untuk penerbitan P12
-
   backend:
-    build: docker/Dockerfile.backend     # Python 3.9 + Endesive + FastAPI
+    build: docker/Dockerfile.backend (Python 3.9 + OpenSSL + Bash CLI Tools)
     container_name: digital_signature_backend
-    ports: ["8000:8000"]                 # Akses web platform API & static UI
+    ports: ["8000:8000"]
     volumes:
       - ./backend/app:/app/app
-      - ./backend/alembic:/app/alembic
-      - ./sign-api/p12:/app/sign-api/p12:ro  # Read-Only arsip P12 untuk TTE
-      - ./frontend/dist:/app/frontend/dist
-    depends_on:
-      postgres: condition: service_healthy
-      pki_service: condition: service_healthy
+      - ./pki:/app/pki
+      - ./sign-api(well3):/app/sign-api(well3)
+    depends_on: postgres (condition: service_healthy)
 
-  frontend (Opsional / Standalone Dev):
-    profiles: ["frontend-standalone"]
+  frontend (Opsional / Development):
+    profiles: ["frontend", "full"]
     build: docker/Dockerfile.frontend
     ports: ["3000:3000"]
 ```

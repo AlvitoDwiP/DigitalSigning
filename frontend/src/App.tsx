@@ -11,7 +11,6 @@ import { ForbiddenPage } from './pages/ForbiddenPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SigningPage } from './pages/SigningPage';
 import { AppShell } from './components/layout/AppShell';
-import { AdminPasswordModal } from './components/layout/AdminPasswordModal';
 import { getAuthToken, getAuthUser, clearAuthSession } from './services/api';
 
 function normalizePath(rawPath: string): string {
@@ -172,14 +171,13 @@ export default function App() {
     return 'admin';
   });
 
-  // Password confirmation modal state for switching into Mode Admin
-  const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
-
   // Effective view mode: SUPER_ADMIN is always 'admin', USER is always 'user', ADMIN follows state
   const effectiveViewMode: 'admin' | 'user' =
     currentRole === 'ADMIN' ? adminViewMode : currentRole === 'SUPER_ADMIN' ? 'admin' : 'user';
 
-  const executeSwitchToMode = (nextMode: 'admin' | 'user') => {
+  const handleToggleViewMode = () => {
+    if (currentRole !== 'ADMIN') return;
+    const nextMode = effectiveViewMode === 'admin' ? 'user' : 'admin';
     setAdminViewMode(nextMode);
     if (typeof window !== 'undefined') {
       localStorage.setItem('ds_admin_view_mode', nextMode);
@@ -201,24 +199,6 @@ export default function App() {
     if (nextMode === 'admin' && (p === '/signing' || p === '/account')) {
       navigateTo('/dashboard');
     }
-  };
-
-  const handleToggleViewMode = () => {
-    if (currentRole !== 'ADMIN') return;
-
-    // Saat sedang di Mode Pengguna dan ingin masuk ke Mode Admin: tampilkan popup password
-    if (effectiveViewMode === 'user') {
-      setIsAdminPasswordModalOpen(true);
-      return;
-    }
-
-    // Saat sedang di Mode Admin dan ingin beralih ke Mode Pengguna: langsung beralih
-    executeSwitchToMode('user');
-  };
-
-  const handleAdminPasswordSuccess = () => {
-    setIsAdminPasswordModalOpen(false);
-    executeSwitchToMode('admin');
   };
 
   const renderContent = () => {
@@ -286,22 +266,14 @@ export default function App() {
   };
 
   return (
-    <>
-      <AppShell
-        currentPath={currentPath}
-        onNavigate={navigateTo}
-        onLogout={handleLogout}
-        viewMode={effectiveViewMode}
-        onToggleViewMode={handleToggleViewMode}
-      >
-        {renderContent()}
-      </AppShell>
-
-      <AdminPasswordModal
-        isOpen={isAdminPasswordModalOpen}
-        onClose={() => setIsAdminPasswordModalOpen(false)}
-        onSuccess={handleAdminPasswordSuccess}
-      />
-    </>
+    <AppShell
+      currentPath={currentPath}
+      onNavigate={navigateTo}
+      onLogout={handleLogout}
+      viewMode={effectiveViewMode}
+      onToggleViewMode={handleToggleViewMode}
+    >
+      {renderContent()}
+    </AppShell>
   );
 }

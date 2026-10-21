@@ -28,24 +28,26 @@ React (+ TypeScript + Vite) merupakan antarmuka web dan konsumen utama dari Plat
 3. **User Management:** Manajemen daftar pengguna, pencarian, pemfilteran berdasarkan role/status/sertifikat, pagination, serta halaman detail pengguna.
 4. **Generate User Single:** Provisioning pengguna baru dan penerbitan sertifikat terintegrasi dari form React, diproses oleh internal PKI adapter ke skrip Bash OpenSSL, serta penyimpanan metadata ke PostgreSQL dan file bundle `.p12` ke storage disk.
 5. **Generate User Bulk (CSV):** Alur validasi 7 kolom (`name,nik,email,organization,ou,password,pfx_pass`), preview data aman tanpa membocorkan rahasia, eksekusi batch, dan isolasi kegagalan per baris.
-6. **Certificate Metadata Management:** Pelacakan masa berlaku 730 hari, serial number, subject, issuer, SHA-256 fingerprint, dan penegakan aturan 1 sertifikat `ACTIVE` per user.
+6. **Certificate Metadata Management:** Pelacakan masa berlaku 730 hari, serial number, subject, issuer, SHA-256 fingerprint, penegakan aturan 1 sertifikat `ACTIVE` per user, serta pembacaan riwayat sertifikat terotentikasi via `GET /api/v1/users/{user_id}/certificates` (Admin) dan `GET /api/v1/account` (User).
 7. **Regenerate Certificate:** Penerbitan sertifikat baru menggantikan sertifikat aktif menggunakan mekanisme folder staging terisolasi dan transaksi database dengan cleanup rollback otomatis untuk menjaga integritas status sertifikat lama jika terjadi kegagalan.
 8. **Ubah Passphrase:** Pergantian passphrase P12/PFX oleh Admin maupun mandiri oleh User tanpa mengubah metadata sertifikat.
 9. **Management Admin:** Pengangkatan dan pencabutan hak akses role Admin oleh Super Admin.
 10. **Audit Logging:** Pencatatan riwayat aktivitas operasional penting (generate, regenerate, delete user, ubah passphrase, assign/remove admin) ke tabel `audit_logs` tanpa mengekspos passphrase atau kredensial sensitif. Aktivitas autentikasi/login/sesi maupun navigasi tidak dicatat. Kapasitas log dibatasi maksimal 5.000 entri dengan mekanisme FIFO/Circular Pruning otomatis.
 11. **Dashboard Operasional:** Metrik statistik operasional sistem (Total User, Active, Expired), peringatan sertifikat mendekati kedaluwarsa, dan ringkasan aktivitas terbaru.
-12. **Monolith Platform API:** Satu backend terpadu (FastAPI) yang memanggil engine PKI secara internal (*in-process*) via `app/services/pki_engine.py` tanpa container microservice terpisah.
-13. **Integrated PDF Digital Signing:** Penandatanganan dokumen PDF digital terpadu via web (`POST /api/v1/signatures/sign` dan UI `/signing`), dengan proteksi passphrase P12, IDOR enforcement (USER hanya dapat menandatangani dokumennya sendiri), opsi stempel visual, serta pembatasan hak akses (SUPER_ADMIN dibatasi).
+12. **Containerized Architecture:** Arsitektur terpisah 3 container (`digital_signature_backend`, `digital_signature_pki`, dan `digital_signature_db`) dengan delegasi PKI internal terautentikasi dan isolasi material kredensial P12 secara read-only.
+13. **API Publik Baca Sertifikat (Read-Only):** Penyediaan endpoint integrasi terotentikasi (`GET /api/v1/certificates` dan `GET /api/v1/certificates/{identifier}`) untuk membaca daftar metadata publik serta memeriksa keabsahan aktif (*validity check*) sertifikat tanpa mengekspos private key, berkas P12, path server, maupun data pribadi NIK.
 
 #### B. Disiapkan untuk Penguatan (In Progress / Future Phase 1 Enhancement)
 1. **Revocation Workflow UI:** Status enum `REVOKED` sudah disiapkan pada skema PostgreSQL dan database constraint, namun alur UI pencabutan sertifikat belum diimplementasikan di Phase 1.
 2. **Two-Factor Authentication (OTP):** Arsitektur login disiapkan untuk mendukung verifikasi OTP di tahap production.
+3. **Public Unauthenticated Verification Portal:** Portal publik tanpa login (misal verifikasi scan QR code oleh pihak ketiga tanpa akun) disiapkan untuk integrasi lanjutan.
 
 #### C. Direncanakan untuk Phase 2 (Advanced Roadmap)
-1. Portal verifikasi publik keabsahan dokumen PDF yang telah ditandatangani.
-2. Alur persetujuan dokumen bertingkat (*multi-party approval workflow*).
-3. Dukungan tanda tangan batch dokumen PDF.
-4. Aplikasi mobile dan arsitektur multi-tenant.
+1. **Penandatanganan Dokumen PDF / TTE Digital:** Fitur penandatanganan PDF in-process (`POST /api/v1/signatures/sign` dan UI `/signing`) direncanakan untuk Phase 2. Kode implementasi backend (`pdf_signer.py`, `signatures.py`) dan frontend (`SigningPage.tsx`) dipertahankan sebagai modul dormant/tercadangkan, dan dinonaktifkan secara aman via HTTP 501 Not Implemented pada konfigurasi default Phase 1 (`ENABLE_PDF_SIGNING=false`).
+2. Portal verifikasi publik keabsahan dokumen PDF yang telah ditandatangani.
+3. Alur persetujuan dokumen bertingkat (*multi-party approval workflow*).
+4. Dukungan tanda tangan batch dokumen PDF.
+5. Aplikasi mobile dan arsitektur multi-tenant.
 
 ---
 
@@ -66,7 +68,8 @@ Terdapat tiga role:
 | Generate User | ✓ | ✓ | - |
 | Management Admin | ✓ | - | - |
 | Audit Log | ✓ | ✓ | - |
-| Penandatanganan | - | ✓ | ✓ |
+| Baca Sertifikat (Public API) | ✓ | ✓ | ✓ |
+| Penandatanganan (Phase 2) | - | Reserved (501) | Reserved (501) |
 | Kelola Akun | - | - | ✓ |
 | Ubah Passphrase | - | Kelola user | ✓ |
 | Regenerate | Kelola user | Kelola user | - |
@@ -99,7 +102,12 @@ Aturan:
 - Email valid.
 - Email unik.
 - Role default saat Generate User adalah `USER`.
-- Password login tidak disimpan sebagai plaintext.
+- **Ketentuan Kredensial Pembuatan Akun:**
+  - Ketika Admin membuat akun baru (baik Single Generate maupun Bulk CSV), sistem mengisi password login awal dan passphrase sertifikat awal secara otomatis menggunakan nilai dasar yang telah ditetapkan dalam dokumentasi proyek (`<DEFAULT_PASSPHRASE>`).
+  - Dilarang membuat nilai default baru atau mengubah nilai yang telah disepakati bersama.
+  - **Pemisahan Kredensial Tegas:** Password login akun dan passphrase sertifikat adalah dua entitas berbeda yang tidak boleh dicampuradukkan:
+    - `password`: Password login akun platform, disimpan secara aman dalam bentuk hash (`password_hash`) menggunakan algoritma cryptographic hashing (bcrypt/argon2). Password plaintext tidak pernah disimpan di database.
+    - `pfx_pass` / `passphrase`: Passphrase pelindung private key sertifikat P12/PFX, hanya diproses saat orkestrasi PKI Engine dan **tidak boleh disimpan** di database, audit log, frontend, maupun application log.
 
 User dibuat melalui fitur **Generate User**, bukan melalui tombol Add User pada halaman Pengguna.
 
@@ -122,8 +130,8 @@ Input:
 - Email
 - Organization
 - OU
-- Password (Password Login Akun)
-- Passphrase
+- Password (Password Login Akun — default otomatis jika tidak diisi secara khusus)
+- Passphrase (Passphrase Sertifikat P12 — default otomatis jika tidak diisi secara khusus)
 - Confirm Passphrase
 
 Role tidak dipilih dari form Generate dan otomatis menjadi `USER`.
@@ -282,6 +290,20 @@ Passphrase:
 - tidak dikembalikan ke frontend;
 - tidak ditulis ke application log.
 
+Ketentuan Pengelolaan Passphrase:
+
+1. **Tidak Wajib pada Login Pertama:** Passphrase sertifikat **tidak wajib diganti** saat pengguna pertama kali login. Pengingat wajib pada login pertama hanya berlaku untuk password login akun.
+2. **Kanal Penggantian Resmi:** Fitur penggantian passphrase tersedia melalui antarmuka pengaturan di aplikasi web (menu *Kelola Akun* untuk penggantian mandiri oleh User, atau menu *Pengguna* untuk penggantian oleh Admin).
+3. **Larangan Saluran Email:**
+   - Sistem dilarang mengarahkan pengguna ke halaman email untuk mengganti passphrase.
+   - Sistem dilarang mengirimkan passphrase melalui email dalam bentuk apapun.
+4. **Status Pemulihan Passphrase Terlupa (Open Decision):**
+   - Mekanisme penanganan jika pengguna lupa passphrase sertifikat **belum ditetapkan (Keputusan Terbuka)**.
+   - Tidak diperbolehkan mengarang alur pemulihan mandiri tanpa penetapan resmi (misal: apakah harus melalui alur regenerasi sertifikat baru oleh Admin atau prosedur verifikasi khusus).
+5. **Integritas Arsitektur PKI:**
+   - Mempertahankan arsitektur: Platform API → PKI Service (`change_p12_passphrase.sh`) → PKI Engine.
+   - Tidak mengubah PKI Engine atau mekanisme teknis penggantian passphrase yang sudah berjalan.
+
 ---
 
 ## 9. Dashboard
@@ -352,26 +374,67 @@ Audit dicatat untuk perubahan role.
 
 ---
 
-## 11. Authentication
+## 11. Authentication & Pengelolaan Password
 
-### Development
+### Alur Autentikasi Dasar
 
+#### Development
 ```text
 Email + Password
+→ Validasi Kredensial (password_hash)
+→ Terbitkan JWT Bearer Token
+→ Cek Status Password Awal
 → Dashboard
 ```
 
 OTP tidak digunakan pada development/testing.
 
-### Production
-
+#### Production
 ```text
 Email + Password
 → OTP
 → Dashboard
 ```
 
-Struktur authentication harus memungkinkan OTP ditambahkan kemudian tanpa perubahan besar pada arsitektur.
+Struktur authentication memungkinkan OTP ditambahkan kemudian tanpa perubahan arsitektur dasar.
+
+### Pop-up Pengingat Wajib Ganti Password
+
+Sistem menerapkan mekanisme pengingat bagi akun yang masih menggunakan password awal:
+
+1. **Pemicu Pop-up:** Ketika pengguna berhasil login menggunakan password login awal (nilai dasar default) yang belum pernah diganti, sistem secara otomatis menampilkan modal pop-up yang meminta pengguna untuk mengganti password akunnya.
+2. **Pengingat Wajib, Bukan Pembatasan Akses (Non-Blocking):**
+   - Pop-up ini berstatus sebagai **pengingat wajib (mandatory reminder)** dan secara eksplisit **bukan pembatasan akses (access blocking)**.
+   - Pengguna memiliki opsi untuk **menutup pop-up** (tombol Tutup / Nanti Saja) dan **tetap dapat mengakses dashboard serta seluruh fitur aplikasi** sesuai dengan role dan izin aksesnya.
+   - Sistem **dilarang memblokir** akses navigasi, dashboard, atau modul operasional lainnya hanya karena pengguna belum mengganti password awal.
+3. **Persistensi Status Kewajiban:**
+   - Menutup pop-up **tidak mengubah status** password awal menjadi sudah diganti. Status akun tetap tercatat sebagai akun dengan password awal yang belum diganti.
+   - Pada sesi login berikutnya, pop-up pengingat wajib ini **akan selalu ditampilkan kembali** selama pengguna belum melakukan penggantian password.
+4. **Penyelesaian Kewajiban:**
+   - Setelah pengguna berhasil mengganti password (baik melalui modal pop-up tersebut maupun melalui halaman *Kelola Akun*), status wajib ganti password dihapus dan pop-up tidak lagi ditampilkan untuk kewajiban tersebut.
+
+### Penggantian Password Akun (Self-Service)
+
+- Pengguna dapat mengganti password login akun secara mandiri kapan saja melalui halaman pengaturan (*Kelola Akun* / `/account`).
+- **Kebijakan Validasi Password:**
+  - Panjang minimal 8 karakter;
+  - Mengandung minimal 1 huruf besar (uppercase `A-Z`);
+  - Mengandung minimal 1 karakter simbol atau non-alphanumeric;
+  - Password baru tidak boleh sama dengan password lama;
+  - Konfirmasi password baru harus identik.
+- Password lama wajib diverifikasi terhadap `password_hash` sebelum password baru di-hash dan disimpan.
+
+### Lupa Password dan Reset Password
+
+1. **Mekanisme Tautan Reset:** Fitur lupa password dirancang menggunakan tautan reset khusus berbasis **token sekali pakai (single-use token)** yang memiliki **masa berlaku (expiration)**.
+2. **Status Keputusan Terbuka (Open Decision):**
+   - Durasi masa berlaku token reset (misalnya 15 menit, 1 jam, atau 24 jam) dan detail teknis token (panjang karakter, skema hashing token di database) **belum ditetapkan dalam dokumentasi proyek**.
+   - Hal ini dicatat sebagai **keputusan yang masih perlu ditetapkan** sebelum implementasi kode.
+3. **Status Integrasi Email (Belum Diimplementasikan):**
+   - Pengiriman tautan reset dan notifikasi melalui email **belum diimplementasikan dalam fase ini**.
+   - Tidak diperkenankan membuat integrasi SMTP, Google API, Microsoft Graph, atau penyedia email lainnya pada tahap ini.
+4. **Keamanan Transmisi:**
+   - Dilarang mengirimkan password baru atau password sementara dalam bentuk teks biasa (plaintext) melalui email atau saluran komunikasi eksternal apapun.
 
 ---
 
@@ -488,6 +551,9 @@ Endpoint utama:
 POST /api/v1/auth/login
 POST /api/v1/auth/logout
 GET  /api/v1/auth/me
+POST /api/v1/auth/verify-password
+POST /api/v1/auth/forgot-password (Usulan / Belum Diimplementasikan)
+POST /api/v1/auth/reset-password  (Usulan / Belum Diimplementasikan)
 ```
 
 ### Dashboard
@@ -524,7 +590,8 @@ DELETE /api/v1/admins/{user_id}
 ```text
 GET   /api/v1/account
 PATCH /api/v1/account
-POST  /api/v1/account/pfx-password
+POST  /api/v1/account/password     (Ganti password login akun mandiri)
+POST  /api/v1/account/pfx-password (Ganti passphrase P12/PFX mandiri)
 ```
 
 ### Audit
@@ -533,14 +600,14 @@ POST  /api/v1/account/pfx-password
 GET /api/v1/audit-logs
 ```
 
-### Signing
+### Signing (Phase 2 Roadmap)
 
 ```text
 POST /api/v1/signatures        (Reserved / 501 Not Implemented)
-POST /api/v1/signatures/sign   (Active Document Signing Endpoint)
+POST /api/v1/signatures/sign   (Phase 2 / 501 Not Implemented pada Phase 1)
 ```
 
-Route root `POST /api/v1/signatures` disediakan sebagai route reserved (mengembalikan `501 Not Implemented`), sedangkan fungsi penandatanganan aktif dilayani via `POST /api/v1/signatures/sign`. Detail request/response API dijelaskan pada `API.md`.
+Seluruh route pada prefix `/api/v1/signatures` dinonaktifkan secara aman pada Phase 1 dan mengembalikan `501 Not Implemented` (`code: FEATURE_DISABLED_PHASE_1` atau `code: RESERVED_ENDPOINT`). Modul implementasi backend (`pdf_signer.py`, `signatures.py`) disimpan dalam kondisi dormant dan dapat diaktifkan kembali pada Phase 2 melalui environment variable `ENABLE_PDF_SIGNING=true`. Detail request/response API dijelaskan pada `API.md`.
 
 ---
 
@@ -587,17 +654,18 @@ PKI_TIMEOUT
 
 Tidak boleh hardcode secret di source code.
 
-### Passphrase
+### Passphrase & Password Security
 
-Passphrase hanya digunakan selama proses yang membutuhkan credential tersebut. Default credential (seperti login password / passphrase sertifikat provisioning atau regenerate) menggunakan nilai standar default sistem (`<DEFAULT_PASSPHRASE>`).
-
-Tidak boleh:
-
-- masuk database;
-- masuk audit;
-- masuk response;
-- masuk log;
-- masuk Git.
+- **Pemisahan Kredensial:** Password login akun dan passphrase sertifikat dipisahkan secara ketat.
+- **Password Login Akun:** Wajib disimpan dalam bentuk hash kriptografis yang aman (`password_hash`). Plaintext tidak pernah disimpan di database, audit log, maupun respons API.
+- **Passphrase P12/PFX:** Hanya digunakan selama proses orkestrasi internal PKI Engine yang membutuhkan kredensial tersebut. Default credential (seperti login password / passphrase sertifikat provisioning atau regenerate) menggunakan nilai standar default sistem (`<DEFAULT_PASSPHRASE>`).
+  Tidak boleh:
+  - masuk database;
+  - masuk audit log;
+  - masuk response API;
+  - masuk application log;
+  - masuk Git.
+- **Larangan Pengiriman Plaintext via Email:** Dilarang keras mengirimkan password login (baru/sementara) atau passphrase P12/PFX sebagai teks biasa (plaintext) melalui email atau media transmisi publik lainnya.
 
 ### Authorization
 
@@ -697,7 +765,7 @@ Sidebar (Mode Pengguna - User & Admin yang Beralih)
 └── [Kontrol: Kembali ke Mode Admin - Khusus Admin]
 ```
 
-Catatan: Menu Penandatanganan (TTE) dan Kelola Akun tidak ditampilkan pada sidebar Mode Admin bagi role Admin. Admin mengakses Kelola Akun dan TTE melalui fitur Beralih ke Mode Pengguna tanpa membuat role atau akun baru. Super Admin dilarang mengakses Mode Pengguna dan TTE.
+Catatan: Pada Phase 1, fitur Penandatanganan Dokumen (TTE) dinonaktifkan dari antarmuka pengguna (sidebar dan dashboard) serta endpoint backend dibatasi (501 Not Implemented). Navigasi pengguna difokuskan pada Dashboard dan Kelola Akun.
 
 Detail halaman, komponen, state, dan user flow dirujuk ke `DESIGN.md`.
 
@@ -705,14 +773,15 @@ Detail halaman, komponen, state, dan user flow dirujuk ke `DESIGN.md`.
 
 ## 22. Phase 2
 
-Phase 2 berfokus pada pengembangan fitur lanjutan dan integrasi ekosistem:
+Phase 2 berfokus pada pengembangan fitur penandatanganan dokumen dan integrasi ekosistem:
 
+- Penandatanganan dokumen PDF digital (TTE) tunggal dan massal via web interface (`POST /api/v1/signatures/sign` dan halaman `SigningPage.tsx`).
 - Portal verifikasi publik keabsahan dokumen PDF yang telah ditandatangani.
 - Alur persetujuan dokumen bertingkat (*multi-party document approval workflow*).
 - Penandatanganan batch dokumen PDF (*bulk PDF signing*).
 - Aplikasi mobile client dan dukungan multi-tenant.
 
-Catatan: Penandatanganan dokumen PDF digital tunggal via web (`POST /api/v1/signatures/sign`) dengan opsi visual stamp dan proteksi IDOR telah diintegrasikan langsung pada platform backend monolith Phase 1 menggunakan service `pdf_signer.py` dan arsip P12 kanonis `sign-api/p12/`.
+Catatan: Fondasi implementasi penandatanganan PDF tunggal (`pdf_signer.py` berbasis pyHanko & cryptography) dan endpoint `POST /api/v1/signatures/sign` telah dibangun dan disimpan secara aman dalam codebase sebagai fitur dormant. Pada Phase 1, fitur ini dinonaktifkan secara default (`ENABLE_PDF_SIGNING=false`) dan siap diaktifkan kembali saat memasuki Phase 2.
 
 ---
 

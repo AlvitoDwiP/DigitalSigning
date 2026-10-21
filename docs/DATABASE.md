@@ -124,6 +124,37 @@ NIK menggunakan `VARCHAR(16)`, bukan integer, karena NIK merupakan identifier.
 
 Email dan NIK harus unik.
 
+### 5.1. Usulan Skema Pelacakan Status Password (Menunggu Persetujuan)
+
+> [!NOTE]
+> Bagian ini adalah **USULAN SKEMA** yang didokumentasikan untuk kebutuhan teknis pop-up pengingat wajib ganti password dan **belum disetujui/diimplementasikan** ke dalam database saat ini. Jangan menjalankan migrasi fisik sebelum ada persetujuan resmi.
+
+Untuk mendukung pelacakan apakah pengguna masih menggunakan password login awal (yang memicu pop-up pengingat ganti password setelah login), diusulkan penambahan kolom:
+
+| Field Usulan | Type | Constraint | Keterangan |
+|---|---|---|---|
+| `is_temporary_password` | BOOLEAN | NOT NULL DEFAULT TRUE | Menandai apakah akun masih menggunakan password awal |
+| `password_changed_at` | TIMESTAMPTZ | NULL | Waktu terakhir kali pengguna mengganti password login |
+
+**Kondisi Saat Ini (Tanpa Perubahan Fisik Database):**
+Sebelum migrasi skema resmi diterapkan, status apakah user masih menggunakan password awal dapat dievaluasi secara dinamis saat proses autentikasi (misalnya dengan membandingkan hash password terhadap nilai dasar default sistem).
+
+### 5.2. Usulan Skema Token Reset Password (Keputusan Terbuka)
+
+> [!NOTE]
+> Fitur lupa password dirancang menggunakan tautan reset dengan token sekali pakai (single-use) dan masa kedaluwarsa. Detail durasi masa berlaku (TTL) dan skema penyimpanan merupakan **Keputusan Terbuka (Open Decision)**. Pengiriman email saat ini **belum diimplementasikan**.
+
+Jika token disimpan pada database relasional, diusulkan tabel terpisah:
+
+| Field Usulan | Type | Constraint | Keterangan |
+|---|---|---|---|
+| `id` | UUID | PK | ID token reset |
+| `user_id` | UUID | FK -> users.id | Pemilik akun yang meminta reset |
+| `token_hash` | VARCHAR(255) | NOT NULL UNIQUE | Hash token reset (token plaintext tidak disimpan) |
+| `expires_at` | TIMESTAMPTZ | NOT NULL | Waktu kedaluwarsa token (TTL: Open Decision) |
+| `used_at` | TIMESTAMPTZ | NULL | Waktu token digunakan (menjamin single-use) |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Waktu pembuatan token |
+
 ---
 
 ## 6. Tabel `certificates`

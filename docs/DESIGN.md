@@ -70,7 +70,7 @@ Aturan pakai: merah bukan hiasan. Merah dipakai untuk sidebar, tombol utama, dan
 - **Topbar**: pencarian pengguna (Enter membuka Pengguna dengan hasil pencarian), tombol toggle mode (khusus Admin: "Mode Pengguna" / "Kembali ke Mode Admin"), tombol ganti tema, dan chip profil pengguna/Admin.
 - **Sidebar Super Admin**: Dashboard Admin, Pengguna, Generate, Management Admin, Audit Log, Kelola Akun Saya. Super Admin tidak memiliki akses ke Mode Pengguna.
 - **Sidebar Admin (Mode Admin)**: Dashboard Admin, Pengguna, Generate, Audit Log, serta kontrol "Beralih ke Mode Pengguna" di footer sidebar. Menu Penandatanganan (TTE) dan Kelola Akun tidak ditampilkan pada Mode Admin (Kelola Akun diakses melalui Mode Pengguna).
-- **Sidebar Mode Pengguna (User & Admin yang beralih)**: Dashboard User, Penandatanganan (TTE), Kelola Akun Saya. Khusus akun Admin yang berada di Mode Pengguna, ditampilkan badge status "Mode Pengguna" dan tombol "Kembali ke Mode Admin" pada footer sidebar dan topbar. Menu administrasi tidak ditampilkan pada Mode Pengguna.
+- **Sidebar Mode Pengguna (User & Admin yang beralih)**: Dashboard User, Kelola Akun Saya (menu Penandatanganan TTE dinonaktifkan di Phase 1, disiapkan untuk Phase 2). Khusus akun Admin yang berada di Mode Pengguna, ditampilkan badge status "Mode Pengguna" dan tombol "Kembali ke Mode Admin" pada footer sidebar dan topbar. Menu administrasi tidak ditampilkan pada Mode Pengguna.
 - **Dashboard** adalah dashboard operasional, bukan analytics. Urutan prioritas visual:
   1. **Statistik utama**: Total User (biru), Active (hijau, paling besar), Expired (kuning). Active dan Expired menghitung sertifikat dengan status efektif tersebut.
   2. **Sertifikat Paling Dekat Berakhir**: maksimal 5 pengguna dengan sertifikat ACTIVE yang paling dekat kedaluwarsa, berisi inisial, nama, "Berlaku sampai", dan sisa hari berwarna menurut urgensi (merah 30 hari atau kurang, kuning sampai 90 hari, hijau selebihnya). Tanpa tombol Regenerate atau Lihat detail. Satu tombol "Lihat Pengguna" membuka Pengguna yang diurutkan berdasarkan sertifikat paling dekat berakhir.
@@ -95,7 +95,7 @@ Menampilkan:
 - Berlaku sampai.
 - Sisa masa berlaku.
 - Data akun ringkas.
-- Quick action Penandatanganan.
+- Aksi mandiri (Ubah Passphrase P12 via Kelola Akun; Quick action Penandatanganan TTE dinonaktifkan di Phase 1 dan direncanakan untuk Phase 2).
 
 Tidak menampilkan statistik sistem, aktivitas pengguna lain, atau Regenerate.
 
@@ -140,6 +140,40 @@ Hanya tersedia untuk Super Admin.
 - Hapus selalu lewat dialog konfirmasi yang menyebut dampaknya.
 - Regenerate: sertifikat lama baru menjadi REPLACED setelah yang baru berhasil dibuat dan divalidasi. Jika gagal, sertifikat lama tetap ACTIVE.
 - Route signing hanya dicadangkan (RESERVED, respons 501). Jangan mengimplementasikan signing di Fase 1.
+
+## Desain Alur Pengelolaan Password & Passphrase
+
+### 1. Pop-up Pengingat Wajib Ganti Password (First Login Reminder)
+
+- **Karakteristik & Sifat:**
+  - Komponen berupa modal dialog yang muncul secara otomatis setelah user login jika akun terindikasi masih menggunakan password awal yang belum pernah diganti.
+  - Bersifat sebagai **Pengingat Wajib (Mandatory Reminder), Bukan Pembatas Akses (Non-Blocking)**.
+  - Dilengkapi tombol penutup (tombol `×` di pojok kanan atas atau tombol sekunder *"Nanti Saja"*).
+  - Pengguna **dapat menutup dialog** kapan saja dan langsung berinteraksi dengan Dashboard atau navigasi aplikasi lainnya tanpa hambatan.
+  - Menutup dialog tidak menandai password sudah diganti; pop-up akan kembali muncul pada login berikutnya selama password belum diubah.
+- **Struktur Antarmuka Modal:**
+  - Header: Ikon perisai keamanan dan judul *"Ganti Password Akun"*.
+  - Body: Teks himbauan keamanan yang ramah dan lugas, input *Password Lama/Saat Ini*, input *Password Baru*, dan input *Konfirmasi Password Baru* (dengan indikator kebijakan password min. 8 karakter, 1 huruf besar, 1 simbol).
+  - Footer: Tombol sekunder *"Nanti Saja"* dan tombol utama *"Simpan Password Baru"*.
+  - Feedback: Ketika penggantian berhasil, modal otomatis tertutup, sistem menampilkan toast sukses *"Password login berhasil diperbarui"*, dan status pengingat wajib dihapus secara permanen.
+
+### 2. Halaman Kelola Akun (Pemisahan Pengaturan)
+
+Halaman Kelola Akun memisahkan pengaturan kredensial ke dalam dua bagian terpisah untuk menghindari kerancuan:
+- **Kartu Keamanan Login (Password Akun):**
+  - Form untuk mengubah password login web (Password Lama, Password Baru, Konfirmasi Password Baru).
+- **Kartu Kredensial Digital (Passphrase Sertifikat P12):**
+  - Form untuk mengubah passphrase pelindung file P12/PFX.
+  - Teks penjelasan bahwa passphrase sertifikat **tidak wajib diganti pada saat pertama kali login**.
+  - Dilarang menyediakan alur kirim passphrase ke email.
+
+### 3. Alur Lupa Password & Tautan Reset
+
+- Halaman login menyediakan tautan teks *"Lupa Password?"*.
+- Mengarahkan ke form input alamat email untuk meminta tautan reset password.
+- Menampilkan konfirmasi generik setelah permintaan dikirimkan.
+- Halaman reset password menerima token sekali pakai dari tautan dan form input password baru.
+- *Catatan Desain:* Saluran pengiriman email saat ini berstatus belum diimplementasikan.
 
 ## Kondisi tampilan wajib
 

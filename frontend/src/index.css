@@ -633,12 +633,14 @@ h2 {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: none !important;
+  transform: none !important;
 }
 
 .sidebar-mode-btn:hover {
   background: rgba(255, 255, 255, 0.28);
-  transform: translateY(-1px);
+  transform: none !important;
+  transition: none !important;
 }
 
 .sidebar-mode-btn:focus-visible {
@@ -660,24 +662,48 @@ h2 {
   background: var(--card);
   color: var(--text);
   box-shadow: var(--shadow);
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: none !important;
+  transform: none !important;
+  animation: none !important;
 }
 
-.topbar-mode-btn:hover {
-  transform: translateY(-1px);
-  border-color: var(--primary, #094067);
+.topbar-mode-btn:hover,
+.topbar-mode-btn:active,
+.topbar-mode-btn:focus {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
 }
 
-.topbar-mode-btn.mode-user {
+.topbar-mode-btn *,
+.topbar-mode-btn:hover * {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.topbar-mode-btn.mode-user,
+.topbar-mode-btn.topbar-mode-btn-user {
   background: rgba(16, 185, 129, 0.1);
   border-color: rgba(16, 185, 129, 0.35);
   color: #065F46;
 }
 
-[data-theme='dark'] .topbar-mode-btn.mode-user {
+.topbar-mode-btn.mode-user:hover,
+.topbar-mode-btn.topbar-mode-btn-user:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+[data-theme='dark'] .topbar-mode-btn.mode-user,
+[data-theme='dark'] .topbar-mode-btn.topbar-mode-btn-user {
   background: rgba(16, 185, 129, 0.18);
   border-color: rgba(16, 185, 129, 0.5);
   color: #6EE7B7;
+}
+
+[data-theme='dark'] .topbar-mode-btn.mode-user:hover,
+[data-theme='dark'] .topbar-mode-btn.topbar-mode-btn-user:hover {
+  border-color: rgba(16, 185, 129, 0.65);
 }
 
 .topbar-mode-btn .mode-dot {
@@ -832,8 +858,12 @@ h2 {
   font-size: 12.5px;
   border: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, opacity 0.15s ease;
+  transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.12s ease;
   line-height: 1;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .btn:disabled {
@@ -900,7 +930,31 @@ h2 {
   animation: spin 0.7s linear infinite;
 }
 
+.btn-ghost .btn-spinner,
+.btn-secondary .btn-spinner {
+  border-color: rgba(0, 0, 0, 0.15);
+  border-top-color: var(--accent);
+}
+
+.spin-animation {
+  animation: spin 0.65s linear infinite;
+  display: inline-flex;
+  transform-origin: center center;
+}
+
+.btn .btn-icon svg {
+  transition: transform 0.2s ease;
+}
+
+.btn:hover:not(:disabled) .btn-icon svg:not(.spin-animation) {
+  transform: rotate(25deg);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 @keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
   to {
     transform: rotate(360deg);
   }
@@ -5519,7 +5573,11 @@ textarea.form-control:focus {
 .account-grid-layout {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+}
+
+.account-tab-card-wrapper {
+  width: 100%;
 }
 
 .account-card {
@@ -5652,6 +5710,24 @@ textarea.form-control:focus {
   gap: 16px;
 }
 
+.account-two-col-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.account-form-cols {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.account-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .account-form-stack {
   display: flex;
   flex-direction: column;
@@ -5709,8 +5785,10 @@ textarea.form-control:focus {
 
 /* Responsive Overrides */
 @media (max-width: 768px) {
-  .account-form-grid {
+  .account-form-grid,
+  .account-form-cols {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .account-form-actions {
@@ -6283,10 +6361,101 @@ textarea.form-control:focus {
   justify-content: flex-end;
 }
 
-/* User Signing Card */
-.user-sign-card {
+/* User Signing Card (Phase 2 Preview with Soon Badge) */
+.user-sign-placeholder-card {
+  margin-top: 24px;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: var(--card);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-sign-placeholder-card:hover {
+  border-color: rgba(184, 28, 28, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.user-sign-content {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+}
+
+.user-sign-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(184, 28, 28, 0.08);
+  color: var(--primary, #b81c1c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-sign-text {
+  flex: 1;
+}
+
+.user-sign-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.user-sign-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.badge-soon {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  border-radius: 9999px;
+  background: rgba(184, 28, 28, 0.1);
+  color: var(--primary, #b81c1c);
+  border: 1px solid rgba(184, 28, 28, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-badge-soon {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.nav-link-reserved {
+  opacity: 0.72;
+  cursor: default !important;
+}
+
+.nav-link-reserved:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 .user-sign-description {
@@ -6296,6 +6465,10 @@ textarea.form-control:focus {
   line-height: 1.6;
 }
 
+.user-sign-action {
+  flex-shrink: 0;
+}
+
 @media (max-width: 860px) {
   .user-dashboard-grid {
     grid-template-columns: 1fr;
@@ -6303,6 +6476,20 @@ textarea.form-control:focus {
 
   .cert-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .user-sign-placeholder-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-sign-action {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .user-sign-action button {
+    width: 100%;
   }
 }
 
