@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Optional
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
@@ -86,6 +86,7 @@ class Settings(BaseSettings):
     MAX_AUDIT_LOGS: int = int(os.getenv("MAX_AUDIT_LOGS", "5000"))
 
     # Passphrases & Defaults
+    INTER_CA_PASS: Optional[str] = os.getenv("INTER_CA_PASS", None)
     DEFAULT_PFX_PASS: str = os.getenv("DEFAULT_PFX_PASS", "Mkri006!")
     DEFAULT_USER_PASS: str = os.getenv("DEFAULT_USER_PASS", "Konstitusi100%")
 
@@ -115,6 +116,13 @@ class Settings(BaseSettings):
             ):
                 raise ValueError(
                     "Production environment requires a secure and non-default DATABASE_URL / POSTGRES_PASSWORD."
+                )
+            if self.INTER_CA_PASS is not None and (
+                self.INTER_CA_PASS in {"InterPass!ChangeMe123", "changeme", "secret", "password"}
+                or len(self.INTER_CA_PASS.strip()) < 8
+            ):
+                raise ValueError(
+                    "Production environment requires a strong and non-default INTER_CA_PASS."
                 )
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(

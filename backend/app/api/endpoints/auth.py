@@ -29,6 +29,8 @@ def login_access_token(
         subject=user.id, expires_delta=access_token_expires
     )
     
+    is_default_password = security.verify_password(settings.DEFAULT_USER_PASS, user.password_hash)
+
     return {
         "success": True,
         "data": {
@@ -36,7 +38,8 @@ def login_access_token(
                 "id": str(user.id),
                 "name": user.name,
                 "email": user.email,
-                "role": user.role
+                "role": user.role,
+                "must_change_password": is_default_password
             },
             "token": token
         }
@@ -58,6 +61,7 @@ def read_users_me(current_user: User = Depends(deps.get_current_user)):
     """
     Mengambil informasi user yang sedang login.
     """
+    is_default_password = security.verify_password(settings.DEFAULT_USER_PASS, current_user.password_hash)
     return {
         "success": True,
         "data": {
@@ -68,6 +72,7 @@ def read_users_me(current_user: User = Depends(deps.get_current_user)):
             "organization": current_user.organization,
             "ou": current_user.ou,
             "role": current_user.role,
-            "status": current_user.status
+            "status": current_user.status,
+            "must_change_password": is_default_password
         }
     }

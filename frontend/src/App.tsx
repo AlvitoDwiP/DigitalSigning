@@ -7,10 +7,12 @@ import { GeneratePage } from './pages/GeneratePage';
 import { AdminsPage } from './pages/AdminsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { AccountPage } from './pages/AccountPage';
+import type { AccountTab } from './pages/AccountPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SigningPage } from './pages/SigningPage';
 import { AppShell } from './components/layout/AppShell';
+import { FirstLoginPasswordModal } from './components/layout/FirstLoginPasswordModal';
 import { getAuthToken, getAuthUser, clearAuthSession } from './services/api';
 
 function normalizePath(rawPath: string): string {
@@ -56,6 +58,29 @@ export default function App() {
     return !!token;
   });
 
+  // Mode state for Admin accounts ('admin' | 'user')
+  const [adminViewMode, setAdminViewMode] = useState<'admin' | 'user'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ds_admin_view_mode');
+      if (saved === 'user' || saved === 'admin') return saved;
+    }
+    return 'admin';
+  });
+
+  // Target tab when navigating to /account (e.g. 'password')
+  const [accountInitialTab, setAccountInitialTab] = useState<AccountTab | undefined>(undefined);
+
+  // Danger Alert pop up to update password when logging in
+  const [showPasswordAlertModal, setShowPasswordAlertModal] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const user = getAuthUser();
+      if (user && user.must_change_password && sessionStorage.getItem('ds_pwd_alert_dismissed') !== 'true') {
+        return true;
+      }
+    }
+    return false;
+  });
+
   // Handle browser popstate (back/forward)
   useEffect(() => {
     const handlePopState = () => {
@@ -90,6 +115,9 @@ export default function App() {
   }, []);
 
   const navigateTo = (path: string) => {
+    if (normalizePath(path) !== '/account') {
+      setAccountInitialTab(undefined);
+    }
     setCurrentPath(path);
     if (typeof window !== 'undefined' && window.history) {
       window.history.pushState({}, '', path);
@@ -102,6 +130,19 @@ export default function App() {
   const handleLoginSuccess = (_email: string) => {
     setSessionNotice(null);
     setIsAuthenticated(true);
+    const user = getAuthUser();
+    if (user && user.must_change_password) {
+      setShowPasswordAlertModal(true);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('ds_show_pwd_alert', 'true');
+        sessionStorage.removeItem('ds_pwd_alert_dismissed');
+      }
+    } else {
+      setShowPasswordAlertModal(false);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('ds_show_pwd_alert');
+      }
+    }
     navigateTo('/dashboard');
   };
 
@@ -109,6 +150,11 @@ export default function App() {
     setSessionNotice(null);
     clearAuthSession();
     setIsAuthenticated(false);
+    setShowPasswordAlertModal(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('ds_show_pwd_alert');
+      sessionStorage.removeItem('ds_pwd_alert_dismissed');
+    }
     navigateTo('/login');
   };
 
@@ -161,15 +207,6 @@ export default function App() {
 
   const authUser = getAuthUser();
   const currentRole = authUser?.role || 'USER';
-
-  // Mode state for Admin accounts ('admin' | 'user')
-  const [adminViewMode, setAdminViewMode] = useState<'admin' | 'user'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ds_admin_view_mode');
-      if (saved === 'user' || saved === 'admin') return saved;
-    }
-    return 'admin';
-  });
 
   // Effective view mode: SUPER_ADMIN is always 'admin', USER is always 'user', ADMIN follows state
   const effectiveViewMode: 'admin' | 'user' =
@@ -251,7 +288,7 @@ export default function App() {
       if (currentRole === 'ADMIN' && effectiveViewMode === 'admin') {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
-      return <AccountPage onNavigate={navigateTo} />;
+      return <AccountPage onNavigate={navigateTo} initialTab={accountInitialTab} />;
     }
 
     if (path === '/signing') {
@@ -265,15 +302,48 @@ export default function App() {
     return <NotFoundPage onNavigate={navigateTo} />;
   };
 
+  const handleClosePasswordAlert = () => {
+    setShowPasswordAlertModal(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('ds_show_pwd_alert');
+      sessionStorage.setItem('ds_pwd_alert_dismissed', 'true');
+    }
+  };
+
+  const handleConfirmPasswordAlert = () => {
+    setShowPasswordAlertModal(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('ds_show_pwd_alert');
+      sessionStorage.setItem('ds_pwd_alert_dismissed', 'true');
+    }
+    // Jika role ADMIN berada di Mode Admin, beralih ke Mode Pengguna karena Kelola Akun berada di Mode Pengguna
+    if (currentRole === 'ADMIN' && effectiveViewMode === 'admin') {
+      setAdminViewMode('user');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ds_admin_view_mode', 'user');
+      }
+    }
+    setAccountInitialTab('password');
+    navigateTo('/account');
+  };
+
   return (
-    <AppShell
-      currentPath={currentPath}
-      onNavigate={navigateTo}
-      onLogout={handleLogout}
-      viewMode={effectiveViewMode}
-      onToggleViewMode={handleToggleViewMode}
-    >
-      {renderContent()}
-    </AppShell>
+    <>
+      <AppShell
+        currentPath={currentPath}
+        onNavigate={navigateTo}
+        onLogout={handleLogout}
+        viewMode={effectiveViewMode}
+        onToggleViewMode={handleToggleViewMode}
+      >
+        {renderContent()}
+      </AppShell>
+
+      <FirstLoginPasswordModal
+        isOpen={showPasswordAlertModal}
+        onClose={handleClosePasswordAlert}
+        onConfirm={handleConfirmPasswordAlert}
+      />
+    </>
   );
 }

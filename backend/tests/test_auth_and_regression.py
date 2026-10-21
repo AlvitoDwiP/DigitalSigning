@@ -59,6 +59,7 @@ def test_production_config_rejects_default_secrets():
         Settings(
             ENVIRONMENT="production",
             SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+            PKI_SERVICE_TOKEN="strong-random-pki-service-token-32bytes-long",
             INTER_CA_PASS="InterPass!ChangeMe123",
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
@@ -68,6 +69,7 @@ def test_production_config_rejects_default_secrets():
         Settings(
             ENVIRONMENT="production",
             SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+            PKI_SERVICE_TOKEN="strong-random-pki-service-token-32bytes-long",
             INTER_CA_PASS="   ",
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
@@ -77,6 +79,7 @@ def test_production_config_rejects_default_secrets():
         Settings(
             ENVIRONMENT="production",
             SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+            PKI_SERVICE_TOKEN="strong-random-pki-service-token-32bytes-long",
             INTER_CA_PASS="short",
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
@@ -85,6 +88,7 @@ def test_production_config_rejects_default_secrets():
     prod_settings = Settings(
         ENVIRONMENT="production",
         SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+        PKI_SERVICE_TOKEN="strong-random-pki-service-token-32bytes-long",
         INTER_CA_PASS="ProductionSecurePassphrase2026!",
         DATABASE_URL="postgresql://user:pass@localhost:5432/db",
     )

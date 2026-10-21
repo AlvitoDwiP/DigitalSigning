@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { IconShield, IconClose } from '../icons/Icons';
+import { IconAlertTriangle, IconClose, IconKey } from '../icons/Icons';
 
 interface FirstLoginPasswordModalProps {
   isOpen: boolean;
@@ -51,7 +51,7 @@ export function FirstLoginPasswordModal({
   return (
     <dialog
       ref={dialogRef}
-      className="custom-modal-dialog"
+      className="custom-modal-dialog danger-alert-modal"
       aria-labelledby="first-login-alert-title"
       aria-describedby="first-login-alert-description"
       onClick={(e) => {
@@ -61,15 +61,18 @@ export function FirstLoginPasswordModal({
       }}
     >
       <div className="dialog-content-wrapper">
-        {/* Header */}
-        <div className="dialog-header">
+        {/* Header - Danger Styling */}
+        <div className="dialog-header danger-header">
           <div className="dialog-header-title-group">
-            <div className="dialog-info-icon" aria-hidden="true">
-              <IconShield size={22} />
+            <div className="dialog-danger-icon" aria-hidden="true">
+              <IconAlertTriangle size={22} />
             </div>
-            <h2 id="first-login-alert-title" className="dialog-title">
-              Pengingat Ganti Password
-            </h2>
+            <div>
+              <h2 id="first-login-alert-title" className="dialog-title text-danger">
+                Peringatan Keamanan Akun
+              </h2>
+              <span className="badge-danger-tag">Penting</span>
+            </div>
           </div>
           <button
             type="button"
@@ -81,11 +84,26 @@ export function FirstLoginPasswordModal({
           </button>
         </div>
 
-        {/* Body */}
+        {/* Body - Danger Alert Box */}
         <div className="dialog-body">
-          <p id="first-login-alert-description" className="dialog-main-text">
-            Akun Anda terindikasi masih menggunakan kata sandi awal/bawaan sistem. Demi menjaga keamanan akun dan privasi data Anda, disarankan untuk segera mengganti kata sandi Anda.
-          </p>
+          <div className="dialog-danger-box" role="alert">
+            <IconAlertTriangle size={24} style={{ color: '#DC2626', flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <div className="dialog-danger-box-title">Wajib Perbarui Password Anda Segera!</div>
+              <p id="first-login-alert-description" className="dialog-danger-box-desc">
+                Akun Anda terindikasi masih menggunakan kata sandi awal atau belum diperbarui. Demi menjaga keamanan akun dan melindungi data dokumen tanda tangan elektronik (TTE), Anda sangat disarankan untuk segera memperbarui kata sandi Anda.
+              </p>
+            </div>
+          </div>
+
+          <div className="dialog-danger-advice" style={{ marginTop: '12px' }}>
+            <p>Ketentuan kata sandi yang aman:</p>
+            <ul>
+              <li>Minimal 8 karakter</li>
+              <li>Kombinasi huruf besar (A-Z) dan huruf kecil (a-z)</li>
+              <li>Mengandung angka (0-9) dan simbol khusus (!@#$%^&*)</li>
+            </ul>
+          </div>
         </div>
 
         {/* Footer Actions */}
@@ -99,14 +117,16 @@ export function FirstLoginPasswordModal({
           </button>
           <button
             type="button"
-            className="btn btn-primary dialog-btn-confirm"
+            className="btn btn-danger-solid dialog-btn-confirm"
             onClick={onConfirm}
             autoFocus
           >
-            Ganti Password
+            <IconKey size={15} style={{ marginRight: '6px' }} />
+            Perbarui Password
           </button>
         </div>
       </div>
     </dialog>
   );
 }
+
