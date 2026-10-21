@@ -34,13 +34,50 @@ app.include_router(signatures.router, prefix=f"{settings.API_V1_STR}/signatures"
 app.include_router(health_router, prefix=settings.API_V1_STR, tags=["Health"])
 app.include_router(health_router, tags=["Health"]) # Root /health convenience
 
-@app.get("/", tags=["Root"])
-def root():
-    return {
-        "message": "Digital Signature Platform Backend API",
-        "docs": "/docs",
-        "health": "/health"
-    }
+from pathlib import Path
+from fastapi import Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from app.core.config import BASE_DIR
+
+# Determine frontend static directory if built
+dist_dir = None
+for candidate in [BASE_DIR / "frontend" / "dist", Path("/app/frontend/dist")]:
+    if candidate.exists() and (candidate / "index.html").is_file():
+        dist_dir = candidate
+        break
+
+if dist_dir:
+    assets_dir = dist_dir / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    @app.get("/", tags=["Dashboard UI"])
+    def serve_frontend_root():
+        return FileResponse(dist_dir / "index.html")
+
+    @app.middleware("http")
+    async def spa_fallback_middleware(request: Request, call_next):
+        response = await call_next(request)
+        if response.status_code == 404 and request.method == "GET":
+            path = request.url.path
+            # Do NOT hijack API, health, docs, openapi routes
+            if not (path.startswith("/api/") or path.startswith("/health") or path.startswith("/docs") or path.startswith("/openapi.json")):
+                static_file = dist_dir / path.lstrip("/")
+                if static_file.is_file():
+                    return FileResponse(static_file)
+                index_file = dist_dir / "index.html"
+                if index_file.is_file():
+                    return FileResponse(index_file)
+        return response
+else:
+    @app.get("/", tags=["Root"])
+    def root():
+        return {
+            "message": "Digital Signature Platform Backend API",
+            "docs": "/docs",
+            "health": "/health"
+        }
 
 if __name__ == "__main__":
     import uvicorn

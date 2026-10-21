@@ -25,30 +25,48 @@ Fitur penandatanganan dokumen (PDF Signing aktif) dipersiapkan untuk Phase 2.
 
 ## 2. Architecture
 
-Arsitektur aplikasi menggunakan pendekatan **Monolith Backend Terpadu** yang dirancang untuk kesederhanaan deployment operasional tanpa kompleksitas microservices yang prematur:
+Arsitektur aplikasi menggunakan pemisahan **3 Container Docker** berdasarkan pemisahan tanggung jawab yang terisolasi:
+
+1. **Container 1: Dashboard / Platform API (`digital_signature_backend`, port 8000)** — Menangani penyajian frontend statis, REST API publik, autentikasi JWT, otorisasi RBAC, manajemen pengguna, metadata sertifikat, audit log, dan penandatanganan PDF via TTE signer.
+2. **Container 2: PKI Service (`digital_signature_pki`, port 8001 internal)** — Mengisolasi beban kerja kriptografi OpenSSL, pembuatan RSA key, CSR, penandatanganan sertifikat, packaging P12, staging regenerasi, dan pembersihan material sertifikat. Terhubung hanya melalui jaringan internal dengan otentikasi token rahasia antarlayanan (`X-Internal-Token`).
+3. **Container 3: PostgreSQL Database (`digital_signature_db`, port 5432)** — Menyimpan data terstruktur identitas pengguna, status dan metadata sertifikat, serta catatan audit log. Menggunakan named volume `postgres_data` untuk persistensi data.
 
 ```text
-[ Frontend (React + TypeScript + Vite) ] (Port 3000)
-                    │
-                    ▼ HTTP/JSON (CORS & Vite Proxy)
-[ Platform API (FastAPI Monolith) ] (Port 8000)
-    │                       │
-    ▼ (SQLAlchemy/Alembic)   ▼ (In-Process Adapter Call)
-[ PostgreSQL DB ]       [ Internal PKI Engine: pki_engine.py ]
-  (Port 5432)               │
-                            ▼ (Secure Subprocess Execution / OpenSSL)
-                        [ Existing PKI Engine Scripts (pki/scripts/) ]
-                            │
-                            ├── Private Key (.key) & CSR (.csr)
-                            ├── Intermediate CA Signed Certificate (.crt)
-                            └── Encrypted PKCS#12 Bundle (.p12)
+[ Browser / Frontend (React + TypeScript) ]
+                     │
+                     │ Port 8000 (HTTP / SPA & API) atau Port 3000 (Vite Dev Proxy)
+                     ▼
++------------------------------------------------------------------------------------+
+| CONTAINER 1: digital_signature_backend (Platform API & Web Dashboard)              |
+| - FastAPI Web Server & SPA Host (Port 8000)                                        |
+| - Autentikasi JWT, RBAC, Validasi Input, Audit Log, Dokumen TTE                    |
+| - Client: PKIApiClient (httpx, X-Internal-Token)                                   |
+| - Volume Mount:                                                                    |
+|   - ./sign-api/p12 -> /app/sign-api/p12:ro (Arsip P12 Read-Only untuk TTE)         |
+|   - ./frontend/dist -> /app/frontend/dist (SPA statis produksi)                    |
++------------------------------------------------------------------------------------+
+              │                                            │
+              │ Docker Network (platform_network:8001)     │ Docker Network (platform_network:5432)
+              │ Internal Only (Tanpa Port Publik)          │ Internal Only (Port 5432)
+              ▼                                            ▼
++-------------------------------------------+  +-------------------------------------+
+| CONTAINER 2: digital_signature_pki        |  | CONTAINER 3: digital_signature_db   |
+| (PKI Service / Certificate Issuer)        |  | (PostgreSQL Database Relasional)    |
+| - FastAPI Daemon Kriptografi (Port 8001)  |  | - Port 5432 (postgres:16-alpine)    |
+| - Endpoint Terproteksi X-Internal-Token   |  | - Named Volume: postgres_data       |
+| - Engine: pki_engine.py & OpenSSL CLI     |  | - Menyimpan metadata user, cert,    |
+| - Volume Mount:                           |  |   dan audit log                     |
+|   - ./pki -> /app/pki (CA keys & issued)  |  +-------------------------------------+
+|   - ./sign-api -> /app/sign-api (Archive) |
++-------------------------------------------+
 ```
 
 ### Karakteristik Arsitektur:
 1. **Frontend Isolation:** Frontend tidak pernah mengakses file privat, database, atau skrip bash secara langsung. Seluruh interaksi melewati REST API.
-2. **Controller/Router Separation:** Endpoint FastAPI (`app/api/endpoints/`) mendelegasikan pemrosesan kriptografi langsung ke service engine Python (`app/services/pki_engine.py`) tanpa wrapper berlebih.
-3. **In-Process PKI Engine:** Engine menangani validasi input/output, sanitasi format, batas timeout proses, verifikasi integritas artefak sertifikat via OpenSSL, serta mekanisme rollback/staging jika terjadi kegagalan transaksi database.
-4. **Data vs Artifact Separation:** PostgreSQL hanya menyimpan metadata identitas dan metadata sertifikat (serial number, subject, issuer, fingerprint, status, masa berlaku). File privat dan bundle `.p12` tersimpan secara terisolasi di volume sistem berkas.
+2. **Container Separation:** Platform API (`backend/`) menangani autentikasi pengguna, otorisasi role, audit log, dan metadata database, sedangkan proses kriptografi terisolasi di PKI Service (`pki-service/`).
+3. **Internal Inter-Service Security:** PKI Service hanya dapat diakses melalui jaringan Docker internal dengan autentikasi header `X-Internal-Token`. Port PKI Service (8001) tidak diekspos ke host publik.
+4. **Shared P12 Volume:** Arsip sertifikat PKCS#12 kanonis (`sign-api/p12`) dibagikan ke Platform API agar fitur penandatanganan PDF (`pdf_signer.py`) dapat membaca bundle P12 untuk proses TTE.
+5. **Data vs Artifact Separation:** PostgreSQL hanya menyimpan metadata identitas dan metadata sertifikat (serial number, subject, issuer, fingerprint, status, masa berlaku). Private key CA dan file fisik tersimpan secara terisolasi di volume PKI.
 
 ---
 
@@ -195,17 +213,21 @@ Aplikasi web dapat diakses di browser melalui: **`http://localhost:3000`**.
 ## 7. Verifikasi & Pengujian
 
 ### Status Pengujian Terverifikasi:
-1. **Automated Unit Testing (Pytest):**
-   - **35 dari 35 test lulus (100%)**: mencakup RBAC Admin, otentikasi JWT, filter & pagination pengguna, validasi CSV bulk 7 kolom, penanganan error PKI, dan staging regenerate sertifikat.
+1. **Automated Backend & Integration Testing (Pytest):**
+   - **66 dari 66 test lulus (100%)**: mencakup RBAC Admin, otentikasi JWT, filter & pagination pengguna, validasi CSV bulk 7 kolom, penanganan error PKI, staging regenerate sertifikat, client HTTP antarlayanan, dan integrasi penandatanganan PDF.
    ```bash
-   # Menjalankan test suite backend
-   cd backend
-   pytest
+   PYTHONPATH=backend pytest -v backend/tests/
    ```
-2. **Frontend Production Build:**
-   - `npm run build` (`tsc && vite build`) berhasil dikompilasi dengan **0 kesalahan TypeScript**.
-3. **Pengujian Nyata di Browser (End-to-End):**
-   - Alur Login Admin (`POST /api/v1/auth/login`) -> Generate Pengguna (`POST /api/v1/users/generate`) -> Eksekusi OpenSSL Intermediate CA -> Penerbitan Sertifikat & file `.p12` -> Tampilan UI Real-Time telah terverifikasi bekerja end-to-end.
+2. **PKI Service Automated Testing (Pytest):**
+   - **7 dari 7 test lulus (100%)**: mencakup verifikasi token internal (`X-Internal-Token`), otorisasi antarlayanan, alur single/bulk issuance, isolasi staging, commit, cleanup, dan penghapusan material pengguna.
+   ```bash
+   PYTHONPATH=pki-service pytest -v pki-service/tests/
+   ```
+3. **Frontend Production Build:**
+   - `npm run build` (`tsc && vite build`) berhasil dikompilasi dengan **0 kesalahan TypeScript** dalam 8.8 detik.
+4. **Pengujian Nyata di 3 Container Docker (End-to-End):**
+   - Container `digital_signature_backend`, `digital_signature_pki`, dan `digital_signature_db` terverifikasi aktif dan sehat.
+   - Alur Login Super Admin -> Generate Single User -> Bulk CSV Validate & Generate -> Staged Regenerate -> Commit & Rollback -> Change Passphrase -> Delete User & Materials terverifikasi bekerja end-to-end tanpa kebocoran secret pada log.
 
 ---
 

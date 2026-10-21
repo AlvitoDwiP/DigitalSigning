@@ -61,7 +61,7 @@ def test_single_generate_success_and_no_secret_leak(client: TestClient, auth_hea
         "expires_at": "2028-10-01T00:00:00Z",
     }
 
-    with patch("app.api.endpoints.users.pki_engine.generate_single", return_value=mock_pki_response):
+    with patch("app.api.endpoints.users.pki_api_client.generate_single", return_value=mock_pki_response):
         response = client.post("/api/v1/users/generate", json=payload, headers=auth_headers["admin"])
         assert response.status_code == 200
         data = response.json()
@@ -166,7 +166,7 @@ Bulk User 2 {str_suffix},{nik2},bulk2_{str_suffix}@mkri.go.id,MKRI,TTE,Password1
     }
 
     files = {"file": ("users.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
-    with patch("app.api.endpoints.users.pki_engine.generate_bulk", return_value=mock_pki_bulk_response):
+    with patch("app.api.endpoints.users.pki_api_client.generate_bulk", return_value=mock_pki_bulk_response):
         response = client.post("/api/v1/users/generate-bulk", files=files, headers=auth_headers["admin"])
         assert response.status_code == 200
         data = response.json()
@@ -194,8 +194,8 @@ def test_regenerate_certificate_uses_default_passphrase(client: TestClient, auth
         }
     }
 
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage", return_value=mock_stage_res) as mock_stage, \
-         patch("app.api.endpoints.users.pki_engine.regenerate_commit", return_value={"status": "SUCCESS"}):
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage", return_value=mock_stage_res) as mock_stage, \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit", return_value={"status": "SUCCESS"}):
         res = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "Password123!"},
@@ -217,7 +217,7 @@ def test_regenerate_certificate_uses_default_passphrase(client: TestClient, auth
 
 def test_change_user_pfx_passphrase(client: TestClient, auth_headers: dict, seed_users: dict):
     target_user = seed_users["user"]
-    with patch("app.api.endpoints.users.pki_engine.change_p12_passphrase_admin", return_value={"status": "SUCCESS"}):
+    with patch("app.api.endpoints.users.pki_api_client.change_p12_passphrase_admin", return_value={"status": "SUCCESS"}):
         res = client.post(
             f"/api/v1/users/{target_user.id}/pfx-password",
             json={"new_password": "NewSecretPass123!", "confirm_password": "NewSecretPass123!"},

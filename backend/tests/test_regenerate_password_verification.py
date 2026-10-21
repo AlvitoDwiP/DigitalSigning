@@ -29,8 +29,8 @@ def test_regenerate_correct_password_succeeds(client: TestClient, auth_headers: 
         }
     }
 
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage", return_value=mock_stage_res) as mock_stage, \
-         patch("app.api.endpoints.users.pki_engine.regenerate_commit", return_value={"status": "SUCCESS"}):
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage", return_value=mock_stage_res) as mock_stage, \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit", return_value={"status": "SUCCESS"}):
         res = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "Password123!"},
@@ -47,8 +47,8 @@ def test_regenerate_wrong_password_rejected_without_calling_pki(client: TestClie
     """2. Password salah menolak proses tanpa memanggil PKI Engine."""
     target_user = seed_users["user"]
 
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage") as mock_stage, \
-         patch("app.api.endpoints.users.pki_engine.regenerate_commit") as mock_commit:
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage, \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit") as mock_commit:
         res = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "WrongPassword999!"},
@@ -68,7 +68,7 @@ def test_regenerate_missing_password_rejected_without_calling_pki(client: TestCl
     """Password kosong atau tidak ada harus ditolak tanpa memanggil PKI Engine."""
     target_user = seed_users["user"]
 
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage") as mock_stage:
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage:
         res = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={},
@@ -84,7 +84,7 @@ def test_regular_user_cannot_use_regenerate_endpoint(client: TestClient, auth_he
     """3. User biasa tidak dapat menggunakan endpoint regenerate Admin."""
     target_user = seed_users["user"]
 
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage") as mock_stage:
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage:
         res = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "Password123!"},
@@ -118,7 +118,7 @@ def test_verified_identity_always_from_logged_in_admin(client: TestClient, db_se
     token = create_access_token(subject=special_admin.id)
     special_headers = {"Authorization": f"Bearer {token}"}
 
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage") as mock_stage:
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage:
         # Mencoba menggunakan password default admin lain ("Password123!") HARUS GAGAL
         res_wrong = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
@@ -145,7 +145,7 @@ def test_verified_identity_always_from_logged_in_admin(client: TestClient, db_se
                 "expires_at": "2028-10-01T00:00:00Z",
             }
         }
-        with patch("app.api.endpoints.users.pki_engine.regenerate_commit", return_value={"status": "SUCCESS"}):
+        with patch("app.api.endpoints.users.pki_api_client.regenerate_commit", return_value={"status": "SUCCESS"}):
             res_correct = client.post(
                 f"/api/v1/users/{target_user.id}/certificates/regenerate",
                 json={"admin_password": "SpecialAdminSecret!99"},
@@ -176,8 +176,8 @@ def test_password_never_leaks_in_response_or_audit_logs(client: TestClient, db_s
         }
     }
 
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage", return_value=mock_stage_res), \
-         patch("app.api.endpoints.users.pki_engine.regenerate_commit", return_value={"status": "SUCCESS"}):
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage", return_value=mock_stage_res), \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit", return_value={"status": "SUCCESS"}):
         res = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": secret_pwd},
@@ -203,8 +203,8 @@ def test_regeneration_failure_handling_and_cleanup(client: TestClient, auth_head
     """6. Kegagalan regenerasi tetap ditangani sesuai mekanisme backend yang ada (cleanup dipanggil)."""
     target_user = seed_users["user"]
 
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage", side_effect=Exception("PKI Stage Failure")), \
-         patch("app.api.endpoints.users.pki_engine.regenerate_cleanup") as mock_cleanup:
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage", side_effect=Exception("PKI Stage Failure")), \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_cleanup") as mock_cleanup:
         res = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "Password123!"},

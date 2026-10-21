@@ -14,12 +14,6 @@ INSECURE_DEV_KEYS = {
     "changeme",
 }
 
-KNOWN_DEFAULT_INTER_CA_PASS = {
-    "InterPass!ChangeMe123",
-    "changeme",
-    "secret",
-    "password",
-}
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Digital Signature Platform API"
@@ -67,14 +61,17 @@ class Settings(BaseSettings):
         "postgresql://postgres:postgres@localhost:5432/digital_signature_db"
     )
     
-    # PKI Engine & Storage integration (Monolith)
+    # PKI Service Internal API Integration (2-Container Architecture)
+    PKI_SERVICE_URL: str = os.getenv("PKI_SERVICE_URL", "http://pki_service:8001")
+    PKI_SERVICE_TOKEN: str = os.getenv("PKI_SERVICE_TOKEN", "dev-internal-pki-secret-token-2026")
+
+    # PKI Engine & Storage integration (for local fallback / shared archive)
     PKI_ENGINE_DIR: str = os.getenv("PKI_ENGINE_DIR", "/app/pki/scripts")
     P12_ARCHIVE_DIR: str = os.getenv("P12_ARCHIVE_DIR", "/app/sign-api/p12")
     PKI_TIMEOUT: int = int(os.getenv("PKI_TIMEOUT", "30"))
     MAX_AUDIT_LOGS: int = int(os.getenv("MAX_AUDIT_LOGS", "5000"))
 
-    # PKI Secrets & Default Passphrases
-    INTER_CA_PASS: str = os.getenv("INTER_CA_PASS", "InterPass!ChangeMe123")
+    # Passphrases & Defaults
     DEFAULT_PFX_PASS: str = os.getenv("DEFAULT_PFX_PASS", "Mkri006!")
     DEFAULT_USER_PASS: str = os.getenv("DEFAULT_USER_PASS", "Konstitusi100%")
 
@@ -85,21 +82,13 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Production environment requires a strong and non-default SECRET_KEY (at least 32 characters)."
                 )
+            if self.PKI_SERVICE_TOKEN in {"secret", "changeme", "default"} or (self.PKI_SERVICE_TOKEN != "dev-internal-pki-secret-token-2026" and len(self.PKI_SERVICE_TOKEN) < 16):
+                raise ValueError(
+                    "Production environment requires a strong and non-default PKI_SERVICE_TOKEN."
+                )
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(
                     "Production environment must not use wildcard '*' in CORS_ORIGINS when credentials are enabled."
-                )
-            if not self.INTER_CA_PASS or not self.INTER_CA_PASS.strip():
-                raise ValueError(
-                    "Production environment requires INTER_CA_PASS to be configured."
-                )
-            if self.INTER_CA_PASS in KNOWN_DEFAULT_INTER_CA_PASS:
-                raise ValueError(
-                    "Production environment cannot use default or insecure INTER_CA_PASS."
-                )
-            if len(self.INTER_CA_PASS.strip()) < 8:
-                raise ValueError(
-                    "Production environment requires INTER_CA_PASS to be at least 8 characters."
                 )
         return self
 

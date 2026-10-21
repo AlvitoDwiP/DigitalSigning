@@ -10,7 +10,7 @@ from app.models.user import User
 from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
 from app.schemas.user import User as UserSchema
-from app.services import pki_engine
+from app.services import pki_api_client
 from app.core.security import verify_password, get_password_hash
 import re
 
@@ -124,7 +124,7 @@ def change_account_pfx_password(
         raise HTTPException(status_code=400, detail={"code": "INVALID_INPUT", "message": "Password baru minimal 8 karakter"})
         
     try:
-        pki_engine.change_p12_passphrase_user(
+        pki_api_client.change_p12_passphrase_user(
             nik=current_user.nik,
             old_password=req.old_password,
             new_password=req.new_password

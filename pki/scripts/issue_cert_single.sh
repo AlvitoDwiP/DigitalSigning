@@ -34,12 +34,12 @@ fi
 export INTER_CA_PASS
 
 # ==================== CA PATH ====================
-INT_DIR="$H/pki/intermediate"
+INT_DIR="${INT_DIR:-$H/pki/intermediate}"
 export INT_DIR
-INT_CNF="$INT_DIR/openssl.cnf"
-CHAIN="$INT_DIR/certs/ca-chain.crt"
-EXTFILE="$INT_DIR/pdfsign-ext.cnf"
-INTER_KEY="$INT_DIR/private/intermediate-ca.key"
+INT_CNF="${INT_CNF:-$INT_DIR/openssl.cnf}"
+CHAIN="${CHAIN:-$INT_DIR/certs/ca-chain.crt}"
+EXTFILE="${EXTFILE:-$INT_DIR/pdfsign-ext.cnf}"
+INTER_KEY="${INTER_KEY:-$INT_DIR/private/intermediate-ca.key}"
 
 command -v openssl >/dev/null 2>&1 || { echo "ERROR: openssl tidak ada"; exit 1; }
 
@@ -67,7 +67,8 @@ slugify () {
 SLUG_ORG="$(slugify "$ORG_NAME")"
 SLUG_CN="$(slugify "$CN")"
 PERSON_SLUG="${SLUG_ORG}--${SLUG_CN}"
-OUT_DIR="${OUT_DIR:-$H/pki/issued/$PERSON_SLUG}"
+ISSUED_ROOT="${ISSUED_ROOT:-$H/pki/issued}"
+OUT_DIR="${OUT_DIR:-$ISSUED_ROOT/$PERSON_SLUG}"
 mkdir -p "$OUT_DIR"
 
 # ==================== EXTENSION FILE (IDENTIK) ====================

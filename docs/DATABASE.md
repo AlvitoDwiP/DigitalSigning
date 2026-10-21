@@ -679,3 +679,40 @@ Belum termasuk:
 - tabel file upload.
 
 Semua tersebut berada di luar scope database Phase 1.
+
+---
+
+## 24. Containerization, Persistensi & Pemeliharaan Database
+
+### 24.1. Persistensi & Volume Docker
+- Layanan database PostgreSQL berjalan pada container `digital_signature_db` (berbasis `postgres:16-alpine`).
+- Persistensi data dijamin menggunakan Docker named volume `postgres_data` yang di-mount ke `/var/lib/postgresql/data`.
+- Data pengguna, sertifikat, dan audit log tidak akan hilang saat container direstart, di-stop, atau di-recreate.
+
+### 24.2. Eksekusi Migrasi Alembic
+Migrasi schema dikelola oleh Alembic pada direktori `backend/alembic/`:
+- **Eksekusi Otomatis:** Container `backend` secara otomatis menjalankan `alembic upgrade head` pada startup command sebelum server Uvicorn dimulai.
+- **Eksekusi Manual (dalam Container):**
+  ```bash
+  docker compose exec backend alembic upgrade head
+  ```
+- **Pemeriksaan Status Migrasi:**
+  ```bash
+  docker compose exec backend alembic current
+  ```
+
+### 24.3. Strategi Backup & Restore
+
+#### A. Prosedur Backup (Logical Dump)
+Jalankan perintah `pg_dump` dari host melalui container:
+```bash
+docker compose exec -T postgres pg_dump -U postgres -d digital_signature_db -F c -b -v -f /tmp/backup.dump
+docker cp digital_signature_db:/tmp/backup.dump ./backup_$(date +%Y%m%d_%H%M%S).dump
+```
+
+#### B. Prosedur Restore
+```bash
+docker cp ./backup_file.dump digital_signature_db:/tmp/restore.dump
+docker compose exec -T postgres pg_restore -U postgres -d digital_signature_db -v /tmp/restore.dump
+```
+

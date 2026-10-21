@@ -77,84 +77,40 @@ def test_production_config_rejects_default_secrets():
         Settings(
             ENVIRONMENT="production",
             SECRET_KEY="dev-secret-key-digital-signature-platform-2026",
-            INTER_CA_PASS="ProductionSecurePassphrase2026!",
+            PKI_SERVICE_TOKEN="ProductionSecureToken2026!LongEnough",
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
 
-    # 2. Production mode harus menolak default INTER_CA_PASS ("InterPass!ChangeMe123")
-    with pytest.raises(ValueError, match="INTER_CA_PASS"):
+    # 2. Production mode harus menolak insecure / short PKI_SERVICE_TOKEN
+    with pytest.raises(ValueError, match="PKI_SERVICE_TOKEN"):
         Settings(
             ENVIRONMENT="production",
             SECRET_KEY="strong-random-secret-key-production-32bytes-long",
-            INTER_CA_PASS="InterPass!ChangeMe123",
+            PKI_SERVICE_TOKEN="secret",
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
 
-    # 3. Production mode harus menolak INTER_CA_PASS kosong atau whitespace
-    with pytest.raises(ValueError, match="INTER_CA_PASS"):
+    # 3. Production mode harus menolak wildcard '*' pada CORS_ORIGINS
+    with pytest.raises(ValueError, match="CORS_ORIGINS"):
         Settings(
             ENVIRONMENT="production",
             SECRET_KEY="strong-random-secret-key-production-32bytes-long",
-            INTER_CA_PASS="   ",
+            PKI_SERVICE_TOKEN="ProductionSecureToken2026!LongEnough",
+            CORS_ORIGINS="*",
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
 
-    # 4. Production mode harus menolak INTER_CA_PASS yang terlalu pendek (< 8 karakter)
-    with pytest.raises(ValueError, match="INTER_CA_PASS"):
-        Settings(
-            ENVIRONMENT="production",
-            SECRET_KEY="strong-random-secret-key-production-32bytes-long",
-            INTER_CA_PASS="short",
-            DATABASE_URL="postgresql://user:pass@localhost:5432/db",
-        )
-
-    # 5. Production mode berhasil jika konfigurasi secret valid dan non-default
+    # 4. Production mode berhasil jika konfigurasi secret valid dan non-default
     prod_settings = Settings(
         ENVIRONMENT="production",
         SECRET_KEY="strong-random-secret-key-production-32bytes-long",
-        INTER_CA_PASS="ProductionSecurePassphrase2026!",
+        PKI_SERVICE_TOKEN="ProductionSecureToken2026!LongEnough",
+        CORS_ORIGINS="https://tte.mkri.go.id",
         DATABASE_URL="postgresql://user:pass@localhost:5432/db",
     )
     assert prod_settings.SECRET_KEY == "strong-random-secret-key-production-32bytes-long"
-    assert prod_settings.INTER_CA_PASS == "ProductionSecurePassphrase2026!"
+    assert prod_settings.PKI_SERVICE_TOKEN == "ProductionSecureToken2026!LongEnough"
 
-
-def test_pki_script_production_rejects_ca_secret_fallback():
-    import subprocess
-    from pathlib import Path
-    script_path = Path("pki/scripts/issue_cert_single.sh").resolve()
-
-    # Skenario 1: Production dengan default INTER_CA_PASS harus gagal
-    env_default = os.environ.copy()
-    env_default["ENVIRONMENT"] = "production"
-    env_default["INTER_CA_PASS"] = "InterPass!ChangeMe123"
-
-    res_default = subprocess.run(
-        ["bash", str(script_path)],
-        input="Univ\nOU\nUser\nuser@univ.ac.id\n730\n1234567890123456\n",
-        capture_output=True,
-        text=True,
-        env=env_default
-    )
-    assert res_default.returncode != 0
-    assert "tidak boleh menggunakan secret default pada mode production" in res_default.stderr
-    # Pastikan tidak ada secret yang bocor di stderr
-    assert "InterPass!ChangeMe123" not in res_default.stderr
-
-    # Skenario 2: Production tanpa INTER_CA_PASS harus gagal
-    env_empty = os.environ.copy()
-    env_empty["ENVIRONMENT"] = "production"
-    env_empty.pop("INTER_CA_PASS", None)
-
-    res_empty = subprocess.run(
-        ["bash", str(script_path)],
-        input="Univ\nOU\nUser\nuser@univ.ac.id\n730\n1234567890123456\n",
-        capture_output=True,
-        text=True,
-        env=env_empty
-    )
-    assert res_empty.returncode != 0
-    assert "wajib dikonfigurasi pada mode production" in res_empty.stderr
 
 
 def test_auth_me(client: TestClient, auth_headers: dict, seed_users: dict):

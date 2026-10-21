@@ -30,16 +30,17 @@ VALID_PDF = (
 
 
 @pytest.fixture(scope="function")
-def test_p12_materials(seed_users: dict):
+def test_p12_materials(seed_users: dict, tmp_path, monkeypatch):
     """
-    Membuat file .p12 mandiri untuk seed_users['user'] di folder P12_ARCHIVE_DIR.
-    Dibersihkan secara otomatis setelah tes selesai tanpa menyentuh CA aktif.
+    Membuat file .p12 mandiri untuk seed_users['user'] di folder terisolasi tmp_path.
+    Dibersihkan secara otomatis setelah tes selesai tanpa menyentuh arsip P12 utama.
     """
-    from app.services.pdf_signer import get_p12_archive_dir
+    test_p12_dir = tmp_path / "test_p12"
+    test_p12_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(settings, "P12_ARCHIVE_DIR", str(test_p12_dir))
+
     user = seed_users["user"]
-    p12_dir = get_p12_archive_dir()
-    p12_dir.mkdir(parents=True, exist_ok=True)
-    p12_path = p12_dir / f"{user.nik}.p12"
+    p12_path = test_p12_dir / f"{user.nik}.p12"
 
     # Buat RSA private key
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
@@ -81,6 +82,22 @@ def test_p12_materials(seed_users: dict):
 
     if p12_path.exists():
         p12_path.unlink()
+
+
+def test_p12_volume_is_read_only_in_container():
+    """
+    Memverifikasi bahwa direktori arsip /app/sign-api/p12 di dalam container
+    terkunci secara read-only (:ro) dan menolak operasi penulisan berkas.
+    """
+    from pathlib import Path
+    container_p12_dir = Path("/app/sign-api/p12")
+    if not container_p12_dir.exists():
+        pytest.skip("Uji ini hanya berlaku saat dijalankan di dalam container dengan mount /app/sign-api/p12")
+
+    test_probe_file = container_p12_dir / ".probe_write_test"
+    with pytest.raises((OSError, PermissionError)):
+        with open(test_probe_file, "wb") as f:
+            f.write(b"probe")
 
 
 def create_test_stamp_png() -> bytes:
@@ -270,27 +287,29 @@ def test_user_cannot_sign_as_other_user_idor_protection(
 def test_corrupt_p12_file_handled_gracefully(
     client: TestClient,
     auth_headers: dict,
-    seed_users: dict
+    seed_users: dict,
+    tmp_path,
+    monkeypatch
 ):
     """
     Jika file P12 corrupt atau kosong, ditangani dengan aman tanpa crash 500 unhandled.
+    Menggunakan direktori terisolasi agar tidak melanggar mount P12 yang read-only.
     """
-    from app.services.pdf_signer import get_p12_archive_dir
+    test_p12_dir = tmp_path / "corrupt_p12"
+    test_p12_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(settings, "P12_ARCHIVE_DIR", str(test_p12_dir))
+
     user = seed_users["user"]
-    p12_path = get_p12_archive_dir() / f"{user.nik}.p12"
+    p12_path = test_p12_dir / f"{user.nik}.p12"
     p12_path.write_bytes(b"Bukan berkas p12 yang valid")
 
-    try:
-        files = {"pdf": ("document.pdf", VALID_PDF, "application/pdf")}
-        data = {"passphrase": "SomePassword123!"}
+    files = {"pdf": ("document.pdf", VALID_PDF, "application/pdf")}
+    data = {"passphrase": "SomePassword123!"}
 
-        response = client.post(
-            "/api/v1/signatures/sign",
-            headers=auth_headers["user"],
-            files=files,
-            data=data
-        )
-        assert response.status_code in [400, 401]
-    finally:
-        if p12_path.exists():
-            p12_path.unlink()
+    response = client.post(
+        "/api/v1/signatures/sign",
+        headers=auth_headers["user"],
+        files=files,
+        data=data
+    )
+    assert response.status_code in [400, 401]

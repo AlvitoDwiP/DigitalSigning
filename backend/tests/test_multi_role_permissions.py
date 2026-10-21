@@ -35,7 +35,7 @@ def test_user_forbidden_on_administrative_endpoints(client: TestClient, auth_hea
     assert res_detail.status_code == 403
 
     # 3. POST /api/v1/users/generate (single generation)
-    with patch("app.api.endpoints.users.pki_engine.generate_single") as mock_pki:
+    with patch("app.api.endpoints.users.pki_api_client.generate_single") as mock_pki:
         res_gen = client.post(
             "/api/v1/users/generate",
             json={
@@ -62,7 +62,7 @@ def test_user_forbidden_on_administrative_endpoints(client: TestClient, auth_hea
     assert res_val_bulk.status_code == 403
 
     # 5. POST /api/v1/users/generate-bulk
-    with patch("app.api.endpoints.users.pki_engine.generate_bulk") as mock_bulk_pki:
+    with patch("app.api.endpoints.users.pki_api_client.generate_bulk") as mock_bulk_pki:
         csv_file_exec = io.BytesIO(b"name,nik,email,organization,ou,password,pfx_password\nTest,1234567890123456,test@mkri.go.id,MK,IT,Pass123!,Pfx123!\n")
         res_bulk = client.post(
             "/api/v1/users/generate-bulk",
@@ -73,7 +73,7 @@ def test_user_forbidden_on_administrative_endpoints(client: TestClient, auth_hea
         mock_bulk_pki.assert_not_called()
 
     # 6. DELETE /api/v1/users/{id}
-    with patch("app.api.endpoints.users.pki_engine.delete_user_materials") as mock_del_pki:
+    with patch("app.api.endpoints.users.pki_api_client.delete_user_materials") as mock_del_pki:
         res_del = client.delete(f"/api/v1/users/{target_id}", headers=user_headers)
         assert res_del.status_code == 403
         mock_del_pki.assert_not_called()
@@ -89,8 +89,8 @@ def test_user_cannot_change_other_user_pfx_password_idor(client: TestClient, aut
     PKI Engine tidak boleh dieksekusi.
     """
     other_user = seed_users["admin"]
-    with patch("app.api.endpoints.users.pki_engine.change_p12_passphrase_user") as mock_pki_user, \
-         patch("app.api.endpoints.users.pki_engine.change_p12_passphrase_admin") as mock_pki_admin:
+    with patch("app.api.endpoints.users.pki_api_client.change_p12_passphrase_user") as mock_pki_user, \
+         patch("app.api.endpoints.users.pki_api_client.change_p12_passphrase_admin") as mock_pki_admin:
         res = client.post(
             f"/api/v1/users/{other_user.id}/pfx-password",
             json={
@@ -157,8 +157,8 @@ def test_user_can_access_own_account_endpoints(client: TestClient, auth_headers:
         headers=user_headers
     )
 
-    # 4. POST /api/v1/account/pfx-password (dengan mock pki_engine)
-    with patch("app.api.endpoints.account.pki_engine.change_p12_passphrase_user") as mock_pfx_user:
+    # 4. POST /api/v1/account/pfx-password (dengan mock pki_api_client)
+    with patch("app.api.endpoints.account.pki_api_client.change_p12_passphrase_user") as mock_pfx_user:
         res_pfx = client.post(
             "/api/v1/account/pfx-password",
             json={
@@ -268,8 +268,8 @@ def test_regenerate_permissions_and_password_verification(client: TestClient, au
     target_user = seed_users["user"]
 
     # 1. USER mencoba regenerate -> 403, PKI tidak dipanggil
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage") as mock_stage_u, \
-         patch("app.api.endpoints.users.pki_engine.regenerate_commit") as mock_commit_u:
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage_u, \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit") as mock_commit_u:
         res_u = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "Password123!"},
@@ -280,8 +280,8 @@ def test_regenerate_permissions_and_password_verification(client: TestClient, au
         mock_commit_u.assert_not_called()
 
     # 2. ADMIN mencoba regenerate dengan password salah -> 400 INVALID_CREDENTIALS, PKI tidak dipanggil
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage") as mock_stage_w, \
-         patch("app.api.endpoints.users.pki_engine.regenerate_commit") as mock_commit_w:
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage_w, \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit") as mock_commit_w:
         res_w = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "WrongPassword999!"},
@@ -308,8 +308,8 @@ def test_regenerate_permissions_and_password_verification(client: TestClient, au
             "expires_at": "2028-10-01T00:00:00Z",
         }
     }
-    with patch("app.api.endpoints.users.pki_engine.regenerate_stage", return_value=mock_stage_res) as mock_stage_s, \
-         patch("app.api.endpoints.users.pki_engine.regenerate_commit", return_value={"status": "SUCCESS"}) as mock_commit_s:
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage", return_value=mock_stage_res) as mock_stage_s, \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit", return_value={"status": "SUCCESS"}) as mock_commit_s:
         res_s = client.post(
             f"/api/v1/users/{target_user.id}/certificates/regenerate",
             json={"admin_password": "Password123!"},

@@ -8,21 +8,15 @@ import uuid
 from pathlib import Path
 from app.core.config import settings
 
-from app.core.exceptions import AppException
-
-class PKIEngineError(AppException):
-    def __init__(self, message: str, code: str = "PKI_ENGINE_ERROR", status_code: int = None):
-        if status_code is None:
-            if code in ["INVALID_INPUT", "INVALID_IDENTIFIER"]:
-                status_code = 400
-            elif code in ["PKI_GENERATION_FAILED", "PKI_ENGINE_ERROR", "TIMEOUT", "ARTIFACT_ERROR", "CERTIFICATE_VALIDATION_FAILED", "P12_VALIDATION_FAILED", "P12_NOT_FOUND"]:
-                status_code = 502
-            else:
-                status_code = 500
-        super().__init__(code=code, message=message, status_code=status_code)
+class PKIEngineError(Exception):
+    def __init__(self, message: str, code: str = "PKI_ENGINE_ERROR", status_code: int = 502):
+        super().__init__(message)
+        self.message = message
+        self.code = code
+        self.status_code = status_code
 
 def slugify(text: str) -> str:
-    text = text.lower()
+    text = (text or "").lower()
     text = re.sub(r'[^a-z0-9]+', '-', text)
     return text.strip('-')
 
@@ -30,18 +24,36 @@ def get_pki_paths():
     pki_engine_dir = Path(getattr(settings, "PKI_ENGINE_DIR", os.getenv("PKI_ENGINE_DIR", "/app/pki/scripts")))
     pki_dir = pki_engine_dir if pki_engine_dir.name == "pki" else pki_engine_dir.parent
     h_dir = pki_dir.parent
-    issued_dir = pki_dir / "issued"
-    default_p12 = h_dir / "sign-api" / "p12"
-    if not default_p12.exists() and (h_dir / "sign-api(well3)" / "p12").exists():
-        default_p12 = h_dir / "sign-api(well3)" / "p12"
-    p12_archive_dir = Path(os.environ.get("P12_ARCHIVE_DIR", getattr(settings, "P12_ARCHIVE_DIR", str(default_p12))))
-    chain_path = pki_dir / "intermediate" / "certs" / "ca-chain.crt"
-    return pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path
+    int_dir = Path(getattr(settings, "INT_DIR", None) or os.getenv("INT_DIR") or str(pki_dir / "intermediate")).resolve()
+    issued_dir = Path(getattr(settings, "ISSUED_DIR", None) or os.getenv("ISSUED_DIR") or str(pki_dir / "issued")).resolve()
+    p12_archive_dir = Path(getattr(settings, "P12_ARCHIVE_DIR", None) or os.getenv("P12_ARCHIVE_DIR") or str(h_dir / "sign-api" / "p12")).resolve()
+    chain_path = Path(getattr(settings, "CHAIN_PATH", None) or os.getenv("CHAIN_PATH") or str(int_dir / "certs" / "ca-chain.crt")).resolve()
+    return pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path, int_dir
 
-def execute_script(script_name: str, input_data: str = None, args: list = None, timeout: int = 30, env: dict = None) -> str:
-    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path = get_pki_paths()
+def execute_script(script_name: str, input_data: str = None, args: list = None, timeout: int = None, env: dict = None) -> str:
+    if timeout is None:
+        timeout = getattr(settings, "PKI_TIMEOUT", 60)
+    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path, int_dir = get_pki_paths()
+
+    # Safety Guard: In test environment, block execution if INT_DIR points to primary intermediate CA
+    env_mode = (os.getenv("ENVIRONMENT") or getattr(settings, "ENVIRONMENT", "development")).lower()
+    is_test_mode = env_mode in ("test", "testing") or os.getenv("PKI_TEST_MODE") == "1" or getattr(settings, "ENVIRONMENT", "").lower() in ("test", "testing")
+    primary_int_dir = (pki_dir / "intermediate").resolve()
+
+    raw_int_dir = (env.get("INT_DIR") if env and "INT_DIR" in env else None) or os.getenv("INT_DIR") or getattr(settings, "INT_DIR", None) or str(int_dir)
+    effective_int_dir = Path(raw_int_dir).resolve()
+    effective_chain = Path(env.get("CHAIN_PATH", str(chain_path))).resolve() if env and "CHAIN_PATH" in env else chain_path
+    effective_issued = Path(env.get("ISSUED_ROOT", str(issued_dir))).resolve() if env and "ISSUED_ROOT" in env else issued_dir
+    effective_p12 = Path(env.get("P12_ARCHIVE_DIR", str(p12_archive_dir))).resolve() if env and "P12_ARCHIVE_DIR" in env else p12_archive_dir
+
+    if is_test_mode and effective_int_dir == primary_int_dir:
+        raise PKIEngineError(
+            "SAFETY VIOLATION: Execution in test environment attempted to use the primary CA directory! "
+            "An isolated test CA directory (INT_DIR) must be configured.",
+            "PRIMARY_CA_PROTECTION",
+            500
+        )
     
-    # Bi-directional mapping for backward and forward compatibility
     SCRIPT_MAP = {
         "bangkitkan_single.sh": "issue_cert_single.sh",
         "bangkitkan_banyak.sh": "issue_cert_bulk.sh",
@@ -68,7 +80,7 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
             break
             
     if not script_path:
-        raise PKIEngineError(f"Script {script_name} not found at {pki_engine_dir / script_name}", "INTERNAL_ERROR")
+        raise PKIEngineError(f"Script {script_name} not found at {pki_engine_dir / script_name}", "INTERNAL_ERROR", 500)
         
     cmd = ["bash", str(script_path)]
     if args:
@@ -76,12 +88,13 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
         
     run_env = os.environ.copy()
     run_env["H"] = str(h_dir)
-    run_env["ISSUED_ROOT"] = str(issued_dir)
-    run_env["P12_ARCHIVE_DIR"] = str(p12_archive_dir)
-    run_env["CHAIN_PATH"] = str(chain_path)
-    run_env["ENVIRONMENT"] = getattr(settings, "ENVIRONMENT", os.getenv("ENVIRONMENT", "development"))
-    run_env["INTER_CA_PASS"] = getattr(settings, "INTER_CA_PASS", os.getenv("INTER_CA_PASS", "InterPass!ChangeMe123"))
-    run_env["DEFAULT_PFX_PASS"] = getattr(settings, "DEFAULT_PFX_PASS", os.getenv("DEFAULT_PFX_PASS", "Mkri006!"))
+    run_env["INT_DIR"] = str(effective_int_dir)
+    run_env["ISSUED_ROOT"] = str(effective_issued)
+    run_env["P12_ARCHIVE_DIR"] = str(effective_p12)
+    run_env["CHAIN_PATH"] = str(effective_chain)
+    run_env["ENVIRONMENT"] = getattr(settings, "ENVIRONMENT", "development")
+    run_env["INTER_CA_PASS"] = getattr(settings, "INTER_CA_PASS", "InterPass!ChangeMe123")
+    run_env["DEFAULT_PFX_PASS"] = getattr(settings, "DEFAULT_PFX_PASS", "Mkri006!")
     if env:
         run_env.update(env)
         
@@ -97,21 +110,18 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
         )
         if result.returncode != 0:
             err_msg = result.stderr.strip() or f"Script failed with exit code {result.returncode}"
-            raise PKIEngineError(f"Script {script_name} failed: {err_msg}", "PKI_GENERATION_FAILED")
+            raise PKIEngineError(f"Script {script_name} failed: {err_msg}", "PKI_GENERATION_FAILED", 502)
         return result.stdout
     except subprocess.TimeoutExpired:
-        raise PKIEngineError(f"Script {script_name} timed out", "TIMEOUT")
+        raise PKIEngineError(f"Script {script_name} timed out after {timeout} seconds", "TIMEOUT", 504)
     except Exception as e:
         if isinstance(e, PKIEngineError):
             raise
-        raise PKIEngineError(f"Unexpected error executing PKI engine: {str(e)}", "INTERNAL_ERROR")
+        raise PKIEngineError(f"Unexpected error executing PKI engine: {str(e)}", "INTERNAL_ERROR", 500)
 
 def validate_p12_file(p12_path: Path, pfx_password: str):
-    """
-    Validasi keberadaan serta keterbacaan file .p12 menggunakan OpenSSL.
-    """
     if not p12_path.is_file() or p12_path.stat().st_size == 0:
-        raise PKIEngineError(f"P12 credential file not found: {p12_path.name}", "P12_NOT_FOUND")
+        raise PKIEngineError(f"P12 credential file not found: {p12_path.name}", "P12_NOT_FOUND", 502)
     try:
         res = subprocess.run(
             ["openssl", "pkcs12", "-in", str(p12_path), "-passin", f"pass:{pfx_password}", "-noout", "-nokeys"],
@@ -119,27 +129,11 @@ def validate_p12_file(p12_path: Path, pfx_password: str):
             text=True
         )
         if res.returncode != 0:
-            raise PKIEngineError(f"P12 credential file validation failed: {res.stderr.strip()}", "P12_VALIDATION_FAILED")
+            raise PKIEngineError(f"P12 credential file validation failed: {res.stderr.strip()}", "P12_VALIDATION_FAILED", 502)
     except subprocess.CalledProcessError:
-        raise PKIEngineError("Failed to validate generated P12 credential", "P12_VALIDATION_FAILED")
+        raise PKIEngineError("Failed to validate generated P12 credential", "P12_VALIDATION_FAILED", 502)
 
-def generate_single(name: str = None, nik: str = None, email: str = None, organization: str = None, ou: str = None, pfx_password: str = None, data: dict = None) -> dict:
-    if data is not None:
-        name = data.get("name", name)
-        nik = data.get("nik", nik)
-        email = data.get("email", email)
-        organization = data.get("organization", organization)
-        ou = data.get("ou", ou)
-        pfx_password = data.get("pfx_password", pfx_password)
-    elif name is not None and isinstance(name, dict):
-        d = name
-        name = d.get("name")
-        nik = d.get("nik")
-        email = d.get("email")
-        organization = d.get("organization")
-        ou = d.get("ou")
-        pfx_password = d.get("pfx_password")
-
+def generate_single(name: str, nik: str, email: str, organization: str, ou: str, pfx_password: str) -> dict:
     lines = [
         organization or "",
         ou or "",
@@ -155,17 +149,16 @@ def generate_single(name: str = None, nik: str = None, email: str = None, organi
     
     out_dir_match = re.search(r"Output dir :\s+(.*)", stdout)
     if not out_dir_match:
-        raise PKIEngineError("Could not determine output directory from PKI engine", "ARTIFACT_ERROR")
+        raise PKIEngineError("Could not determine output directory from PKI engine", "ARTIFACT_ERROR", 502)
         
     out_dir = Path(out_dir_match.group(1).strip())
     meta_file = out_dir / f"{out_dir.name}-meta.txt"
-    
     if not meta_file.is_file():
-        raise PKIEngineError("Metadata file not generated", "ARTIFACT_ERROR")
+        raise PKIEngineError("Metadata file not generated", "ARTIFACT_ERROR", 502)
         
     crt_file = out_dir / f"{out_dir.name}.crt"
     if not crt_file.is_file():
-        raise PKIEngineError("Certificate file not generated", "ARTIFACT_ERROR")
+        raise PKIEngineError("Certificate file not generated", "ARTIFACT_ERROR", 502)
         
     try:
         cert_info = subprocess.run(
@@ -173,7 +166,7 @@ def generate_single(name: str = None, nik: str = None, email: str = None, organi
             capture_output=True, text=True, check=True
         ).stdout
     except subprocess.CalledProcessError:
-        raise PKIEngineError("Failed to read generated certificate", "CERTIFICATE_VALIDATION_FAILED")
+        raise PKIEngineError("Failed to read generated certificate", "CERTIFICATE_VALIDATION_FAILED", 502)
         
     serial = ""
     not_before = ""
@@ -191,7 +184,6 @@ def generate_single(name: str = None, nik: str = None, email: str = None, organi
             fingerprint = line.split("=")[1].strip().replace(":", "")
             
     p12_file = out_dir / f"{nik}.p12"
-    # Validasi keberadaan serta keterbacaan file .p12
     validate_p12_file(p12_file, pfx_password)
     
     return {
@@ -205,24 +197,8 @@ def generate_single(name: str = None, nik: str = None, email: str = None, organi
         "p12_reference": str(p12_file)
     }
 
-def generate_staged(name: str = None, nik: str = None, email: str = None, organization: str = None, ou: str = None, pfx_password: str = None, data: dict = None) -> dict:
-    if data is not None:
-        name = data.get("name", name)
-        nik = data.get("nik", nik)
-        email = data.get("email", email)
-        organization = data.get("organization", organization)
-        ou = data.get("ou", ou)
-        pfx_password = data.get("pfx_password", pfx_password)
-    elif name is not None and isinstance(name, dict):
-        d = name
-        name = d.get("name")
-        nik = d.get("nik")
-        email = d.get("email")
-        organization = d.get("organization")
-        ou = d.get("ou")
-        pfx_password = d.get("pfx_password")
-
-    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path = get_pki_paths()
+def generate_staged(name: str, nik: str, email: str, organization: str, ou: str, pfx_password: str) -> dict:
+    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path, int_dir = get_pki_paths()
     
     person_slug = f"{slugify(organization)}--{slugify(name)}"
     final_user_dir = issued_dir / person_slug
@@ -262,7 +238,7 @@ def generate_staged(name: str = None, nik: str = None, email: str = None, organi
     if not crt_files:
         if staging_dir.exists():
             shutil.rmtree(staging_dir, ignore_errors=True)
-        raise PKIEngineError("Certificate file not generated in staging", "ARTIFACT_ERROR")
+        raise PKIEngineError("Certificate file not generated in staging", "ARTIFACT_ERROR", 502)
         
     crt_file = crt_files[0]
     
@@ -274,7 +250,7 @@ def generate_staged(name: str = None, nik: str = None, email: str = None, organi
     except subprocess.CalledProcessError:
         if staging_dir.exists():
             shutil.rmtree(staging_dir, ignore_errors=True)
-        raise PKIEngineError("Failed to read generated certificate", "CERTIFICATE_VALIDATION_FAILED")
+        raise PKIEngineError("Failed to read generated certificate", "CERTIFICATE_VALIDATION_FAILED", 502)
         
     serial = ""
     not_before = ""
@@ -291,12 +267,11 @@ def generate_staged(name: str = None, nik: str = None, email: str = None, organi
         elif "Fingerprint" in line:
             fingerprint = line.split("=")[1].strip().replace(":", "")
             
-    # Validasi keberadaan serta keterbacaan file .p12 di staging
     staged_p12_files = list(staging_dir.glob("*.p12"))
     if not staged_p12_files:
         if staging_dir.exists():
             shutil.rmtree(staging_dir, ignore_errors=True)
-        raise PKIEngineError("P12 credential file not generated in staging", "P12_NOT_FOUND")
+        raise PKIEngineError("P12 credential file not generated in staging", "P12_NOT_FOUND", 502)
     
     try:
         validate_p12_file(staged_p12_files[0], pfx_password)
@@ -327,17 +302,15 @@ def generate_staged(name: str = None, nik: str = None, email: str = None, organi
 def commit_staged(staging_token: str, target_user_dir: str, target_archive_p12: str) -> bool:
     staging_path = Path(staging_token)
     if not staging_path.exists():
-        raise PKIEngineError("Staging directory not found", "ARTIFACT_ERROR")
+        raise PKIEngineError("Staging directory not found", "ARTIFACT_ERROR", 502)
         
     target_dir = Path(target_user_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     
-    # Copy all files from staging into target_user_dir
     for item in staging_path.iterdir():
         if item.is_file():
             shutil.copy2(item, target_dir / item.name)
             
-    # Copy p12 to archive
     staging_archive = staging_path / "archive"
     if staging_archive.exists():
         for p12 in staging_archive.glob("*.p12"):
@@ -345,7 +318,6 @@ def commit_staged(staging_token: str, target_user_dir: str, target_archive_p12: 
             archive_target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(p12, archive_target)
             
-    # Cleanup staging
     shutil.rmtree(staging_path, ignore_errors=True)
     return True
 
@@ -355,9 +327,9 @@ def cleanup_staged(staging_token: str) -> bool:
         shutil.rmtree(staging_path, ignore_errors=True)
     return True
 
-def generate_bulk(requests: list) -> list:
+def generate_bulk(requests: list) -> dict:
     if not requests:
-        return []
+        return {"results": []}
         
     temp_fd, temp_path_str = tempfile.mkstemp(suffix=".tsv", prefix="pki_bulk_")
     temp_path = Path(temp_path_str)
@@ -370,7 +342,7 @@ def generate_bulk(requests: list) -> list:
                 for k in ["organization", "ou", "name", "email", "nik", "pfx_password"]:
                     val = str(req_dict.get(k, ""))
                     if "\t" in val or "\r" in val or "\n" in val:
-                        raise PKIEngineError(f"Field {k} contains forbidden tab/newline characters", "INVALID_INPUT")
+                        raise PKIEngineError(f"Field {k} contains forbidden tab/newline characters", "INVALID_INPUT", 400)
                 row = f"{req_dict['organization']}\t{req_dict['ou']}\t{req_dict['name']}\t{req_dict['email']}\t{req_dict['nik']}\t{req_dict['pfx_password']}\n"
                 f.write(row)
                 
@@ -388,7 +360,6 @@ def generate_bulk(requests: list) -> list:
                     meta = item["metadata"]
                     matched_req = next((r if isinstance(r, dict) else r.model_dump() for r in requests if (r if isinstance(r, dict) else r.model_dump()).get("nik") == item.get("nik")), None)
                     if matched_req:
-                        # Validasi artefak sertifikat .crt
                         crt_path_str = meta.get("certificate_path")
                         if not crt_path_str or not Path(crt_path_str).is_file():
                             item["status"] = "FAILED"
@@ -396,7 +367,6 @@ def generate_bulk(requests: list) -> list:
                             results.append(item)
                             continue
                             
-                        # Validasi artefak file .p12
                         p12_path_str = meta.get("p12_reference")
                         if not p12_path_str or not Path(p12_path_str).is_file():
                             item["status"] = "FAILED"
@@ -408,7 +378,7 @@ def generate_bulk(requests: list) -> list:
                             validate_p12_file(Path(p12_path_str), matched_req["pfx_password"])
                         except PKIEngineError as pe:
                             item["status"] = "FAILED"
-                            item["error"] = f"P12 validation failed: {str(pe)}"
+                            item["error"] = f"P12 validation failed: {pe.message}"
                             results.append(item)
                             continue
 
@@ -434,11 +404,11 @@ def generate_bulk(requests: list) -> list:
 def change_p12_passphrase_user(nik: str, old_password: str, new_password: str) -> bool:
     nik_safe = re.sub(r'[^0-9]', '', nik)
     if len(nik_safe) != 16:
-        raise PKIEngineError("NIK must be 16 digits", "INVALID_IDENTIFIER")
+        raise PKIEngineError("NIK must be 16 digits", "INVALID_IDENTIFIER", 400)
         
     for val in [old_password, new_password]:
         if "\n" in val or "\r" in val or "\t" in val:
-            raise PKIEngineError("Password cannot contain newlines or tabs", "INVALID_INPUT")
+            raise PKIEngineError("Password cannot contain newlines or tabs", "INVALID_INPUT", 400)
             
     input_data = f"{nik_safe}\n{old_password}\n{new_password}\n"
     execute_script("change_p12_passphrase_user.sh", input_data=input_data)
@@ -447,10 +417,10 @@ def change_p12_passphrase_user(nik: str, old_password: str, new_password: str) -
 def change_p12_passphrase_admin(nik: str, new_password: str) -> bool:
     nik_safe = re.sub(r'[^0-9]', '', nik)
     if len(nik_safe) != 16:
-        raise PKIEngineError("NIK must be 16 digits", "INVALID_IDENTIFIER")
+        raise PKIEngineError("NIK must be 16 digits", "INVALID_IDENTIFIER", 400)
         
     if "\n" in new_password or "\r" in new_password or "\t" in new_password:
-        raise PKIEngineError("Password cannot contain newlines or tabs", "INVALID_INPUT")
+        raise PKIEngineError("Password cannot contain newlines or tabs", "INVALID_INPUT", 400)
         
     input_data = f"{nik_safe}\n{new_password}\n"
     execute_script("change_p12_passphrase_admin.sh", input_data=input_data)
@@ -459,9 +429,9 @@ def change_p12_passphrase_admin(nik: str, new_password: str) -> bool:
 def delete_user_pki_materials(nik: str) -> dict:
     nik_safe = re.sub(r'[^0-9]', '', nik)
     if not nik_safe:
-        raise PKIEngineError("Invalid NIK provided", "INVALID_IDENTIFIER")
+        raise PKIEngineError("Invalid NIK provided", "INVALID_IDENTIFIER", 400)
         
-    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, _ = get_pki_paths()
+    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, _, _ = get_pki_paths()
     
     deleted_files = []
     failed_files = []
@@ -471,7 +441,7 @@ def delete_user_pki_materials(nik: str) -> dict:
             try:
                 filepath.unlink()
                 deleted_files.append(str(filepath))
-            except Exception as e:
+            except Exception:
                 failed_files.append(str(filepath))
                 
     archive_p12 = p12_archive_dir / f"{nik_safe}.p12"
@@ -496,12 +466,6 @@ def delete_user_pki_materials(nik: str) -> dict:
                 pass
                 
     if failed_files:
-        raise PKIEngineError("Partial cleanup failure", "PARTIAL_CLEANUP_FAILURE")
+        raise PKIEngineError("Partial cleanup failure", "PARTIAL_CLEANUP_FAILURE", 500)
         
     return {"success": True, "deleted": deleted_files}
-
-# Direct aliases for service layer
-delete_user_materials = delete_user_pki_materials
-regenerate_stage = generate_staged
-regenerate_commit = commit_staged
-regenerate_cleanup = cleanup_staged

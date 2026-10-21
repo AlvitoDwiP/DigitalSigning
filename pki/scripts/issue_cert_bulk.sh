@@ -5,7 +5,7 @@ umask 077
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_H="$(cd "$SCRIPT_DIR/../.." && pwd)"
 H="${H:-$DEFAULT_H}"
-export INT_DIR="$H/pki/intermediate"
+export INT_DIR="${INT_DIR:-$H/pki/intermediate}"
 DEFAULT_DAYS="${DEFAULT_DAYS:-730}"
 
 if [[ $# -lt 1 ]]; then
