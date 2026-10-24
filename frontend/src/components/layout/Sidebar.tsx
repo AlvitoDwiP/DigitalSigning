@@ -169,6 +169,7 @@ interface SidebarProps {
   onLogout?: () => void;
   viewMode?: 'admin' | 'user';
   onToggleViewMode?: () => void;
+  isSwitchingMode?: boolean;
 }
 
 export function Sidebar({
@@ -179,6 +180,7 @@ export function Sidebar({
   onLogout,
   viewMode = 'admin',
   onToggleViewMode,
+  isSwitchingMode = false,
 }: SidebarProps) {
   const authUser = getAuthUser();
   const currentRole = authUser?.role || 'ADMIN';
@@ -284,11 +286,19 @@ export function Sidebar({
           {currentRole === 'ADMIN' && onToggleViewMode && (
             <button
               type="button"
-              className={`sidebar-mode-btn ${viewMode === 'user' ? 'sidebar-mode-btn-user' : 'sidebar-mode-btn-admin'}`}
+              className={`sidebar-mode-btn ${viewMode === 'user' ? 'sidebar-mode-btn-user' : 'sidebar-mode-btn-admin'} ${
+                isSwitchingMode ? 'is-switching' : ''
+              }`}
               onClick={onToggleViewMode}
+              disabled={isSwitchingMode}
               aria-label={viewMode === 'user' ? 'Kembali ke Mode Admin' : 'Beralih ke Mode Pengguna'}
             >
-              {viewMode === 'user' ? (
+              {isSwitchingMode ? (
+                <>
+                  <span className="sidebar-mode-spinner" aria-hidden="true" />
+                  <span>Beralih mode...</span>
+                </>
+              ) : viewMode === 'user' ? (
                 <>
                   <IconShield size={18} aria-hidden="true" />
                   <span>Kembali ke Mode Admin</span>

@@ -49,10 +49,40 @@ export function labelAktivitas(kode: string): string {
   return teks.charAt(0).toUpperCase() + teks.slice(1);
 }
 
+export interface ParsedSubject {
+  cn?: string;
+  o?: string;
+  ou?: string;
+  email?: string;
+  c?: string;
+  raw?: string;
+}
+
+// Subjek sertifikat: parse detail field (CN, O, OU, emailAddress)
+export function parseSubjectDetails(subject: string | null | undefined): ParsedSubject {
+  if (!subject) return {};
+  const res: ParsedSubject = { raw: subject };
+  
+  const regex = /(?:^|[/,]\s*)([A-Za-z0-9_]+)=([^/,]+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(subject)) !== null) {
+    const key = match[1].trim().toUpperCase();
+    const val = match[2].trim();
+    if (key === 'CN') res.cn = val;
+    else if (key === 'O') res.o = val;
+    else if (key === 'OU') res.ou = val;
+    else if (key === 'EMAILADDRESS' || key === 'EMAIL' || key === 'E') res.email = val;
+    else if (key === 'C') res.c = val;
+  }
+  return res;
+}
+
 // Subjek sertifikat (Subject DN): tampilkan hanya nilai CN tanpa "CN="
 export function parseCommonName(subject: string | null | undefined): string {
   if (!subject) return '-';
-  const match = subject.match(/(?:^|,\s*)CN=([^,]+)/i);
+  const details = parseSubjectDetails(subject);
+  if (details.cn) return details.cn;
+  const match = subject.match(/(?:^|[,/]\s*)CN=([^,/]+)/i);
   if (match && match[1]) {
     return match[1].trim();
   }

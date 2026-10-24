@@ -175,7 +175,15 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
         setDeleteError(msg);
       }
     } catch (err: any) {
-      setDeleteError(err.message || 'Gagal menghapus pengguna dari sistem.');
+      if (err?.status === 404 || err?.message?.toLowerCase().includes('not found')) {
+        setIsDeleteDialogOpen(false);
+        setDeleteTargetUser(null);
+        setDeleteError(null);
+        showFeedback('Pengguna sudah tidak ada di sistem (telah terhapus). Daftar pengguna telah diperbarui.');
+        await loadUsers();
+      } else {
+        setDeleteError(err.message || 'Gagal menghapus pengguna dari sistem.');
+      }
     } finally {
       setIsDeleting(false);
     }

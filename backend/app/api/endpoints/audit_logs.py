@@ -100,7 +100,7 @@ def get_audit_logs(
         target_users_map = {u.id: u for u in found_users}
 
         found_certs = (
-            db.query(Certificate.id, Certificate.subject, Certificate.serial_number, Certificate.user_id)
+            db.query(Certificate.id, Certificate.subject, Certificate.serial_number, Certificate.certificate_number, Certificate.user_id)
             .filter(Certificate.id.in_(all_target_ids))
             .all()
         )
@@ -115,6 +115,7 @@ def get_audit_logs(
             target_certs_map[c.id] = {
                 "owner_name": owner_name,
                 "serial_number": c.serial_number,
+                "certificate_number": c.certificate_number,
                 "user_id": c.user_id
             }
 

@@ -8,9 +8,16 @@ interface TopbarProps {
   onNavigate?: (path: string) => void;
   viewMode?: 'admin' | 'user';
   onToggleViewMode?: () => void;
+  isSwitchingMode?: boolean;
 }
 
-export function Topbar({ onOpenMobileMenu, onNavigate, viewMode = 'admin', onToggleViewMode }: TopbarProps) {
+export function Topbar({
+  onOpenMobileMenu,
+  onNavigate: _onNavigate,
+  viewMode = 'admin',
+  onToggleViewMode,
+  isSwitchingMode = false,
+}: TopbarProps) {
   const authUser = getAuthUser();
   const userName = authUser?.name || 'Pengguna Platform';
   const initial = userName.trim().charAt(0).toUpperCase() || 'U';
@@ -35,39 +42,25 @@ export function Topbar({ onOpenMobileMenu, onNavigate, viewMode = 'admin', onTog
         {authUser?.role === 'ADMIN' && onToggleViewMode && (
           <button
             type="button"
-            className={`topbar-mode-btn ${viewMode === 'user' ? 'topbar-mode-btn-user mode-user' : 'topbar-mode-btn-admin mode-admin'}`}
+            className={`topbar-mode-btn ${viewMode === 'user' ? 'topbar-mode-btn-user mode-user' : 'topbar-mode-btn-admin mode-admin'} ${
+              isSwitchingMode ? 'is-switching' : ''
+            }`}
             onClick={onToggleViewMode}
+            disabled={isSwitchingMode}
             aria-label={viewMode === 'user' ? 'Kembali ke Mode Admin' : 'Beralih ke Mode Pengguna'}
           >
-            <span className={`mode-dot ${viewMode === 'user' ? 'mode-dot-user' : 'mode-dot-admin'}`} />
-            <span>{viewMode === 'user' ? 'Mode Pengguna' : 'Mode Admin'}</span>
+            <span className={`mode-dot ${viewMode === 'user' ? 'mode-dot-user' : 'mode-dot-admin'} ${isSwitchingMode ? 'is-spinning' : ''}`} />
+            <span>{isSwitchingMode ? 'Beralih mode...' : (viewMode === 'user' ? 'Mode Pengguna' : 'Mode Admin')}</span>
           </button>
         )}
 
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* Profile Area */}
+        {/* Profile Area (Static display for all roles, non-clickable) */}
         <div
           className="topbar-profile"
-          tabIndex={0}
-          role="button"
-          onClick={() => {
-            if (authUser?.role === 'ADMIN' && viewMode === 'admin' && onToggleViewMode) {
-              onToggleViewMode();
-            }
-            if (onNavigate) onNavigate('/account');
-          }}
-          onKeyDown={(e) => {
-            if ((e.key === 'Enter' || e.key === ' ') && onNavigate) {
-              e.preventDefault();
-              if (authUser?.role === 'ADMIN' && viewMode === 'admin' && onToggleViewMode) {
-                onToggleViewMode();
-              }
-              onNavigate('/account');
-            }
-          }}
-          aria-label={`Profil Pengguna: ${userName}. Klik untuk Kelola Akun.`}
+          aria-label={`Identitas Pengguna: ${userName}`}
         >
           <div className="profile-avatar" aria-hidden="true">
             <span>{initial}</span>

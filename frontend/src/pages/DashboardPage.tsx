@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { StatsSection } from '../components/dashboard/StatsSection';
 import { NearestExpiryCard } from '../components/dashboard/NearestExpiryCard';
 import { ExpiryBucketsCard } from '../components/dashboard/ExpiryBucketsCard';
@@ -6,7 +7,7 @@ import { RecentActivitiesCard } from '../components/dashboard/RecentActivitiesCa
 import { UserDashboardView } from '../components/dashboard/UserDashboardView';
 import { DashboardSkeleton } from '../components/dashboard/DashboardSkeleton';
 import { DashboardError } from '../components/dashboard/DashboardError';
-import { IconRefresh } from '../components/icons/Icons';
+import { IconRefresh, IconShield, IconCertificate, IconUser } from '../components/icons/Icons';
 import { Button } from '../components/ui/Button';
 import { fetchAdminDashboard, fetchUserDashboard } from '../services/dashboard';
 import { getAuthUser } from '../services/api';
@@ -49,7 +50,7 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
     } finally {
       if (isManualRefresh) {
         const elapsed = Date.now() - startTime;
-        const delay = Math.max(0, 650 - elapsed);
+        const delay = Math.max(0, 700 - elapsed);
         setTimeout(() => {
           setIsRefreshing(false);
         }, delay);
@@ -68,11 +69,49 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
     return <DashboardSkeleton />;
   }
 
+  const currentRole = authUser?.role;
   const dashboardTitle = isUserView
     ? 'Dashboard User'
-    : authUser?.role === 'SUPER_ADMIN'
+    : currentRole === 'SUPER_ADMIN'
     ? 'Dashboard Super Admin'
     : 'Dashboard Admin';
+
+  // Konfigurasi animasi dan dialog refresh sesuai role
+  let refreshRoleConfig = {
+    title: 'Menyegarkan Dashboard Pengguna',
+    subtitle: 'Memperbarui status sertifikat dan informasi akun Anda...',
+    iconWrapClass: 'refresh-icon-user',
+    progressClass: 'refresh-progress-user',
+    icon: <IconCertificate size={28} aria-hidden="true" />,
+  };
+
+  if (currentRole === 'SUPER_ADMIN') {
+    refreshRoleConfig = {
+      title: 'Menyegarkan Dashboard Super Admin',
+      subtitle: 'Memperbarui ringkasan sistem, sertifikat, dan data pengguna...',
+      iconWrapClass: 'refresh-icon-superadmin',
+      progressClass: 'refresh-progress-superadmin',
+      icon: <IconShield size={28} aria-hidden="true" />,
+    };
+  } else if (currentRole === 'ADMIN') {
+    if (viewMode === 'admin') {
+      refreshRoleConfig = {
+        title: 'Menyegarkan Dashboard Admin',
+        subtitle: 'Memperbarui ringkasan sertifikat dan status pengguna aktif...',
+        iconWrapClass: 'refresh-icon-admin',
+        progressClass: 'refresh-progress-admin',
+        icon: <IconShield size={28} aria-hidden="true" />,
+      };
+    } else {
+      refreshRoleConfig = {
+        title: 'Menyegarkan Dashboard Pengguna',
+        subtitle: 'Memperbarui informasi sertifikat dalam mode pratinjau...',
+        iconWrapClass: 'refresh-icon-user',
+        progressClass: 'refresh-progress-user',
+        icon: <IconUser size={28} aria-hidden="true" />,
+      };
+    }
+  }
 
   if (error || (isUserView ? !userData : !adminData)) {
     return (
@@ -85,70 +124,89 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
         </div>
         <DashboardError
           message={error || 'Data dashboard tidak tersedia.'}
-          onRetry={() => loadDashboard()}
-          isRetrying={loading}
+          onRetry={() => loadDashboard(true)}
+          isRetrying={loading || isRefreshing}
         />
       </div>
     );
   }
 
-  // 1. User View (Role USER atau ADMIN pada Mode Pengguna)
-  if (isUserView && userData) {
-    return (
-      <UserDashboardView
-        data={userData}
-        onNavigate={onNavigate}
-        onRefresh={() => loadDashboard(true)}
-        isRefreshing={isRefreshing}
-      />
-    );
-  }
-
-  // 2. Role ADMIN & SUPER_ADMIN View
-  const data = adminData!;
+  const data = adminData;
 
   return (
-    <div className="dashboard-page">
-      {/* Page Header */}
-      <div className="page-header-row">
-        <div className="page-header">
-          <h1 className="page-title">{dashboardTitle}</h1>
-          <p className="page-subtitle">Ringkasan sertifikat dan pengguna.</p>
-        </div>
-        <div className="page-header-actions">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => loadDashboard(true)}
-            disabled={isRefreshing}
-            icon={<IconRefresh size={16} className={isRefreshing ? 'spin-animation' : ''} />}
-            aria-label="Segarkan data dashboard"
-          >
-            Segarkan
-          </Button>
-        </div>
-      </div>
-
-      {/* 1. Statistics Cards (Total User, Active, Expired) */}
-      <StatsSection statistics={data.statistics} />
-
-      {/* 2. Expiry Section (Nearest Expiry & Buckets Side-by-Side) */}
-      <section className="dashboard-expiry-grid" aria-label="Informasi Masa Berlaku Sertifikat">
-        <NearestExpiryCard
-          expiringUsers={data.expiring_certificates}
-          onViewUsers={() => onNavigate('/users')}
-          onSelectUser={(userId) => onNavigate(`/users/${userId}?tab=certificate`)}
+    <>
+      {isUserView && userData ? (
+        <UserDashboardView
+          data={userData}
+          onNavigate={onNavigate}
+          onRefresh={() => loadDashboard(true)}
+          isRefreshing={isRefreshing}
         />
-        <ExpiryBucketsCard buckets={data.expiry_buckets} />
-      </section>
+      ) : data ? (
+        <div className={`dashboard-page ${isRefreshing ? 'dashboard-refreshing-content' : 'dashboard-revealed'}`}>
+          {/* Page Header */}
+          <div className="page-header-row">
+            <div className="page-header">
+              <h1 className="page-title">{dashboardTitle}</h1>
+              <p className="page-subtitle">Ringkasan sertifikat dan pengguna.</p>
+            </div>
+            <div className="page-header-actions">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => loadDashboard(true)}
+                disabled={isRefreshing}
+                icon={<IconRefresh size={16} className={isRefreshing ? 'spin-animation' : ''} />}
+                aria-label="Segarkan data dashboard"
+              >
+                {isRefreshing ? 'Menyegarkan...' : 'Segarkan'}
+              </Button>
+            </div>
+          </div>
 
-      {/* 3. Recent Activities (Max 6 from API) */}
-      <section className="dashboard-activities-section" aria-label="Riwayat Aktivitas Terbaru">
-        <RecentActivitiesCard
-          activities={data.recent_activities}
-          onViewAll={() => onNavigate('/audit-log')}
-        />
-      </section>
-    </div>
+          {/* 1. Statistics Cards (Total User, Active, Expired) */}
+          <StatsSection statistics={data.statistics} />
+
+          {/* 2. Expiry Section (Nearest Expiry & Buckets Side-by-Side) */}
+          <section className="dashboard-expiry-grid" aria-label="Informasi Masa Berlaku Sertifikat">
+            <NearestExpiryCard
+              expiringUsers={data.expiring_certificates}
+              onViewUsers={() => onNavigate('/users')}
+              onSelectUser={(userId) => onNavigate(`/users/${userId}?tab=certificate`)}
+            />
+            <ExpiryBucketsCard buckets={data.expiry_buckets} />
+          </section>
+
+          {/* 3. Recent Activities (Max 6 from API) */}
+          <section className="dashboard-activities-section" aria-label="Riwayat Aktivitas Terbaru">
+            <RecentActivitiesCard
+              activities={data.recent_activities}
+              onViewAll={() => onNavigate('/audit-log')}
+            />
+          </section>
+        </div>
+      ) : null}
+
+      {/* Role-tailored Refresh Transition Overlay */}
+      {isRefreshing &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="mode-switch-overlay refresh-transition-overlay" role="status" aria-live="polite">
+            <div className="mode-switch-card refresh-transition-card">
+              <div className={`mode-switch-icon-wrap ${refreshRoleConfig.iconWrapClass}`}>
+                {refreshRoleConfig.icon}
+              </div>
+              <div className="mode-switch-texts">
+                <h3 className="mode-switch-title">{refreshRoleConfig.title}</h3>
+                <p className="mode-switch-subtext">{refreshRoleConfig.subtitle}</p>
+              </div>
+              <div className="mode-switch-progress-bar">
+                <div className={`mode-switch-progress-fill refresh-progress-fill ${refreshRoleConfig.progressClass}`} />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   );
 }

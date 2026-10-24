@@ -88,12 +88,20 @@ export function UserDeleteDialog({
 
         {/* Body */}
         <div className="dialog-body">
-          <p id="delete-dialog-description" className="dialog-main-text">
-            Hapus <strong>{user.name}</strong>? Akun beserta sertifikatnya akan dihapus dan tidak bisa dikembalikan.
-          </p>
+          <div className="dialog-danger-box" role="alert">
+            <div className="danger-box-icon" aria-hidden="true">
+              <IconAlertTriangle size={20} />
+            </div>
+            <div className="danger-box-content">
+              <p id="delete-dialog-description" className="dialog-danger-box-desc">
+                Hapus <strong>{user.name}</strong>? Akun beserta sertifikatnya akan dihapus dan tidak bisa dikembalikan.
+              </p>
+            </div>
+          </div>
 
           {error && (
             <div className="dialog-error-banner" role="alert">
+              <IconAlertTriangle size={16} aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}

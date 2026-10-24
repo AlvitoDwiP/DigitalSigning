@@ -83,6 +83,7 @@ export function AdminsPage({ onNavigate: _onNavigate }: AdminsPageProps) {
 
   // Handle Candidate Selection -> Open Assign Dialog
   const handleSelectCandidate = (candidate: AdminItem) => {
+    setIsCandidatesModalOpen(false);
     setAssignTarget(candidate);
     setAssignError(null);
     setIsAssignOpen(true);
@@ -269,6 +270,7 @@ export function AdminsPage({ onNavigate: _onNavigate }: AdminsPageProps) {
           if (!isAssigning) {
             setIsAssignOpen(false);
             setAssignTarget(null);
+            setIsCandidatesModalOpen(true);
           }
         }}
       />

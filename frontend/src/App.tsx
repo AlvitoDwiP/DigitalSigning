@@ -68,6 +68,10 @@ export default function App() {
     return 'admin';
   });
 
+  // Mode switching animation state
+  const [isSwitchingMode, setIsSwitchingMode] = useState<boolean>(false);
+  const [switchingTargetMode, setSwitchingTargetMode] = useState<'admin' | 'user' | null>(null);
+
   // Target tab when navigating to /account (e.g. 'password')
   const [accountInitialTab, setAccountInitialTab] = useState<AccountTab | undefined>(undefined);
 
@@ -214,29 +218,53 @@ export default function App() {
     currentRole === 'ADMIN' ? adminViewMode : currentRole === 'SUPER_ADMIN' ? 'admin' : 'user';
 
   const handleToggleViewMode = () => {
-    if (currentRole !== 'ADMIN') return;
+    if (currentRole !== 'ADMIN' || isSwitchingMode) return;
     const nextMode = effectiveViewMode === 'admin' ? 'user' : 'admin';
-    setAdminViewMode(nextMode);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ds_admin_view_mode', nextMode);
-    }
-    // If switching to user mode and on an administrative page, route to /dashboard
-    const p = normalizePath(currentPath);
-    if (
-      nextMode === 'user' &&
-      (p === '/users' ||
-        p.startsWith('/users/') ||
-        p === '/generate' ||
-        p === '/admins' ||
-        p === '/audit-log' ||
-        p === '/audit-logs')
-    ) {
-      navigateTo('/dashboard');
-    }
-    // If switching to admin mode and on /signing or /account, route to /dashboard
-    if (nextMode === 'admin' && (p === '/signing' || p === '/account')) {
-      navigateTo('/dashboard');
-    }
+
+    // Mulai animasi transisi
+    setIsSwitchingMode(true);
+    setSwitchingTargetMode(nextMode);
+
+    const performModeChange = () => {
+      setAdminViewMode(nextMode);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ds_admin_view_mode', nextMode);
+      }
+      // If switching to user mode and on an administrative page, route to /dashboard
+      const p = normalizePath(currentPath);
+      if (
+        nextMode === 'user' &&
+        (p === '/users' ||
+          p.startsWith('/users/') ||
+          p === '/generate' ||
+          p === '/admins' ||
+          p === '/audit-log' ||
+          p === '/audit-logs')
+      ) {
+        navigateTo('/dashboard');
+      }
+      // If switching to admin mode and on /signing or /account, route to /dashboard
+      if (nextMode === 'admin' && (p === '/signing' || p === '/account')) {
+        navigateTo('/dashboard');
+      }
+    };
+
+    // Delay perubahan state aktual agar animasi fade out/transisi visual sempat berjalan
+    setTimeout(() => {
+      if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+        (document as any).startViewTransition(() => {
+          performModeChange();
+        });
+      } else {
+        performModeChange();
+      }
+
+      // Selesaikan fase switching setelah tampilan baru terpasang halus
+      setTimeout(() => {
+        setIsSwitchingMode(false);
+        setSwitchingTargetMode(null);
+      }, 300);
+    }, 260);
   };
 
   const renderContent = () => {
@@ -341,6 +369,8 @@ export default function App() {
         onLogout={handleLogout}
         viewMode={effectiveViewMode}
         onToggleViewMode={handleToggleViewMode}
+        isSwitchingMode={isSwitchingMode}
+        switchingTargetMode={switchingTargetMode}
       >
         {renderContent()}
       </AppShell>

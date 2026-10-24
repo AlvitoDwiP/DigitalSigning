@@ -418,3 +418,4 @@ V	281020042917Z		119E	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Aditya Pratama
 V	281020042917Z		119F	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Ni Putu Eka Sari/OU=Fakultas Psikologi
 V	281020042918Z		11A0	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Eko Sulistyo/OU=Tata Usaha
 V	281020042919Z		11A1	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Rina Marlina/OU=Perpustakaan
+V	281023063144Z		11A2	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Rahmat Muhajir Nugroho/OU=Universitas Ahmad Dahlan

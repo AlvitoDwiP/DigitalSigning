@@ -52,13 +52,13 @@ export function CertificateHistoryCard({ history }: CertificateHistoryCardProps)
                   <th scope="col">Status</th>
                   <th scope="col">Diterbitkan pada</th>
                   <th scope="col">Berlaku sampai</th>
-                  <th scope="col">Sidik jari digital (SHA-256)</th>
+                  <th scope="col">Sidik jari digital</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((cert) => (
                   <tr key={cert.id} className="history-table-row">
-                    <td className="font-mono text-nowrap">{cert.serial_number}</td>
+                    <td className="font-mono text-nowrap">{cert.certificate_number || cert.serial_number}</td>
                     <td>
                       <StatusChip
                         status={cert.status}

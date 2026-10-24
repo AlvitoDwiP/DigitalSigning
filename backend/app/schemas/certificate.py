@@ -6,6 +6,9 @@ from pydantic import BaseModel, ConfigDict
 
 class CertificateBase(BaseModel):
     serial_number: str
+    certificate_number: str
+    sequence_number: Optional[int] = None
+    issued_year: Optional[int] = None
     subject: str
     issuer: str
     fingerprint_sha256: str
@@ -42,6 +45,7 @@ class RegenerateCertificateRequest(BaseModel):
 class RegenerateCertificateNewCertData(BaseModel):
     id: uuid.UUID
     serial_number: str
+    certificate_number: str
     issued_at: datetime
     expires_at: datetime
     status: str

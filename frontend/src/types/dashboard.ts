@@ -43,6 +43,7 @@ export interface DashboardApiResponse {
 export interface DashboardUserCertificate {
   id: string;
   serial_number: string;
+  certificate_number?: string;
   issued_at: string;
   expires_at: string;
   status: 'ACTIVE' | 'EXPIRED' | 'REPLACED' | string;

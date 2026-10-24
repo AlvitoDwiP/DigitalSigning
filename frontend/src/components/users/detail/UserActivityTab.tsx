@@ -76,7 +76,7 @@ export function UserActivityTab({ userId }: UserActivityTabProps) {
             aria-label="Segarkan riwayat aktivitas"
           >
             <IconRefresh size={15} className={isLoading ? 'spin-animation' : ''} aria-hidden="true" />
-            <span>Segarkan</span>
+            <span>{isLoading ? 'Menyegarkan...' : 'Segarkan'}</span>
           </button>
         </div>
 

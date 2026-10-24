@@ -1,6 +1,7 @@
 export interface UserCertificate {
   id: string;
   serial_number: string;
+  certificate_number?: string;
   subject: string;
   issuer: string;
   fingerprint_sha256: string;

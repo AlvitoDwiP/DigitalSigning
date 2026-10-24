@@ -249,7 +249,7 @@ export function AdminCandidatesModal({
                         <td className="text-right">
                           <button
                             type="button"
-                            className="btn btn-primary btn-sm"
+                            className="btn btn-primary btn-sm btn-select-candidate"
                             onClick={() => onSelectCandidate(candidate)}
                             disabled={disabled}
                           >

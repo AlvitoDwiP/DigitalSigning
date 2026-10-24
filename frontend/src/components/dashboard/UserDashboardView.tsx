@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { DashboardUserData } from '../../types/dashboard';
 import { StatusChip } from '../ui/StatusChip';
 import { Button } from '../ui/Button';
@@ -9,6 +10,8 @@ import {
   IconShield,
   IconClock,
   IconSignature,
+  IconCopy,
+  IconCheckCircle,
 } from '../icons/Icons';
 import { NikDisplay } from '../ui/NikDisplay';
 import { formatWaktuIndonesia, statusSertifikat } from '../../lib/labels';
@@ -26,6 +29,17 @@ export function UserDashboardView({
   isRefreshing = false,
 }: UserDashboardViewProps) {
   const { user, active_certificate, has_active_certificate } = data;
+  const [copiedCertNum, setCopiedCertNum] = useState(false);
+
+  const handleCopyCertNum = async (num: string) => {
+    try {
+      await navigator.clipboard.writeText(num);
+      setCopiedCertNum(true);
+      setTimeout(() => setCopiedCertNum(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
 
   const getDaysRemainingBadge = (days: number) => {
     if (days <= 0) {
@@ -50,7 +64,7 @@ export function UserDashboardView({
   };
 
   return (
-    <div className="dashboard-page user-dashboard-page">
+    <div className={`dashboard-page user-dashboard-page ${isRefreshing ? 'dashboard-refreshing-content' : 'dashboard-revealed'}`}>
       {/* Page Header */}
       <div className="page-header-row">
         <div className="page-header">
@@ -68,7 +82,7 @@ export function UserDashboardView({
             icon={<IconRefresh size={16} className={isRefreshing ? 'spin-animation' : ''} />}
             aria-label="Segarkan data dashboard"
           >
-            Segarkan
+            {isRefreshing ? 'Menyegarkan...' : 'Segarkan'}
           </Button>
         </div>
       </div>
@@ -79,9 +93,6 @@ export function UserDashboardView({
         <div className="card user-cert-card" aria-labelledby="user-cert-title">
           <div className="user-card-header">
             <div className="user-card-title-group">
-              <div className="user-card-icon-badge cert-icon-badge">
-                <IconCertificate size={22} />
-              </div>
               <div>
                 <h2 id="user-cert-title" className="user-card-title">Sertifikat Saya</h2>
                 <p className="user-card-subtitle">Status dan masa berlaku sertifikat digital</p>
@@ -100,10 +111,41 @@ export function UserDashboardView({
           <div className="user-card-body">
             {has_active_certificate && active_certificate ? (
               <div className="user-cert-details">
-                <div className="cert-detail-item">
-                  <span className="cert-detail-label">Nomor Seri</span>
-                  <div className="cert-serial-number">
-                    <code>{active_certificate.serial_number}</code>
+                <div className="cert-number-card-container">
+                  <div className="cert-number-header-row">
+                    <span className="cert-detail-label">
+                      <IconShield size={13} className="detail-inline-icon" /> Nomor Sertifikat Resmi
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-copy-cert-number"
+                      onClick={() => handleCopyCertNum(active_certificate.certificate_number || active_certificate.serial_number)}
+                      title="Salin nomor sertifikat ke papan klip"
+                      aria-label="Salin nomor sertifikat"
+                    >
+                      {copiedCertNum ? (
+                        <>
+                          <IconCheckCircle size={14} className="copy-icon-success" />
+                          <span className="copy-text-success">Tersalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <IconCopy size={14} />
+                          <span>Salin</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="cert-number-hero-box">
+                    <div className="cert-number-icon-chip" aria-hidden="true">
+                      <IconCertificate size={22} />
+                    </div>
+                    <div className="cert-number-value-wrap">
+                      <code className="cert-number-code">
+                        {active_certificate.certificate_number || active_certificate.serial_number}
+                      </code>
+                      <span className="cert-number-subtext">Sertifikat Digital Elektronik Mahkamah Konstitusi RI</span>
+                    </div>
                   </div>
                 </div>
 

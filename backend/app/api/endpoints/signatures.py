@@ -233,6 +233,7 @@ async def sign_document(
         "Content-Disposition": f'attachment; filename="{out_name}"',
         "X-Signer-NIK": target_nik,
         "X-Certificate-Serial": active_cert.serial_number or "",
+        "X-Certificate-Number": active_cert.certificate_number or "",
     }
 
     return StreamingResponse(

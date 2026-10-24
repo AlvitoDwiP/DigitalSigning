@@ -101,10 +101,15 @@ def seed_users(db_session: Session):
 
     # Certificates
     now = datetime.now(timezone.utc)
+    user_issued_year = (now - timedelta(days=700)).year
+    seq_base = int(num_suffix) * 10
     cert_admin = Certificate(
         id=uuid.uuid4(),
         user_id=admin_user.id,
         serial_number=f"SER-ADM-{str_suffix}",
+        certificate_number=f"DS-{now.year}-ADM{str_suffix[:4].upper()}-{seq_base + 1:04d}",
+        sequence_number=seq_base + 1,
+        issued_year=now.year,
         subject=f"CN={admin_user.name}",
         issuer="Intermediate CA",
         fingerprint_sha256=f"FINGERPRINTADMIN{str_suffix}0000000000000000000000000000000000000000"[:64],
@@ -119,6 +124,9 @@ def seed_users(db_session: Session):
         id=uuid.uuid4(),
         user_id=regular_user.id,
         serial_number=f"SER-USR-{str_suffix}",
+        certificate_number=f"DS-{user_issued_year}-USR{str_suffix[:4].upper()}-{seq_base + 2:04d}",
+        sequence_number=seq_base + 2,
+        issued_year=user_issued_year,
         subject=f"CN={regular_user.name}",
         issuer="Intermediate CA",
         fingerprint_sha256=f"FINGERPRINTUSER{str_suffix}0000000000000000000000000000000000000000"[:64],

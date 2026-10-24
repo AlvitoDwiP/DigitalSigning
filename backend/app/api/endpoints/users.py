@@ -20,6 +20,7 @@ from app.schemas.user import (
 from app.schemas.certificate import CertificateResponse, RegenerateCertificateRequest, RegenerateCertificateResponse
 from app.services import pki_api_client
 from app.services.bulk_user_importer import parse_and_validate_bulk_csv
+from app.services.certificate_counter import allocate_certificate_number
 from app.core.security import get_password_hash, verify_password
 from app.core.config import settings
 
@@ -51,10 +52,14 @@ def _record_audit(
 
 
 def _build_certificate_model(
+    db: Session,
     user_id: uuid.UUID,
     cert_metadata: Dict[str, Any],
     cert_id: Optional[uuid.UUID] = None,
-    status: str = "ACTIVE"
+    status: str = "ACTIVE",
+    certificate_number: Optional[str] = None,
+    sequence_number: Optional[int] = None,
+    issued_year: Optional[int] = None,
 ) -> Certificate:
     """Helper untuk memetakan metadata sertifikat PKI Engine ke model SQLAlchemy Certificate."""
     try:
@@ -64,10 +69,22 @@ def _build_certificate_model(
         issued_at = datetime.datetime.now(datetime.timezone.utc)
         expires_at = issued_at + datetime.timedelta(days=730)
 
+    serial = cert_metadata.get("serial_number", "").strip()
+
+    if not certificate_number or not sequence_number or not issued_year:
+        certificate_number, sequence_number, issued_year = allocate_certificate_number(
+            db=db,
+            issued_at=issued_at,
+            serial_hex=serial
+        )
+
     return Certificate(
         id=cert_id or uuid.uuid4(),
         user_id=user_id,
-        serial_number=cert_metadata.get("serial_number", ""),
+        serial_number=serial,
+        certificate_number=certificate_number,
+        sequence_number=sequence_number,
+        issued_year=issued_year,
         subject=cert_metadata.get("subject", ""),
         issuer=cert_metadata.get("issuer", "Intermediate CA"),
         fingerprint_sha256=cert_metadata.get("fingerprint_sha256", "").replace(":", ""),
@@ -241,7 +258,7 @@ def generate_user(
         )
         db.add(new_user)
         
-        new_cert = _build_certificate_model(user_id=user_id, cert_metadata=cert_metadata, cert_id=cert_id)
+        new_cert = _build_certificate_model(db=db, user_id=user_id, cert_metadata=cert_metadata, cert_id=cert_id)
         db.add(new_cert)
         
         _record_audit(db, current_user.id, "USER_CREATED", user_id, "SUCCESS")
@@ -416,7 +433,7 @@ async def generate_bulk_users(
             )
             db.add(new_user)
             
-            new_cert = _build_certificate_model(user_id=user_id, cert_metadata=cert_metadata, cert_id=cert_id)
+            new_cert = _build_certificate_model(db=db, user_id=user_id, cert_metadata=cert_metadata, cert_id=cert_id)
             db.add(new_cert)
             
             _record_audit(db, current_user.id, "USER_CREATED", user_id, "SUCCESS")
@@ -652,6 +669,7 @@ def regenerate_user_certificate(
         active_cert.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
         new_cert = _build_certificate_model(
+            db=db,
             user_id=user.id,
             cert_metadata=cert_metadata,
             cert_id=new_cert_id
@@ -679,6 +697,7 @@ def regenerate_user_certificate(
                 "new_certificate": {
                     "id": new_cert.id,
                     "serial_number": new_cert.serial_number,
+                    "certificate_number": new_cert.certificate_number,
                     "issued_at": new_cert.issued_at,
                     "expires_at": new_cert.expires_at,
                     "status": new_cert.status

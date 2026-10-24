@@ -143,6 +143,7 @@ def get_dashboard(
         cert_data = {
             "id": str(active_cert.id),
             "serial_number": active_cert.serial_number,
+            "certificate_number": active_cert.certificate_number,
             "issued_at": active_cert.issued_at.isoformat(),
             "expires_at": active_cert.expires_at.isoformat(),
             "status": active_cert.status,

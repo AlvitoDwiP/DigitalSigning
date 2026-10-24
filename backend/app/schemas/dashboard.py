@@ -42,6 +42,7 @@ class DashboardAdminData(BaseModel):
 class DashboardUserCertificate(BaseModel):
     id: str
     serial_number: str
+    certificate_number: Optional[str] = None
     issued_at: str
     expires_at: str
     status: str

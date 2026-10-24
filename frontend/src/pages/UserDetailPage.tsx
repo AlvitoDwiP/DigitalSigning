@@ -240,7 +240,12 @@ export function UserDetailPage({ userId, onNavigate, initialTab }: UserDetailPag
         setDeleteError(msg);
       }
     } catch (err: any) {
-      setDeleteError(err.message || 'Gagal menghapus pengguna dari sistem.');
+      if (err?.status === 404 || err?.message?.toLowerCase().includes('not found')) {
+        setIsDeleteOpen(false);
+        onNavigate('/users');
+      } else {
+        setDeleteError(err.message || 'Gagal menghapus pengguna dari sistem.');
+      }
     } finally {
       setIsDeleting(false);
     }

@@ -7,7 +7,7 @@ import {
   IconShield,
   IconArrowRight,
 } from '../../icons/Icons';
-import { statusSertifikat, peran, parseCommonName } from '../../../lib/labels';
+import { statusSertifikat, peran } from '../../../lib/labels';
 
 interface UserSummaryTabProps {
   user: UserDetailData;
@@ -63,21 +63,16 @@ export function UserSummaryTab({ user, onSwitchTab }: UserSummaryTabProps) {
                 <dl className="user-details-grid">
                   <div className="user-detail-item">
                     <dt className="user-detail-label">Nomor Sertifikat</dt>
-                    <dd className="user-detail-value font-mono text-break">
-                      {activeCert.serial_number}
+                    <dd className="user-detail-value">
+                      <div className="cert-number-pill">
+                        <span className="cert-number-pill-code">{activeCert.certificate_number || activeCert.serial_number}</span>
+                      </div>
                     </dd>
                   </div>
 
                   <div className="user-detail-item">
                     <dt className="user-detail-label">Penerbit (CA)</dt>
-                    <dd className="user-detail-value">{activeCert.issuer}</dd>
-                  </div>
-
-                  <div className="user-detail-item col-span-2">
-                    <dt className="user-detail-label">Subjek Pemilik</dt>
-                    <dd className="user-detail-value font-mono text-break">
-                      {parseCommonName(activeCert.subject)}
-                    </dd>
+                    <dd className="user-detail-value font-medium">{activeCert.issuer}</dd>
                   </div>
                 </dl>
 

@@ -51,6 +51,7 @@ def list_certificates(
         s = f"%{search.strip()}%"
         query = query.filter(
             or_(
+                Certificate.certificate_number.ilike(s),
                 Certificate.serial_number.ilike(s),
                 Certificate.subject.ilike(s),
                 Certificate.fingerprint_sha256.ilike(s)
@@ -113,10 +114,11 @@ def get_certificate_by_identifier(
     except ValueError:
         pass
 
-    # 2. Jika bukan UUID atau tidak ditemukan via UUID, cari via serial_number atau fingerprint_sha256
+    # 2. Jika bukan UUID atau tidak ditemukan via UUID, cari via certificate_number, serial_number, atau fingerprint_sha256
     if not cert:
         cert = db.query(Certificate).filter(
             or_(
+                Certificate.certificate_number.ilike(clean_identifier),
                 Certificate.serial_number == clean_identifier,
                 Certificate.fingerprint_sha256.ilike(clean_identifier)
             )
@@ -138,6 +140,7 @@ def get_certificate_by_identifier(
 
     cert_data = {
         "id": cert.id,
+        "certificate_number": cert.certificate_number,
         "serial_number": cert.serial_number,
         "subject": cert.subject,
         "issuer": cert.issuer,

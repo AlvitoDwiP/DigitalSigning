@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { UserCertificate } from '../../../types/users';
 import { formatDate } from '../UsersTable';
 import { StatusChip } from '../../ui/StatusChip';
-import { IconCertificate, IconRefresh, IconLock, IconCopy, IconCheckCircle } from '../../icons/Icons';
-import { parseCommonName, statusSertifikat } from '../../../lib/labels';
+import { IconRefresh, IconLock, IconCopy, IconCheckCircle, IconCertificate } from '../../icons/Icons';
+import { parseSubjectDetails, statusSertifikat } from '../../../lib/labels';
 
 interface ActiveCertificateCardProps {
   certificate: UserCertificate | null;
@@ -76,6 +76,7 @@ export function ActiveCertificateCard({
   }
 
   const { days, urgency } = calculateExpiryDays(certificate.expires_at);
+  const subjectDetails = parseSubjectDetails(certificate.subject);
 
   let remainingDaysBadgeClass = 'expiry-badge-normal';
   let remainingDaysText = `Sisa ${days} hari`;
@@ -132,9 +133,13 @@ export function ActiveCertificateCard({
 
       <div className="detail-card-body">
         <dl className="cert-details-grid">
-          <div className="cert-detail-item">
+          <div className="cert-detail-item cert-detail-item-featured col-span-2">
             <dt className="cert-detail-label">Nomor sertifikat</dt>
-            <dd className="cert-detail-value font-mono">{certificate.serial_number}</dd>
+            <dd className="cert-detail-value">
+              <div className="cert-number-pill">
+                <span className="cert-number-pill-code">{certificate.certificate_number || certificate.serial_number}</span>
+              </div>
+            </dd>
           </div>
 
           <div className="cert-detail-item">
@@ -144,7 +149,39 @@ export function ActiveCertificateCard({
 
           <div className="cert-detail-item col-span-2">
             <dt className="cert-detail-label">Atas nama</dt>
-            <dd className="cert-detail-value font-mono text-break">{parseCommonName(certificate.subject)}</dd>
+            <dd className="cert-detail-value">
+              <div className="subject-details-grid">
+                {subjectDetails.cn && (
+                  <div className="subject-detail-entry">
+                    <span className="subject-entry-label">Nama</span>
+                    <span className="subject-entry-value font-medium">{subjectDetails.cn}</span>
+                  </div>
+                )}
+                {subjectDetails.o && (
+                  <div className="subject-detail-entry">
+                    <span className="subject-entry-label">Organisasi</span>
+                    <span className="subject-entry-value">{subjectDetails.o}</span>
+                  </div>
+                )}
+                {subjectDetails.ou && (
+                  <div className="subject-detail-entry">
+                    <span className="subject-entry-label">Unit Kerja</span>
+                    <span className="subject-entry-value">{subjectDetails.ou}</span>
+                  </div>
+                )}
+                {subjectDetails.email && (
+                  <div className="subject-detail-entry">
+                    <span className="subject-entry-label">Email</span>
+                    <span className="subject-entry-value font-mono">{subjectDetails.email}</span>
+                  </div>
+                )}
+                {!subjectDetails.cn && !subjectDetails.o && !subjectDetails.ou && (
+                  <div className="subject-detail-entry">
+                    <span className="subject-entry-value">{certificate.subject || '-'}</span>
+                  </div>
+                )}
+              </div>
+            </dd>
           </div>
 
           <div className="cert-detail-item">
@@ -157,10 +194,10 @@ export function ActiveCertificateCard({
             <dd className="cert-detail-value">{formatDate(certificate.expires_at)}</dd>
           </div>
 
-          {/* Technical Section: Full SHA-256 Fingerprint with Copy Button */}
+          {/* Technical Section: Full Fingerprint with Copy Button */}
           <div className="cert-detail-item col-span-2 cert-tech-fingerprint-box">
             <div className="fingerprint-header-row">
-              <dt className="cert-detail-label">Sidik jari digital (SHA-256)</dt>
+              <dt className="cert-detail-label">Sidik jari digital</dt>
               <button
                 type="button"
                 className="btn-copy-fingerprint"
