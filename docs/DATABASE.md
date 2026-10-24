@@ -75,10 +75,7 @@ INACTIVE
 ACTIVE
 EXPIRED
 REPLACED
-REVOKED
 ```
-
-`REVOKED` disiapkan untuk lifecycle certificate di masa mendatang. Fitur revocation belum menjadi fitur utama Phase 1.
 
 ### 4.4 Audit Status
 
@@ -175,7 +172,7 @@ Tabel ini **tidak menyimpan private key, PFX, atau P12 binary**.
 | `p12_reference` | TEXT | NOT NULL | Referensi P12 |
 | `issued_at` | TIMESTAMPTZ | NOT NULL | Waktu mulai berlaku |
 | `expires_at` | TIMESTAMPTZ | NOT NULL | Waktu berakhir |
-| `status` | VARCHAR(20) | NOT NULL | ACTIVE / EXPIRED / REPLACED / REVOKED |
+| `status` | VARCHAR(20) | NOT NULL | ACTIVE / EXPIRED / REPLACED |
 | `replaced_by` | UUID | FK, NULL | Certificate pengganti |
 | `created_at` | TIMESTAMPTZ | NOT NULL | Waktu record dibuat |
 | `updated_at` | TIMESTAMPTZ | NOT NULL | Waktu record diperbarui |
@@ -204,8 +201,7 @@ CONSTRAINT certificates_status_check
         status IN (
             'ACTIVE',
             'EXPIRED',
-            'REPLACED',
-            'REVOKED'
+            'REPLACED'
         )
     );
 
@@ -639,8 +635,7 @@ CREATE TABLE certificates (
             status IN (
                 'ACTIVE',
                 'EXPIRED',
-                'REPLACED',
-                'REVOKED'
+                'REPLACED'
             )
         ),
 

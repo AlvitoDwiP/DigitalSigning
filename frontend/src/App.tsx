@@ -3,6 +3,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { UserDetailPage } from './pages/UserDetailPage';
+import type { UserDetailTab } from './pages/UserDetailPage';
 import { GeneratePage } from './pages/GeneratePage';
 import { AdminsPage } from './pages/AdminsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
@@ -260,7 +261,12 @@ export default function App() {
       if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
-      return <UserDetailPage userId={userId} onNavigate={navigateTo} />;
+      const searchStr = currentPath.includes('?')
+        ? currentPath.slice(currentPath.indexOf('?'))
+        : (typeof window !== 'undefined' ? window.location.search : '');
+      const queryParams = new URLSearchParams(searchStr);
+      const tabParam = queryParams.get('tab') as UserDetailTab | null;
+      return <UserDetailPage userId={userId} onNavigate={navigateTo} initialTab={tabParam || undefined} />;
     }
 
     if (path === '/generate') {

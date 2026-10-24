@@ -137,6 +137,7 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
         <NearestExpiryCard
           expiringUsers={data.expiring_certificates}
           onViewUsers={() => onNavigate('/users')}
+          onSelectUser={(userId) => onNavigate(`/users/${userId}?tab=certificate`)}
         />
         <ExpiryBucketsCard buckets={data.expiry_buckets} />
       </section>

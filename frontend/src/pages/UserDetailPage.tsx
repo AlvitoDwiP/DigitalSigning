@@ -33,14 +33,30 @@ export type UserDetailTab = 'summary' | 'account' | 'certificate' | 'activity';
 interface UserDetailPageProps {
   userId: string;
   onNavigate: (path: string) => void;
+  initialTab?: UserDetailTab;
 }
 
-export function UserDetailPage({ userId, onNavigate }: UserDetailPageProps) {
+export function UserDetailPage({ userId, onNavigate, initialTab }: UserDetailPageProps) {
   const [user, setUser] = useState<UserDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
-  const [activeTab, setActiveTab] = useState<UserDetailTab>('summary');
+  const [activeTab, setActiveTab] = useState<UserDetailTab>(() => {
+    if (initialTab) return initialTab;
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('tab');
+      if (p === 'certificate' || p === 'account' || p === 'activity' || p === 'summary') {
+        return p;
+      }
+    }
+    return 'summary';
+  });
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Success Feedback Toast
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);

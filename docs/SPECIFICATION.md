@@ -38,9 +38,8 @@ React (+ TypeScript + Vite) merupakan antarmuka web dan konsumen utama dari Plat
 13. **API Publik Baca Sertifikat (Read-Only):** Penyediaan endpoint integrasi terotentikasi (`GET /api/v1/certificates` dan `GET /api/v1/certificates/{identifier}`) untuk membaca daftar metadata publik serta memeriksa keabsahan aktif (*validity check*) sertifikat tanpa mengekspos private key, berkas P12, path server, maupun data pribadi NIK.
 
 #### B. Disiapkan untuk Penguatan (In Progress / Future Phase 1 Enhancement)
-1. **Revocation Workflow UI:** Status enum `REVOKED` sudah disiapkan pada skema PostgreSQL dan database constraint, namun alur UI pencabutan sertifikat belum diimplementasikan di Phase 1.
-2. **Two-Factor Authentication (OTP):** Arsitektur login disiapkan untuk mendukung verifikasi OTP di tahap production.
-3. **Public Unauthenticated Verification Portal:** Portal publik tanpa login (misal verifikasi scan QR code oleh pihak ketiga tanpa akun) disiapkan untuk integrasi lanjutan.
+1. **Two-Factor Authentication (OTP):** Arsitektur login disiapkan untuk mendukung verifikasi OTP di tahap production.
+2. **Public Unauthenticated Verification Portal:** Portal publik tanpa login (misal verifikasi scan QR code oleh pihak ketiga tanpa akun) disiapkan untuk integrasi lanjutan.
 
 #### C. Direncanakan untuk Phase 2 (Advanced Roadmap)
 1. **Penandatanganan Dokumen PDF / TTE Digital:** Fitur penandatanganan PDF in-process (`POST /api/v1/signatures/sign` dan UI `/signing`) direncanakan untuk Phase 2. Kode implementasi backend (`pdf_signer.py`, `signatures.py`) dan frontend (`SigningPage.tsx`) dipertahankan sebagai modul dormant/tercadangkan, dan dinonaktifkan secara aman via HTTP 501 Not Implemented pada konfigurasi default Phase 1 (`ENABLE_PDF_SIGNING=false`).
@@ -226,7 +225,6 @@ Status:
 - `ACTIVE`
 - `EXPIRED`
 - `REPLACED`
-- `REVOKED`
 
 Hanya satu certificate `ACTIVE` untuk setiap user.
 

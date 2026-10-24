@@ -211,7 +211,7 @@ def test_public_certificates_readonly_no_mutation(client: TestClient, auth_heade
     res_post = client.post("/api/v1/certificates", headers=auth_headers["admin"], json={"name": "Test"})
     assert res_post.status_code == 405
 
-    res_put = client.put("/api/v1/certificates", headers=auth_headers["admin"], json={"status": "REVOKED"})
+    res_put = client.put("/api/v1/certificates", headers=auth_headers["admin"], json={"status": "EXPIRED"})
     assert res_put.status_code == 405
 
     res_delete = client.delete("/api/v1/certificates", headers=auth_headers["super_admin"])

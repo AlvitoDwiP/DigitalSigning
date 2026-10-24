@@ -55,7 +55,7 @@ def upgrade() -> None:
         sa.Column('replaced_by', postgresql.UUID(as_uuid=True), sa.ForeignKey('certificates.id', ondelete='SET NULL'), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('NOW()')),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('NOW()')),
-        sa.CheckConstraint("status IN ('ACTIVE', 'EXPIRED', 'REPLACED', 'REVOKED')", name='certificates_status_check'),
+        sa.CheckConstraint("status IN ('ACTIVE', 'EXPIRED', 'REPLACED')", name='certificates_status_check'),
         sa.CheckConstraint('expires_at > issued_at', name='certificates_validity_check')
     )
     op.create_index('certificates_user_idx', 'certificates', ['user_id'])

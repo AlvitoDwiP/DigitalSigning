@@ -111,7 +111,6 @@ export function UsersToolbar({
               <option value="ACTIVE">{statusSertifikat.ACTIVE || 'Aktif'}</option>
               <option value="EXPIRED">{statusSertifikat.EXPIRED || 'Kedaluwarsa'}</option>
               <option value="REPLACED">{statusSertifikat.REPLACED || 'Diganti'}</option>
-              <option value="REVOKED">{statusSertifikat.REVOKED || 'Dicabut'}</option>
             </select>
           </div>
 

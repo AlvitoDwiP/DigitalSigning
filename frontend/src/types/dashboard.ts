@@ -45,7 +45,7 @@ export interface DashboardUserCertificate {
   serial_number: string;
   issued_at: string;
   expires_at: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'REPLACED' | 'REVOKED' | string;
+  status: 'ACTIVE' | 'EXPIRED' | 'REPLACED' | string;
   days_remaining: number;
 }
 

@@ -29,7 +29,7 @@ class Certificate(Base):
     replacement_certificate = relationship("Certificate", remote_side=[id])
 
     __table_args__ = (
-        CheckConstraint("status IN ('ACTIVE', 'EXPIRED', 'REPLACED', 'REVOKED')", name="certificates_status_check"),
+        CheckConstraint("status IN ('ACTIVE', 'EXPIRED', 'REPLACED')", name="certificates_status_check"),
         CheckConstraint("expires_at > issued_at", name="certificates_validity_check"),
         Index("certificates_user_idx", "user_id"),
         Index("certificates_status_idx", "status"),

@@ -13,7 +13,7 @@ from app.schemas.certificate import PublicCertificateItem
 
 router = APIRouter()
 
-VALID_CERT_STATUSES = {"ACTIVE", "EXPIRED", "REPLACED", "REVOKED"}
+VALID_CERT_STATUSES = {"ACTIVE", "EXPIRED", "REPLACED"}
 
 
 @router.get("", response_model=dict)
@@ -21,7 +21,7 @@ VALID_CERT_STATUSES = {"ACTIVE", "EXPIRED", "REPLACED", "REVOKED"}
 def list_certificates(
     page: int = Query(1, ge=1, description="Nomor halaman (mulai dari 1)"),
     limit: int = Query(20, ge=1, le=100, description="Jumlah item per halaman (1 - 100)"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Filter status sertifikat: ACTIVE, EXPIRED, REPLACED, REVOKED"),
+    status_filter: Optional[str] = Query(None, alias="status", description="Filter status sertifikat: ACTIVE, EXPIRED, REPLACED"),
     search: Optional[str] = Query(None, description="Pencarian kata kunci pada serial number, subject, atau fingerprint SHA-256"),
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user)

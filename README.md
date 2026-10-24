@@ -14,7 +14,7 @@ Fokus implementasi Phase 1 meliputi:
 - User Management & Lifecycle (Active, Inactive);
 - Single User Generate (penerbitan akun dan sertifikat terintegrasi);
 - Bulk User Generate (validasi dan pemrosesan batch via CSV);
-- Certificate Management (Active, Expired, Replaced, Revoked);
+- Certificate Management (Active, Expired, Replaced);
 - Certificate Expiration & Regenerate (Staged generation & rollback);
 - Public Read API untuk membaca informasi dan memeriksa keabsahan sertifikat (terautentikasi);
 - Pengelolaan & Perubahan Passphrase P12/PFX (Admin & Self-Service User, tidak wajib pada login pertama);

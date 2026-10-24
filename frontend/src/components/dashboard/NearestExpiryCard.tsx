@@ -5,6 +5,7 @@ import type { ExpiringCertificateUser } from '../../types/dashboard';
 interface NearestExpiryCardProps {
   expiringUsers: ExpiringCertificateUser[];
   onViewUsers: () => void;
+  onSelectUser?: (userId: string) => void;
 }
 
 function getInitials(name: string): string {
@@ -42,6 +43,7 @@ function calculateDaysRemaining(isoString: string): number {
 export function NearestExpiryCard({
   expiringUsers,
   onViewUsers,
+  onSelectUser,
 }: NearestExpiryCardProps) {
   const displayedUsers = expiringUsers.slice(0, 5);
 
@@ -87,25 +89,37 @@ export function NearestExpiryCard({
             }
 
             return (
-              <li key={item.user_id} className="expiry-user-item">
-                <div className="user-avatar-initials" aria-hidden="true">
-                  <span>{initials}</span>
-                </div>
-
-                <div className="expiry-user-details">
-                  <span className="user-name">{item.name}</span>
-                  <div className="expiry-date-row">
-                    <IconClock size={13} className="text-muted" aria-hidden="true" />
-                    <span className="expiry-date">
-                      Berlaku sampai: <strong>{formatDate(item.expires_at)}</strong>
-                    </span>
+              <li key={item.user_id}>
+                <button
+                  type="button"
+                  className="expiry-user-item clickable"
+                  onClick={() => onSelectUser?.(item.user_id)}
+                  title={`Klik untuk melihat detail sertifikat ${item.name}`}
+                  aria-label={`Buka detail sertifikat ${item.name}`}
+                >
+                  <div className="user-avatar-initials" aria-hidden="true">
+                    <span>{initials}</span>
                   </div>
-                </div>
 
-                <div className={`expiry-countdown-pill ${urgencyClass}`} title={`Status: ${urgencyLabel}`}>
-                  <span className="days-number tabular-nums">{daysLeft}</span>
-                  <span className="days-label">hari lagi</span>
-                </div>
+                  <div className="expiry-user-details">
+                    <span className="user-name">{item.name}</span>
+                    <div className="expiry-date-row">
+                      <IconClock size={13} className="text-muted" aria-hidden="true" />
+                      <span className="expiry-date">
+                        Berlaku sampai: <strong>{formatDate(item.expires_at)}</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={`expiry-countdown-pill ${urgencyClass}`} title={`Status: ${urgencyLabel}`}>
+                    <span className="days-number tabular-nums">{daysLeft}</span>
+                    <span className="days-label">hari lagi</span>
+                  </div>
+
+                  <div className="expiry-user-action" aria-hidden="true">
+                    <IconArrowRight size={15} />
+                  </div>
+                </button>
               </li>
             );
           })}

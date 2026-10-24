@@ -84,7 +84,7 @@ def get_users(
     search: Optional[str] = Query(None, description="Search across name, nik, or email"),
     role: Optional[str] = Query(None, description="Filter by role: SUPER_ADMIN, ADMIN, USER"),
     status: Optional[str] = Query(None, description="Filter by user status: ACTIVE, INACTIVE"),
-    certificate_status: Optional[str] = Query(None, description="Filter by certificate status: ACTIVE, EXPIRED, REPLACED, REVOKED"),
+    certificate_status: Optional[str] = Query(None, description="Filter by certificate status: ACTIVE, EXPIRED, REPLACED"),
     sort: Optional[str] = Query("created_at", description="Sort field: name, created_at, nearest_expiry, expires_at"),
     order: Optional[str] = Query("desc", description="Sort order: asc, desc"),
     page: Optional[int] = Query(None, ge=1, description="Page number (1-based)"),
