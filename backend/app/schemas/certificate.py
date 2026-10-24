@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, ConfigDict
+
 
 class CertificateBase(BaseModel):
     serial_number: str
@@ -12,11 +13,12 @@ class CertificateBase(BaseModel):
     expires_at: datetime
     status: str
 
+
 class CertificateResponse(CertificateBase):
     id: uuid.UUID
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class CertificateInDB(CertificateBase):
     id: uuid.UUID
@@ -26,15 +28,16 @@ class CertificateInDB(CertificateBase):
     replaced_by: Optional[uuid.UUID] = None
     created_at: datetime
     updated_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class RegenerateCertificateRequest(BaseModel):
     admin_password: Optional[str] = None
     password: Optional[str] = None
     pfx_password: Optional[str] = None
     confirm_pfx_password: Optional[str] = None
+
 
 class RegenerateCertificateNewCertData(BaseModel):
     id: uuid.UUID
@@ -43,23 +46,24 @@ class RegenerateCertificateNewCertData(BaseModel):
     expires_at: datetime
     status: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class RegenerateCertificateData(BaseModel):
     old_certificate_id: uuid.UUID
     new_certificate: RegenerateCertificateNewCertData
 
+
 class RegenerateCertificateResponse(BaseModel):
     success: bool = True
     data: RegenerateCertificateData
 
+
 class PublicCertificateItem(CertificateBase):
     id: uuid.UUID
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class PublicCertificateDetail(PublicCertificateItem):
     is_valid: bool
-

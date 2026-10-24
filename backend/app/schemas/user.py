@@ -1,7 +1,23 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
-from datetime import datetime
+import re
 import uuid
+from datetime import datetime
+from typing import Optional, List
+
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, model_validator
+from app.core.config import settings
+
+
+def validate_password_policy(pwd: str) -> List[str]:
+    """Validasi kebijakan password: min 8 karakter, 1 huruf besar, 1 non-alphanumeric."""
+    errors = []
+    if len(pwd) < 8:
+        errors.append("Password must be at least 8 characters")
+    if not re.search(r'[A-Z]', pwd):
+        errors.append("Password must contain at least one uppercase letter")
+    if not re.search(r'[^a-zA-Z0-9]', pwd):
+        errors.append("Password must contain at least one non-alphanumeric character")
+    return errors
+
 
 class UserBase(BaseModel):
     name: str
@@ -11,13 +27,16 @@ class UserBase(BaseModel):
     role: str = "USER"
     status: str = "ACTIVE"
 
+
 class UserCreate(UserBase):
     nik: str
     password: str
 
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserInDBBase(UserBase):
     id: uuid.UUID
@@ -25,19 +44,16 @@ class UserInDBBase(UserBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class User(UserInDBBase):
     pass
 
+
 class UserInDB(UserInDBBase):
     password_hash: str
 
-from typing import Optional
-from pydantic import BaseModel, EmailStr, field_validator, model_validator
-import re
-from app.core.config import settings
 
 class GenerateUserRequest(BaseModel):
     name: str
@@ -80,12 +96,9 @@ class GenerateUserRequest(BaseModel):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not re.search(r'[^a-zA-Z0-9]', v):
-            raise ValueError('Password must contain at least one non-alphanumeric character')
+        errs = validate_password_policy(v)
+        if errs:
+            raise ValueError(errs[0])
         return v
 
     @model_validator(mode='after')
@@ -95,10 +108,18 @@ class GenerateUserRequest(BaseModel):
                 raise ValueError('Nama pengguna dan email tidak boleh sama')
         return self
 
+
 class GenerateUserResponseData(BaseModel):
     user: User
     certificate: dict
 
+
 class GenerateUserResponse(BaseModel):
     success: bool
     data: GenerateUserResponseData
+
+
+class ChangeUserPfxPasswordRequest(BaseModel):
+    new_password: str
+    confirm_password: str
+    old_password: Optional[str] = None

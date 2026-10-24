@@ -1,7 +1,6 @@
-import os
 import re
 import httpx
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from app.core.config import settings
 from app.core.exceptions import AppException
 

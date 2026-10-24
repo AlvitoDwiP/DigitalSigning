@@ -1,10 +1,6 @@
 import hashlib
-import os
 from pathlib import Path
-import pytest
 from app.services import pki_engine
-from app.services.pki_engine import PKIEngineError
-from app.core.config import settings
 
 def get_primary_ca_hashes():
     pki_engine_dir, pki_dir, _, _, _, _, _ = pki_engine.get_pki_paths()

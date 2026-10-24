@@ -21,12 +21,26 @@ def slugify(text: str) -> str:
     return text.strip('-')
 
 def get_pki_paths():
-    pki_engine_dir = Path(getattr(settings, "PKI_ENGINE_DIR", os.getenv("PKI_ENGINE_DIR", "/app/pki/scripts")))
+    raw_engine_dir = getattr(settings, "PKI_ENGINE_DIR", os.getenv("PKI_ENGINE_DIR", "/app/pki/scripts"))
+    pki_engine_dir = Path(raw_engine_dir)
+    if not pki_engine_dir.exists():
+        from app.core.config import ROOT_DIR
+        local_candidate = ROOT_DIR / "pki" / "scripts"
+        if local_candidate.exists():
+            pki_engine_dir = local_candidate
+
     pki_dir = pki_engine_dir if pki_engine_dir.name == "pki" else pki_engine_dir.parent
     h_dir = pki_dir.parent
     int_dir = Path(getattr(settings, "INT_DIR", None) or os.getenv("INT_DIR") or str(pki_dir / "intermediate")).resolve()
     issued_dir = Path(getattr(settings, "ISSUED_DIR", None) or os.getenv("ISSUED_DIR") or str(pki_dir / "issued")).resolve()
-    p12_archive_dir = Path(getattr(settings, "P12_ARCHIVE_DIR", None) or os.getenv("P12_ARCHIVE_DIR") or str(h_dir / "sign-api" / "p12")).resolve()
+
+    default_p12 = h_dir / "sign-api" / "p12"
+    raw_p12 = getattr(settings, "P12_ARCHIVE_DIR", None) or os.getenv("P12_ARCHIVE_DIR")
+    if raw_p12 and Path(raw_p12).exists():
+        p12_archive_dir = Path(raw_p12).resolve()
+    else:
+        p12_archive_dir = Path(default_p12).resolve()
+
     chain_path = Path(getattr(settings, "CHAIN_PATH", None) or os.getenv("CHAIN_PATH") or str(int_dir / "certs" / "ca-chain.crt")).resolve()
     return pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path, int_dir
 

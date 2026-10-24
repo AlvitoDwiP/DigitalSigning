@@ -1,6 +1,5 @@
 import os
 import subprocess
-from pathlib import Path
 import pytest
 from app.services import pki_engine
 from app.services.pki_engine import PKIEngineError

@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, ConfigDict
+
 
 class AuditLogBase(BaseModel):
     user_id: Optional[uuid.UUID] = None
@@ -14,10 +15,11 @@ class AuditLogBase(BaseModel):
     target_name: Optional[str] = None
     status: str
 
+
 class AuditLogResponse(AuditLogBase):
     id: uuid.UUID
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
+
 

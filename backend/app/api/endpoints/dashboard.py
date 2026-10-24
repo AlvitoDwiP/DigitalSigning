@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func, case
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 
 from app.api import deps
 from app.models.user import User
@@ -41,11 +42,33 @@ def get_dashboard(
     # 1. Admin / Super Admin Dashboard (hanya jika bukan permintaan mode user)
     if current_user.role in ["SUPER_ADMIN", "ADMIN"] and mode_clean != "user":
         total_user = db.query(User).count()
-        active_certs_count = db.query(Certificate).filter(Certificate.status == "ACTIVE").count()
-        expired_certs_count = db.query(Certificate).filter(Certificate.status == "EXPIRED").count()
+
+        limit_30_days = now + timedelta(days=30)
+        limit_60_days = now + timedelta(days=60)
+        limit_90_days = now + timedelta(days=90)
+
+        # Single aggregated query for certificate stats and expiry buckets
+        cert_stats = db.query(
+            func.count(case((Certificate.status == "ACTIVE", 1))).label("active"),
+            func.count(case((Certificate.status == "EXPIRED", 1))).label("expired"),
+            func.count(case((
+                (Certificate.status == "ACTIVE") & (Certificate.expires_at >= now) & (Certificate.expires_at <= limit_30_days), 1
+            ))).label("within_30"),
+            func.count(case((
+                (Certificate.status == "ACTIVE") & (Certificate.expires_at > limit_30_days) & (Certificate.expires_at <= limit_60_days), 1
+            ))).label("d31_to_60"),
+            func.count(case((
+                (Certificate.status == "ACTIVE") & (Certificate.expires_at > limit_60_days) & (Certificate.expires_at <= limit_90_days), 1
+            ))).label("d61_to_90"),
+        ).first()
+
+        active_certs_count = cert_stats.active if cert_stats else 0
+        expired_certs_count = cert_stats.expired if cert_stats else 0
+        within_30 = cert_stats.within_30 if cert_stats else 0
+        d31_to_60 = cert_stats.d31_to_60 if cert_stats else 0
+        d61_to_90 = cert_stats.d61_to_90 if cert_stats else 0
 
         # Expiring certificates: active certs expiring within <= 30 days (closest first, max 5)
-        limit_30_days = now + timedelta(days=30)
         expiring_rows = (
             db.query(Certificate, User)
             .join(User, Certificate.user_id == User.id)
@@ -67,25 +90,6 @@ def get_dashboard(
             }
             for cert, user in expiring_rows
         ]
-
-        # Expiry buckets (for ACTIVE certificates)
-        within_30 = db.query(Certificate).filter(
-            Certificate.status == "ACTIVE",
-            Certificate.expires_at <= now + timedelta(days=30),
-            Certificate.expires_at >= now
-        ).count()
-
-        d31_to_60 = db.query(Certificate).filter(
-            Certificate.status == "ACTIVE",
-            Certificate.expires_at > now + timedelta(days=30),
-            Certificate.expires_at <= now + timedelta(days=60)
-        ).count()
-
-        d61_to_90 = db.query(Certificate).filter(
-            Certificate.status == "ACTIVE",
-            Certificate.expires_at > now + timedelta(days=60),
-            Certificate.expires_at <= now + timedelta(days=90)
-        ).count()
 
         # Recent activities (6 activities per DESIGN.md spec)
         recent_logs = (

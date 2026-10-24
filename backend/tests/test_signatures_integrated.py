@@ -12,8 +12,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import pkcs12, BestAvailableEncryption
 from PIL import Image
 
-from app.models.user import User
-from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
 from app.core.config import settings
 

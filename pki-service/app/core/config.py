@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import model_validator
 
 # Base dir of pki-service
@@ -63,8 +63,9 @@ class Settings(BaseSettings):
                 )
         return self
 
-    class Config:
-        env_file = str(ENV_FILE) if ENV_FILE.exists() else None
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE) if ENV_FILE.exists() else None,
+        extra="ignore"
+    )
 
 settings = Settings()

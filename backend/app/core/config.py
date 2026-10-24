@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import List, Union, Optional
 from pydantic import field_validator, model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Root directory of the repository
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
@@ -130,9 +130,10 @@ class Settings(BaseSettings):
                 )
         return self
 
-    class Config:
-        env_file = str(ENV_FILE) if ENV_FILE.exists() else None
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE) if ENV_FILE.exists() else None,
+        extra="ignore"
+    )
 
 settings = Settings()
 

@@ -1,8 +1,22 @@
-from fastapi import FastAPI
+from pathlib import Path
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from app.api.health import router as health_router
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+from app.api.endpoints import (
+    account,
+    admins,
+    audit_logs,
+    auth,
+    certificates,
+    dashboard,
+    signatures,
+    users,
+)
 from app.api.errors import setup_exception_handlers
+from app.api.health import router as health_router
+from app.core.config import BASE_DIR, settings
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -23,7 +37,6 @@ app.add_middleware(
 )
 
 # Include routers
-from app.api.endpoints import auth, users, admins, account, dashboard, audit_logs, signatures, certificates
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Auth"])
 app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["Users"])
 app.include_router(admins.router, prefix=f"{settings.API_V1_STR}/admins", tags=["Management Admin"])
@@ -33,13 +46,7 @@ app.include_router(audit_logs.router, prefix=f"{settings.API_V1_STR}/audit-logs"
 app.include_router(signatures.router, prefix=f"{settings.API_V1_STR}/signatures", tags=["Signatures"])
 app.include_router(certificates.router, prefix=f"{settings.API_V1_STR}/certificates", tags=["Certificates"])
 app.include_router(health_router, prefix=settings.API_V1_STR, tags=["Health"])
-app.include_router(health_router, tags=["Health"]) # Root /health convenience
-
-from pathlib import Path
-from fastapi import Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from app.core.config import BASE_DIR
+app.include_router(health_router, tags=["Health"])  # Root /health convenience
 
 # Determine frontend static directory if built
 dist_dir = None

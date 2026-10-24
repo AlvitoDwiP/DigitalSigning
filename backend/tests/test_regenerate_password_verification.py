@@ -1,4 +1,3 @@
-import pytest
 import uuid
 import random
 from unittest.mock import patch

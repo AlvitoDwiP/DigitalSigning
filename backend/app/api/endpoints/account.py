@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import uuid
@@ -9,21 +9,11 @@ from app.api import deps
 from app.models.user import User
 from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
-from app.schemas.user import User as UserSchema
+from app.schemas.user import User as UserSchema, validate_password_policy
 from app.services import pki_api_client
 from app.core.security import verify_password, get_password_hash
-import re
 
 router = APIRouter()
-
-def validate_password_policy(pwd: str) -> Optional[str]:
-    if len(pwd) < 8:
-        return "Password must be at least 8 characters"
-    if not re.search(r'[A-Z]', pwd):
-        return "Password must contain at least one uppercase letter"
-    if not re.search(r'[^a-zA-Z0-9]', pwd):
-        return "Password must contain at least one non-alphanumeric character"
-    return None
 
 class UpdateAccountRequest(BaseModel):
     name: Optional[str] = None
@@ -170,9 +160,9 @@ def change_account_login_password(
     if req.old_password == req.new_password:
         raise HTTPException(status_code=400, detail={"code": "INVALID_INPUT", "message": "Password baru tidak boleh sama dengan password lama"})
         
-    policy_err = validate_password_policy(req.new_password)
-    if policy_err:
-        raise HTTPException(status_code=400, detail={"code": "INVALID_INPUT", "message": policy_err})
+    policy_errs = validate_password_policy(req.new_password)
+    if policy_errs:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_INPUT", "message": policy_errs[0]})
         
     current_user.password_hash = get_password_hash(req.new_password)
     db.commit()

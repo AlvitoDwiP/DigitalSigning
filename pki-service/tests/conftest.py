@@ -1,8 +1,7 @@
-import os
 import shutil
 import pytest
 from app.core.config import settings
-from tests.test_ca_factory import create_isolated_test_ca, IsolatedTestCA
+from tests.test_ca_factory import create_isolated_test_ca
 
 @pytest.fixture(scope="function")
 def isolated_ca(tmp_path, monkeypatch):

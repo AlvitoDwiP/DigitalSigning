@@ -16,7 +16,19 @@ P12_ARCHIVE_DIR="${P12_ARCHIVE_DIR:-$H/sign-api/p12}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
-for tool in openssl flock find mktemp cmp cp mv chmod chown sed; do
+copy_ownership() {
+  local ref="$1"
+  local target="$2"
+  chown --reference="$ref" "$target" 2>/dev/null && return 0
+  local owner group
+  owner="$(stat -f '%u' "$ref" 2>/dev/null || stat -c '%u' "$ref" 2>/dev/null || true)"
+  group="$(stat -f '%g' "$ref" 2>/dev/null || stat -c '%g' "$ref" 2>/dev/null || true)"
+  if [[ -n "$owner" && -n "$group" ]]; then
+    chown "$owner:$group" "$target" 2>/dev/null || true
+  fi
+}
+
+for tool in openssl find mktemp cmp cp mv chmod chown sed; do
   command -v "$tool" >/dev/null 2>&1 || die "$tool tidak tersedia."
 done
 
@@ -60,12 +72,15 @@ fi
 
 export P12_OLD_SECRET P12_NEW_SECRET
 
-exec 9>"$ISSUED_ROOT/.change-p12-passphrase.lock"
+if command -v flock >/dev/null 2>&1; then
+  exec 9>"$ISSUED_ROOT/.change-p12-passphrase.lock"
+  flock -n 9 || die 'Penggantian passphrase lain sedang berjalan.'
+fi
 
-flock -n 9 ||
-  die 'Penggantian passphrase lain sedang berjalan.'
-
-mapfile -d '' -t MATCHES < <(
+MATCHES=()
+while IFS= read -r -d '' match; do
+  MATCHES+=("$match")
+done < <(
   find "$ISSUED_ROOT" \
     -mindepth 2 \
     -maxdepth 2 \
@@ -227,7 +242,7 @@ cmp -s \
 
 cp -p -- "$SOURCE" "$WORK/old.p12"
 
-chown --reference="$SOURCE" "$WORK/new.p12"
+copy_ownership "$SOURCE" "$WORK/new.p12"
 chmod 600 "$WORK/new.p12"
 
 if [[ -f "$DEST" ]]; then
@@ -235,9 +250,9 @@ if [[ -f "$DEST" ]]; then
 
   cp -p -- "$DEST" "$ARCHIVE_WORK/old.p12"
 
-  chown --reference="$DEST" "$ARCHIVE_WORK/new.p12"
+  copy_ownership "$DEST" "$ARCHIVE_WORK/new.p12"
 else
-  chown --reference="$SOURCE" "$ARCHIVE_WORK/new.p12"
+  copy_ownership "$SOURCE" "$ARCHIVE_WORK/new.p12"
 fi
 
 chmod 600 "$ARCHIVE_WORK/new.p12"

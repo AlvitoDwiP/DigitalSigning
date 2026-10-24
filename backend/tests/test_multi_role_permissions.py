@@ -1,13 +1,11 @@
 import uuid
 import io
 import random
-import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models.user import User
-from app.models.certificate import Certificate
 from app.core.security import create_access_token, get_password_hash
 
 

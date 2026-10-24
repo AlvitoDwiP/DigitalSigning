@@ -1,219 +1,83 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_, asc, desc, func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import or_, and_, func
 import uuid
-from typing import List, Any, Dict, Optional
+from typing import Any, Dict, Optional
 import datetime
-import dateutil.parser
-import csv
-import io
-import re
-from pydantic import BaseModel
+from dateutil import parser
 
 from app.api import deps
 from app.models.user import User
 from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
-from app.schemas.user import User as UserSchema, GenerateUserRequest, GenerateUserResponse, GenerateUserResponseData
+from app.schemas.user import (
+    User as UserSchema,
+    GenerateUserRequest,
+    GenerateUserResponse,
+    GenerateUserResponseData,
+    ChangeUserPfxPasswordRequest,
+)
 from app.schemas.certificate import CertificateResponse, RegenerateCertificateRequest, RegenerateCertificateResponse
 from app.services import pki_api_client
+from app.services.bulk_user_importer import parse_and_validate_bulk_csv
 from app.core.security import get_password_hash, verify_password
 from app.core.config import settings
 
 router = APIRouter()
 
-CSV_EXPECTED_HEADERS = ["name", "nik", "email", "organization", "ou", "password", "pfx_pass"]
 
-class ChangeUserPfxPasswordRequest(BaseModel):
-    new_password: str
-    confirm_password: str
-    old_password: Optional[str] = None
+def _record_audit(
+    db: Session,
+    actor_id: Optional[uuid.UUID],
+    action: str,
+    target_id: Optional[uuid.UUID],
+    status: str = "SUCCESS",
+    target_type: str = "user",
+    commit: bool = False
+) -> AuditLog:
+    """Helper untuk pencatatan audit log agar konsisten dan ringkas."""
+    audit = AuditLog(
+        id=uuid.uuid4(),
+        user_id=actor_id,
+        action=action,
+        target_type=target_type,
+        target_id=target_id,
+        status=status
+    )
+    db.add(audit)
+    if commit:
+        db.commit()
+    return audit
 
-def validate_password_policy(pwd: str) -> List[str]:
-    errors = []
-    if len(pwd) < 8:
-        errors.append("Password must be at least 8 characters")
-    if not re.search(r'[A-Z]', pwd):
-        errors.append("Password must contain at least one uppercase letter")
-    if not re.search(r'[^a-zA-Z0-9]', pwd):
-        errors.append("Password must contain at least one non-alphanumeric character")
-    return errors
 
-def parse_and_validate_bulk_csv(content: str, db: Session) -> Dict[str, Any]:
-    # Strip potential UTF-8 BOM
-    if content.startswith('\ufeff'):
-        content = content[1:]
-        
-    reader = csv.reader(io.StringIO(content))
-    rows = list(reader)
-    
-    if not rows:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "INVALID_CSV", "message": "CSV file is empty"}
-        )
-        
-    # Validate Header: support both standard 7-col and alternative 6-col (org,ou,cn,email,nik,pfx_pass)
-    raw_header = [h.strip() for h in rows[0]]
-    header_lower = [h.lower() for h in raw_header]
-    
-    is_standard_7col = (raw_header == CSV_EXPECTED_HEADERS or header_lower == [h.lower() for h in CSV_EXPECTED_HEADERS])
-    is_alt_6col = (header_lower in (
-        ["org", "ou", "cn", "email", "nik", "pfx_pass"],
-        ["organization", "ou", "cn", "email", "nik", "pfx_pass"]
-    ))
-    
-    if not (is_standard_7col or is_alt_6col):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "INVALID_CSV_HEADER", "message": f"CSV header must be: {','.join(CSV_EXPECTED_HEADERS)} or org,ou,cn,email,nik,pfx_pass"}
-        )
-        
-    data_rows = rows[1:]
-    if not data_rows:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "EMPTY_CSV_DATA", "message": "CSV contains no data rows"}
-        )
-        
-    parsed_rows = []
-    seen_names = set()
-    seen_niks = set()
-    seen_emails = set()
-    
-    row_idx = 0
-    for r in data_rows:
-        # Skip completely blank lines
-        if not r or (len(r) == 1 and not r[0].strip()):
-            continue
-            
-        row_idx += 1
-        errors = []
-        
-        expected_cols = 7 if is_standard_7col else 6
-        if len(r) != expected_cols:
-            errors.append(f"Expected {expected_cols} columns, got {len(r)}")
-            parsed_rows.append({
-                "row": row_idx,
-                "nik": r[1].strip() if len(r) > 1 else "",
-                "valid": False,
-                "errors": errors,
-                "data": None
-            })
-            continue
-            
-        if is_standard_7col:
-            name, nik, email, org, ou, password, pfx_pass = [col.strip() for col in r]
-        else:
-            # org, ou, cn, email, nik, pfx_pass
-            org, ou, name, email, nik, pfx_pass = [col.strip() for col in r]
-            password = ""
-        
-        # Check forbidden characters (\t, \r, \n)
-        for field_name, field_val in [
-            ("name", name), ("nik", nik), ("email", email), 
-            ("organization", org), ("ou", ou), ("password", password), 
-            ("pfx_pass", pfx_pass)
-        ]:
-            if "\t" in field_val or "\r" in field_val or "\n" in field_val:
-                errors.append(f"Field '{field_name}' contains forbidden tab or newline characters")
-                
-        # Required fields
-        if not name:
-            errors.append("Field 'name' is required")
-        if not nik:
-            errors.append("Field 'nik' is required")
-        if not email:
-            errors.append("Field 'email' is required")
-        if not org:
-            errors.append("Field 'organization' is required")
-        if not ou:
-            errors.append("Field 'ou' is required")
-            
-        # Automatic default credentials when empty
-        if not password:
-            password = settings.DEFAULT_USER_PASS
-        if not pfx_pass:
-            pfx_pass = settings.DEFAULT_PFX_PASS
-            
-        # NIK format
-        if nik and not re.match(r"^[0-9]{16}$", nik):
-            errors.append("NIK must be exactly 16 digits")
-            
-        # Email format
-        if email and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-            errors.append("Invalid email format")
+def _build_certificate_model(
+    user_id: uuid.UUID,
+    cert_metadata: Dict[str, Any],
+    cert_id: Optional[uuid.UUID] = None,
+    status: str = "ACTIVE"
+) -> Certificate:
+    """Helper untuk memetakan metadata sertifikat PKI Engine ke model SQLAlchemy Certificate."""
+    try:
+        issued_at = parser.parse(cert_metadata["issued_at"])
+        expires_at = parser.parse(cert_metadata["expires_at"])
+    except Exception:
+        issued_at = datetime.datetime.now(datetime.timezone.utc)
+        expires_at = issued_at + datetime.timedelta(days=730)
 
-        # Name and Email equality check
-        if name and email and name.strip().lower() == email.strip().lower():
-            errors.append("Nama dan email tidak boleh sama")
-            
-        # Password policy
-        if password:
-            pwd_errs = validate_password_policy(password)
-            errors.extend(pwd_errs)
-            
-        # Duplicate check in CSV
-        if name:
-            name_lower = name.strip().lower()
-            if name_lower in seen_names:
-                errors.append("Duplicate name in CSV")
-            else:
-                seen_names.add(name_lower)
+    return Certificate(
+        id=cert_id or uuid.uuid4(),
+        user_id=user_id,
+        serial_number=cert_metadata.get("serial_number", ""),
+        subject=cert_metadata.get("subject", ""),
+        issuer=cert_metadata.get("issuer", "Intermediate CA"),
+        fingerprint_sha256=cert_metadata.get("fingerprint_sha256", "").replace(":", ""),
+        certificate_path=cert_metadata.get("certificate_path", ""),
+        p12_reference=cert_metadata.get("p12_reference", ""),
+        issued_at=issued_at,
+        expires_at=expires_at,
+        status=status
+    )
 
-        if nik:
-            if nik in seen_niks:
-                errors.append("Duplicate NIK in CSV")
-            else:
-                seen_niks.add(nik)
-                
-        if email:
-            email_lower = email.strip().lower()
-            if email_lower in seen_emails:
-                errors.append("Duplicate email in CSV")
-            else:
-                seen_emails.add(email_lower)
-                
-        # Duplicate check in DB
-        if name and not any("name" in e.lower() or "nama" in e.lower() for e in errors):
-            existing_user_name = db.query(User).filter(func.lower(User.name) == func.lower(name.strip())).first()
-            if existing_user_name:
-                errors.append("Name already exists in database")
-
-        if nik and not any("NIK" in e for e in errors):
-            existing_user_nik = db.query(User).filter(User.nik == nik.strip()).first()
-            if existing_user_nik:
-                errors.append("NIK already exists in database")
-                
-        if email and not any("email" in e.lower() for e in errors):
-            existing_user_email = db.query(User).filter(func.lower(User.email) == func.lower(email.strip())).first()
-            if existing_user_email:
-                errors.append("Email already exists in database")
-                
-        is_valid = len(errors) == 0
-        parsed_rows.append({
-            "row": row_idx,
-            "nik": nik,
-            "valid": is_valid,
-            "errors": errors if not is_valid else [],
-            "data": {
-                "name": name,
-                "nik": nik,
-                "email": email,
-                "organization": org,
-                "ou": ou,
-                "password": password,
-                "pfx_pass": pfx_pass
-            } if is_valid else None
-        })
-        
-    return {
-        "total": len(parsed_rows),
-        "valid": sum(1 for r in parsed_rows if r["valid"]),
-        "invalid": sum(1 for r in parsed_rows if not r["valid"]),
-        "rows": parsed_rows
-    }
 
 @router.get("/", response_model=dict)
 def get_users(
@@ -248,11 +112,7 @@ def get_users(
         query = query.filter(User.status == status)
 
     if certificate_status:
-        query = query.filter(
-            User.id.in_(
-                db.query(Certificate.user_id).filter(Certificate.status == certificate_status)
-            )
-        )
+        query = query.filter(User.certificates.any(Certificate.status == certificate_status))
 
     # Sorting
     is_asc = (order.lower() == "asc") if order else False
@@ -280,7 +140,7 @@ def get_users(
         offset = skip if skip is not None else 0
         current_page = (offset // limit) + 1 if limit > 0 else 1
 
-    users = query.offset(offset).limit(limit).all()
+    users = query.options(selectinload(User.certificates)).offset(offset).limit(limit).all()
 
     items = []
     for u in users:
@@ -381,44 +241,11 @@ def generate_user(
         )
         db.add(new_user)
         
-        issued_at = dateutil.parser.parse(cert_metadata["issued_at"])
-        expires_at = dateutil.parser.parse(cert_metadata["expires_at"])
-        
-        new_cert = Certificate(
-            id=cert_id,
-            user_id=user_id,
-            serial_number=cert_metadata["serial_number"],
-            subject=cert_metadata["subject"],
-            issuer=cert_metadata["issuer"],
-            fingerprint_sha256=cert_metadata["fingerprint_sha256"].replace(":", ""),
-            certificate_path=cert_metadata["certificate_path"],
-            p12_reference=cert_metadata["p12_reference"],
-            issued_at=issued_at,
-            expires_at=expires_at,
-            status="ACTIVE"
-        )
+        new_cert = _build_certificate_model(user_id=user_id, cert_metadata=cert_metadata, cert_id=cert_id)
         db.add(new_cert)
         
-        # Audit
-        audit_user = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="USER_CREATED",
-            target_type="user",
-            target_id=user_id,
-            status="SUCCESS"
-        )
-        db.add(audit_user)
-
-        audit_cert = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="CERTIFICATE_GENERATED",
-            target_type="user",
-            target_id=user_id,
-            status="SUCCESS"
-        )
-        db.add(audit_cert)
+        _record_audit(db, current_user.id, "USER_CREATED", user_id, "SUCCESS")
+        _record_audit(db, current_user.id, "CERTIFICATE_GENERATED", user_id, "SUCCESS")
         
         db.commit()
         db.refresh(new_user)
@@ -589,43 +416,11 @@ async def generate_bulk_users(
             )
             db.add(new_user)
             
-            issued_at = dateutil.parser.parse(cert_metadata["issued_at"])
-            expires_at = dateutil.parser.parse(cert_metadata["expires_at"])
-            
-            new_cert = Certificate(
-                id=cert_id,
-                user_id=user_id,
-                serial_number=cert_metadata.get("serial_number", ""),
-                subject=cert_metadata.get("subject", ""),
-                issuer=cert_metadata.get("issuer", "Intermediate CA"),
-                fingerprint_sha256=cert_metadata.get("fingerprint_sha256", "").replace(":", ""),
-                certificate_path=cert_metadata.get("certificate_path", ""),
-                p12_reference=cert_metadata.get("p12_reference", ""),
-                issued_at=issued_at,
-                expires_at=expires_at,
-                status="ACTIVE"
-            )
+            new_cert = _build_certificate_model(user_id=user_id, cert_metadata=cert_metadata, cert_id=cert_id)
             db.add(new_cert)
             
-            audit_user = AuditLog(
-                id=uuid.uuid4(),
-                user_id=current_user.id,
-                action="USER_CREATED",
-                target_type="user",
-                target_id=user_id,
-                status="SUCCESS"
-            )
-            db.add(audit_user)
-
-            audit_cert = AuditLog(
-                id=uuid.uuid4(),
-                user_id=current_user.id,
-                action="CERTIFICATE_GENERATED",
-                target_type="user",
-                target_id=user_id,
-                status="SUCCESS"
-            )
-            db.add(audit_cert)
+            _record_audit(db, current_user.id, "USER_CREATED", user_id, "SUCCESS")
+            _record_audit(db, current_user.id, "CERTIFICATE_GENERATED", user_id, "SUCCESS")
             
             db.commit()
             
@@ -698,16 +493,7 @@ def change_user_pfx_password(
                 new_password=req.new_password
             )
         except Exception:
-            audit = AuditLog(
-                id=uuid.uuid4(),
-                user_id=current_user.id,
-                action="PFX_PASSWORD_CHANGED",
-                target_type="user",
-                target_id=target_user.id,
-                status="FAILED"
-            )
-            db.add(audit)
-            db.commit()
+            _record_audit(db, current_user.id, "PFX_PASSWORD_CHANGED", target_user.id, "FAILED", commit=True)
             raise
     else:
         # ADMIN / SUPER_ADMIN
@@ -717,28 +503,10 @@ def change_user_pfx_password(
                 new_password=req.new_password
             )
         except Exception:
-            audit = AuditLog(
-                id=uuid.uuid4(),
-                user_id=current_user.id,
-                action="PFX_PASSWORD_CHANGED",
-                target_type="user",
-                target_id=target_user.id,
-                status="FAILED"
-            )
-            db.add(audit)
-            db.commit()
+            _record_audit(db, current_user.id, "PFX_PASSWORD_CHANGED", target_user.id, "FAILED", commit=True)
             raise
             
-    audit = AuditLog(
-        id=uuid.uuid4(),
-        user_id=current_user.id,
-        action="PFX_PASSWORD_CHANGED",
-        target_type="user",
-        target_id=target_user.id,
-        status="SUCCESS"
-    )
-    db.add(audit)
-    db.commit()
+    _record_audit(db, current_user.id, "PFX_PASSWORD_CHANGED", target_user.id, "SUCCESS", commit=True)
     
     return {"success": True, "message": "Passphrase berhasil diubah"}
 
@@ -754,17 +522,8 @@ def delete_user(
         
     try:
         pki_api_client.delete_user_materials(user.nik)
-    except Exception as e:
-        audit_fail = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="USER_DELETED",
-            target_type="user",
-            target_id=user_id,
-            status="FAILED"
-        )
-        db.add(audit_fail)
-        db.commit()
+    except Exception:
+        _record_audit(db, current_user.id, "USER_DELETED", user_id, "FAILED", commit=True)
         raise HTTPException(
             status_code=500, 
             detail={"code": "PKI_CLEANUP_FAILED", "message": "Failed to cleanup PKI materials, user not deleted"}
@@ -773,17 +532,7 @@ def delete_user(
     try:
         db.query(Certificate).filter(Certificate.user_id == user_id).delete()
         db.delete(user)
-        
-        audit = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="USER_DELETED",
-            target_type="user",
-            target_id=user_id,
-            status="SUCCESS"
-        )
-        db.add(audit)
-        db.commit()
+        _record_audit(db, current_user.id, "USER_DELETED", user_id, "SUCCESS", commit=True)
         return {"success": True, "message": "User berhasil dihapus"}
     except Exception as e:
         db.rollback()
@@ -838,16 +587,7 @@ def regenerate_user_certificate(
         )
 
     if not verify_password(admin_pwd, current_user.password_hash):
-        audit_fail = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="CERTIFICATE_REGENERATED",
-            target_type="user",
-            target_id=user.id,
-            status="FAILED"
-        )
-        db.add(audit_fail)
-        db.commit()
+        _record_audit(db, current_user.id, "CERTIFICATE_REGENERATED", user.id, "FAILED", commit=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "INVALID_CREDENTIALS", "message": "Password admin salah. Verifikasi gagal."}
@@ -883,16 +623,7 @@ def regenerate_user_certificate(
         target_archive_p12 = stage_res.get("target_archive_p12")
         cert_metadata = stage_res.get("metadata", {})
     except Exception as e:
-        audit_fail = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="CERTIFICATE_REGENERATED",
-            target_type="user",
-            target_id=user.id,
-            status="FAILED"
-        )
-        db.add(audit_fail)
-        db.commit()
+        _record_audit(db, current_user.id, "CERTIFICATE_REGENERATED", user.id, "FAILED", commit=True)
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(
@@ -908,27 +639,11 @@ def regenerate_user_certificate(
                     pki_api_client.regenerate_cleanup(staging_token)
                 except Exception:
                     pass
-            audit_fail = AuditLog(
-                id=uuid.uuid4(),
-                user_id=current_user.id,
-                action="CERTIFICATE_REGENERATED",
-                target_type="user",
-                target_id=user.id,
-                status="FAILED"
-            )
-            db.add(audit_fail)
-            db.commit()
+            _record_audit(db, current_user.id, "CERTIFICATE_REGENERATED", user.id, "FAILED", commit=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail={"code": "INVALID_CERTIFICATE_METADATA", "message": f"Missing required certificate metadata: {k}"}
             )
-
-    try:
-        issued_at = dateutil.parser.parse(cert_metadata["issued_at"])
-        expires_at = dateutil.parser.parse(cert_metadata["expires_at"])
-    except Exception:
-        issued_at = datetime.datetime.now(datetime.timezone.utc)
-        expires_at = issued_at + datetime.timedelta(days=730)
 
     new_cert_id = uuid.uuid4()
     old_cert_id = active_cert.id
@@ -936,34 +651,17 @@ def regenerate_user_certificate(
         active_cert.status = "REPLACED"
         active_cert.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
-        new_cert = Certificate(
-            id=new_cert_id,
+        new_cert = _build_certificate_model(
             user_id=user.id,
-            serial_number=cert_metadata["serial_number"],
-            subject=cert_metadata["subject"],
-            issuer=cert_metadata["issuer"],
-            fingerprint_sha256=cert_metadata["fingerprint_sha256"].replace(":", ""),
-            certificate_path=cert_metadata["certificate_path"],
-            p12_reference=cert_metadata["p12_reference"],
-            issued_at=issued_at,
-            expires_at=expires_at,
-            status="ACTIVE"
+            cert_metadata=cert_metadata,
+            cert_id=new_cert_id
         )
         db.add(new_cert)
         db.flush()
 
         active_cert.replaced_by = new_cert_id
 
-        audit_success = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="CERTIFICATE_REGENERATED",
-            target_type="user",
-            target_id=user.id,
-            status="SUCCESS"
-        )
-        db.add(audit_success)
-
+        _record_audit(db, current_user.id, "CERTIFICATE_REGENERATED", user.id, "SUCCESS")
         db.commit()
         db.refresh(new_cert)
 
@@ -995,16 +693,7 @@ def regenerate_user_certificate(
             except Exception:
                 pass
         try:
-            audit_fail = AuditLog(
-                id=uuid.uuid4(),
-                user_id=current_user.id,
-                action="CERTIFICATE_REGENERATED",
-                target_type="user",
-                target_id=user.id,
-                status="FAILED"
-            )
-            db.add(audit_fail)
-            db.commit()
+            _record_audit(db, current_user.id, "CERTIFICATE_REGENERATED", user.id, "FAILED", commit=True)
         except Exception:
             db.rollback()
             
