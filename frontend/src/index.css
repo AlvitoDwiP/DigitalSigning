@@ -1002,9 +1002,8 @@ h2 {
   align-items: center;
   justify-content: flex-end;
   padding: 18px 28px 8px;
-  position: sticky;
-  top: 0;
-  z-index: 40;
+  position: static;
+  z-index: 10;
 }
 
 .topbar-left {
@@ -7137,16 +7136,22 @@ button.expiry-user-item:hover .expiry-user-action {
 .badge-soon {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: 3px 9px;
   font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
   border-radius: 9999px;
-  background: rgba(184, 28, 28, 0.1);
-  color: var(--primary, #b81c1c);
-  border: 1px solid rgba(184, 28, 28, 0.25);
+  background: rgba(217, 119, 6, 0.12);
+  color: #B45309;
+  border: 1px solid rgba(217, 119, 6, 0.32);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+[data-theme='dark'] .badge-soon {
+  background: rgba(245, 158, 11, 0.18);
+  color: #FBBF24;
+  border-color: rgba(245, 158, 11, 0.45);
 }
 
 .sidebar-badge-soon {
@@ -7157,13 +7162,26 @@ button.expiry-user-item:hover .expiry-user-action {
   font-weight: 700;
   line-height: 1.1;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-left: 8px;
   flex-shrink: 0;
+}
+
+/* Kontras tinggi saat link di sidebar sedang aktif (background putih) */
+.nav-link-active .sidebar-badge-soon {
+  background: rgba(217, 119, 6, 0.14) !important;
+  color: #B45309 !important;
+  border-color: rgba(217, 119, 6, 0.38) !important;
+}
+
+[data-theme='dark'] .nav-link-active .sidebar-badge-soon {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #FBBF24 !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
 }
 
 .nav-link-reserved {
@@ -7211,129 +7229,1581 @@ button.expiry-user-item:hover .expiry-user-action {
 }
 
 /* ==========================================================================
-   Signing Page & Interactive A4 Preview (Section 7)
+   Signing Page & TTE (Tanda Tangan Elektronik) Modern Workflow
    ========================================================================== */
-.signing-card {
-  max-width: 900px;
+
+.tte-page-wrapper {
+  max-width: 1400px;
   margin: 0 auto;
-  background-color: var(--card);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
-.signing-dropzone-area {
-  border: 1.5px dashed var(--input-border);
+/* Header & Badges */
+.tte-page-header {
+  margin-bottom: 4px;
+}
+
+.tte-title-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tte-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background-color: var(--active-tint);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+/* Success Banner */
+.tte-success-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.14) 100%);
+  border: 1.5px solid var(--ok);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12);
+  animation: feedback-slide-in 0.25s ease-out;
+}
+
+.tte-success-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.tte-success-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: var(--ok);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+}
+
+.tte-success-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tte-success-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tte-success-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.tte-success-subtitle code {
+  background-color: var(--card);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tte-success-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tte-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* Two-Column Responsive Layout: Left is wider, Right (preview) is smaller */
+.tte-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 390px);
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1180px) {
+  .tte-main-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, 350px);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 860px) {
+  .tte-main-grid {
+    grid-template-columns: 100%;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.tte-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  width: 100%;
+}
+
+.tte-right-col {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.tte-config-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Step Card Base */
+.tte-step-card {
+  background-color: var(--card);
+  border-radius: 10px;
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tte-step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tte-step-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background-color: var(--accent);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tte-step-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.tte-step-desc {
+  margin: 3px 0 0 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.35;
+}
+
+/* Step 1: Dropzone & File Card */
+.tte-dropzone {
+  border: 2px dashed var(--input-border);
   border-radius: 10px;
   background-color: var(--input-bg);
-  padding: 28px 20px;
+  padding: 30px 20px;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-.signing-dropzone-area:hover {
+.tte-dropzone:hover,
+.tte-dropzone.is-drag-over {
+  border-color: var(--accent);
+  background-color: var(--active-tint);
+}
+
+.tte-dropzone-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--active-tint);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tte-dropzone-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tte-dropzone-main {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tte-dropzone-hint {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.tte-file-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--line);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tte-file-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background-color: var(--active-tint);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tte-file-meta {
+  flex: 1 1 0%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.tte-file-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.tte-file-details {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.tte-file-dot {
+  font-size: 8px;
+  color: var(--text-2);
+}
+
+.tte-file-loading-pages {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.tte-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tte-file-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background-color: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tte-file-action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tte-file-action-btn.is-danger {
+  color: var(--danger);
+}
+
+.tte-file-action-btn.is-danger:hover {
+  border-color: var(--danger);
+  background-color: var(--danger-fill);
+}
+
+/* Step 2: Page Selection Radio Cards */
+.tte-page-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@media (max-width: 540px) {
+  .tte-page-options-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tte-radio-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line);
+  background-color: var(--card);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.tte-radio-card:hover {
   border-color: var(--accent);
 }
 
-.signing-dropzone-area.has-file {
-  border-style: solid;
-  border-color: var(--gold-line);
+.tte-radio-card.is-selected {
+  border-color: var(--accent);
+  background-color: var(--active-tint);
 }
 
-.signing-layout-container {
+.tte-radio-card input[type="radio"] {
+  margin-top: 2px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.tte-radio-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tte-radio-content strong {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.tte-radio-content span {
+  font-size: 11px;
+  color: var(--text-2);
+  line-height: 1.3;
+}
+
+.tte-specific-page-box {
+  padding: 12px 14px;
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tte-specific-page-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tte-specific-page-input-row input {
+  max-width: 90px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.tte-specific-page-helper {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* Step 3: Footer Controls */
+.tte-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tte-presets-row {
   display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 2px;
 }
 
-@media (max-width: 1100px) {
-  .signing-layout-container {
-    grid-template-columns: 1fr;
-  }
-
-  .signing-a4-preview-wrapper {
-    order: -1;
-    margin-bottom: 16px;
+@media (max-width: 480px) {
+  .tte-presets-row {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.signing-coords-box {
+.tte-preset-btn {
+  padding: 8px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background-color: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.tte-preset-btn:hover {
+  border-color: var(--accent);
+}
+
+.tte-preset-btn.is-active {
+  border-color: var(--accent);
+  background-color: var(--active-tint);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tte-manual-coords-container {
+  padding: 12px 14px;
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tte-manual-coords-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tte-manual-coords-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tte-manual-coords-note {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.tte-coords-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.tte-coord-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tte-coord-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.tte-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.tte-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tte-checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.tte-label-optional {
+  font-size: 11.5px;
+  font-weight: normal;
+  color: var(--text-2);
+}
+
+.tte-hint-text {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.tte-upload-stamp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.tte-stamp-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--line);
+  margin-top: 4px;
+}
+
+.tte-stamp-thumb {
+  max-height: 38px;
+  max-width: 60px;
+  object-fit: contain;
+  background-color: #ffffff;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+.tte-stamp-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tte-stamp-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tte-stamp-size {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.tte-stamp-delete-btn {
+  padding: 6px;
+  color: var(--danger);
+}
+
+.tte-stamp-delete-btn:hover {
+  background-color: var(--danger-fill);
+}
+
+.tte-edu-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background-color: var(--active-tint);
+  border: 1px solid var(--accent);
+}
+
+.tte-edu-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tte-edu-text {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.tte-error-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--danger);
+  margin: 0;
+}
+
+/* Action Summary Card */
+.tte-summary-card {
+  gap: 12px;
+}
+
+.tte-summary-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tte-summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tte-summary-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.tte-summary-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tte-summary-label {
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.tte-summary-val {
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 250px;
+}
+
+.tte-actions-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tte-submit-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tte-reset-btn {
+  width: 100%;
+  padding: 8px;
+  font-size: 12.5px;
+}
+
+/* Right Column: PDF Preview */
+.tte-preview-panel {
+  background-color: var(--card);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tte-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tte-preview-tab-group {
+  display: inline-flex;
+  background-color: var(--input-bg);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  gap: 4px;
+}
+
+.tte-preview-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tte-preview-tab-btn:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.tte-preview-tab-btn.is-active {
+  background-color: var(--card);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tte-preview-tab-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tte-preview-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tte-page-nav-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.tte-page-counter {
+  font-size: 12.5px;
+  color: var(--text-2);
+  padding: 0 4px;
+}
+
+.tte-page-counter strong {
+  color: var(--text);
+}
+
+.tte-preview-body {
+  width: 100%;
+}
+
+/* Empty State */
+.tte-empty-preview-card {
+  min-height: 440px;
+  border: 2px dashed var(--input-border);
+  border-radius: 10px;
+  background-color: var(--input-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 18px;
+}
+
+.tte-empty-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background-color: var(--active-tint);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.tte-empty-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tte-empty-desc {
+  margin: 0 auto 16px auto;
+  font-size: 12.5px;
+  color: var(--text-2);
+  max-width: 320px;
+  line-height: 1.45;
+}
+
+.tte-empty-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  max-width: 300px;
+  width: 100%;
+}
+
+.tte-empty-step-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.tte-empty-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   background-color: var(--card);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Sheet Canvas Container */
+.tte-sheet-scroll-container {
+  background-color: #1e2430;
+  border-radius: 10px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 480px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.tte-sheet-status-bar {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tte-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.tte-status-pill.is-active-target {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.tte-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.tte-warning-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* A4 Sheet & Footer Element */
+.tte-a4-sheet {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1 / 1.4142;
+  background-color: #ffffff;
+  border-radius: 4px;
+  position: relative;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  user-select: none;
   padding: 16px;
+  box-sizing: border-box;
+}
+
+.tte-sheet-mock-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+  opacity: 0.18;
+}
+
+.tte-sheet-mock-line-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #0f172a;
+}
+
+.tte-sheet-mock-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.tte-sheet-mock-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0.12;
+}
+
+.tte-sheet-line {
+  height: 6px;
+  border-radius: 3px;
+  background-color: #0f172a;
+}
+
+.tte-sheet-line.line-heading {
+  width: 45%;
+  height: 8px;
+  margin-bottom: 6px;
+}
+
+.tte-sheet-line.line-long {
+  width: 80%;
+}
+
+.tte-sheet-line.line-med {
+  width: 55%;
+}
+
+.tte-sheet-line.line-full {
+  width: 100%;
+}
+
+.tte-sheet-line.line-34 {
+  width: 75%;
+}
+
+.tte-sheet-line.line-half {
+  width: 50%;
+}
+
+.tte-sheet-line.line-spacer {
+  height: 12px;
+  background: transparent;
+}
+
+.tte-sheet-page-watermark {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* Footer TTE Box Inside Sheet */
+.tte-footer-box {
+  position: absolute;
+  border: 1.5px dashed #059669;
+  background-color: rgba(236, 253, 245, 0.94);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+  cursor: grab;
+  user-select: none;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease;
+  z-index: 10;
+}
+
+.tte-footer-box:hover {
+  background-color: rgba(209, 250, 229, 0.98);
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
+}
+
+.tte-footer-box.is-dragging {
+  cursor: grabbing;
+  border-style: solid;
+  border-width: 2px;
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.45);
+}
+
+.tte-footer-box.is-out {
+  border-color: #ef4444;
+  background-color: rgba(254, 242, 242, 0.94);
+}
+
+.tte-footer-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.tte-footer-qr {
+  width: 38px;
+  height: 38px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px;
+  color: #0f172a;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tte-footer-qr svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tte-footer-stamp-thumb {
+  height: 36px;
+  max-width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.tte-footer-stamp-thumb img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.tte-footer-texts {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.tte-footer-header-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #059669;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tte-footer-signer-name {
+  font-size: 9px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tte-footer-org {
+  font-size: 8px;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tte-footer-time {
+  font-size: 7px;
+  color: #64748b;
+}
+
+.tte-drag-handle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0.4;
+}
+
+.tte-drag-handle span {
+  width: 10px;
+  height: 2px;
+  background-color: #059669;
+  border-radius: 1px;
+}
+
+.tte-drag-hint {
+  font-size: 11.5px;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Native PDF Iframe */
+.tte-native-pdf-wrapper {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.tte-native-iframe {
+  width: 100%;
+  height: 480px;
+  border: none;
+  background-color: #ffffff;
+}
+
+/* Modal Dialog */
+.tte-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.tte-modal-box {
+  background-color: var(--card);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: feedback-slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tte-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tte-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tte-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.tte-modal-close-btn:hover {
+  color: var(--text);
+}
+
+.tte-modal-body {
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.signing-coords-group-title {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 6px;
-}
-
-.signing-coords-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.signing-a4-preview-wrapper {
+.tte-summary-preview {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
+  padding: 12px 14px;
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  border: 1px solid var(--line);
 }
 
-.signing-a4-paper {
-  width: 210px;
-  height: 297px;
-  background-color: var(--cert-bg);
-  border: 1px solid var(--gold-line);
-  border-radius: 4px;
+.tte-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tte-password-input-wrapper {
   position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  user-select: none;
-  cursor: crosshair;
+  display: flex;
+  align-items: center;
 }
 
-.signing-a4-paper-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(to right, var(--line) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
-  background-size: 21px 29.7px;
-  opacity: 0.35;
-  pointer-events: none;
+.tte-password-input {
+  width: 100%;
+  padding: 9px 40px 9px 12px;
+  font-size: 13.5px;
+  border: 1.5px solid var(--input-border);
+  border-radius: 8px;
+  background-color: var(--input-bg);
+  color: var(--text);
+  transition: border-color 0.15s ease;
 }
 
-.signing-a4-stamp-box {
+.tte-password-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tte-password-toggle-btn {
   position: absolute;
-  background-color: var(--active-tint);
-  border: 1.5px solid var(--accent);
-  border-radius: 3px;
-  cursor: move;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--accent-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.signing-a4-hint {
-  font-size: 11px;
-  color: var(--text-2);
-  text-align: center;
-  line-height: 1.35;
+.tte-password-toggle-btn:hover {
+  color: var(--text);
+}
+
+.tte-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  background-color: var(--input-bg);
+}
+
+.tte-modal-footer button {
+  min-width: 90px;
+}
+
+/* ==========================================================================
+   TTE Mobile Responsive Enhancements (Iteratif - Breakpoint 860px)
+   ========================================================================== */
+@media (max-width: 860px) {
+  .tte-page-wrapper {
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .tte-step-card {
+    padding: 16px 14px;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .tte-step-header {
+    gap: 10px;
+  }
+
+  .tte-step-title {
+    font-size: 14.5px;
+  }
+
+  .tte-step-desc {
+    font-size: 12px;
+  }
+
+  .tte-dropzone {
+    padding: 22px 14px;
+  }
+
+  .tte-dropzone-icon-wrap {
+    width: 42px;
+    height: 42px;
+  }
+
+  /* File Card Responsive: Icon + Meta on top, Actions on bottom */
+  .tte-file-card {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    grid-template-areas:
+      "icon meta"
+      "actions actions";
+    gap: 10px;
+    padding: 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .tte-file-icon {
+    grid-area: icon;
+  }
+
+  .tte-file-meta {
+    grid-area: meta;
+    min-width: 0;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .tte-file-name {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+  }
+
+  .tte-file-actions {
+    grid-area: actions;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .tte-file-action-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 10px;
+  }
+
+  /* Page Selection Radio Cards */
+  .tte-page-options-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .tte-radio-card {
+    padding: 10px 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Presets Grid: Clean 2 columns with ellipsis safety */
+  .tte-presets-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tte-preset-btn {
+    padding: 9px 4px;
+    font-size: 11.5px;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+
+  /* Preview Panel */
+  .tte-preview-panel {
+    padding: 14px 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .tte-preview-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .tte-preview-tab-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tte-preview-tab-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 8px;
+    font-size: 11.5px;
+  }
+
+  .tte-preview-pagination {
+    justify-content: center;
+  }
+
+  .tte-sheet-scroll-container {
+    padding: 14px 8px;
+    min-height: 400px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .tte-a4-sheet {
+    max-width: min(290px, 100%);
+    padding: 14px;
+  }
+
+  /* Summary Card */
+  .tte-summary-card {
+    padding: 16px 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .tte-summary-list li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .tte-summary-val {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .tte-actions-row button {
+    font-size: 13.5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tte-coords-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .tte-modal-box {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .tte-modal-body {
+    padding: 16px;
+  }
+
+  .tte-modal-footer {
+    padding: 12px 16px;
+  }
 }

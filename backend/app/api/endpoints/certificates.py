@@ -9,7 +9,10 @@ from sqlalchemy import or_
 from app.api import deps
 from app.models.certificate import Certificate
 from app.models.user import User
+from app.models.audit_log import AuditLog
 from app.schemas.certificate import PublicCertificateItem
+from app.services import pki_api_client
+from app.services.pki_cleanup import cleanup_local_pki_materials
 
 router = APIRouter()
 
@@ -155,3 +158,64 @@ def get_certificate_by_identifier(
         "success": True,
         "data": cert_data
     }
+
+
+@router.delete("/{certificate_id}", response_model=dict)
+def delete_certificate(
+    certificate_id: uuid.UUID,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"]))
+) -> Dict[str, Any]:
+    """
+    Menghapus sertifikat dari database dan membersihkan seluruh berkas fisik terkait di backend / storage.
+    """
+    cert = db.query(Certificate).filter(Certificate.id == certificate_id).first()
+    if not cert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "CERTIFICATE_NOT_FOUND", "message": "Sertifikat tidak ditemukan"}
+        )
+
+    user = db.query(User).filter(User.id == cert.user_id).first()
+    user_nik = user.nik if user else None
+
+    cert_paths = []
+    if cert.certificate_path:
+        cert_paths.append(cert.certificate_path)
+    if cert.p12_reference:
+        cert_paths.append(cert.p12_reference)
+
+    # 1. Bersihkan file fisik di sign-api/p12 dan pki/issued
+    if user_nik:
+        try:
+            pki_api_client.delete_user_materials(user_nik)
+        except Exception:
+            pass
+        cleanup_local_pki_materials(user_nik, cert_paths=cert_paths)
+    elif cert_paths:
+        cleanup_local_pki_materials("", cert_paths=cert_paths)
+
+    # 2. Hapus dari database
+    try:
+        db.query(Certificate).filter(Certificate.replaced_by == certificate_id).update({"replaced_by": None}, synchronize_session=False)
+        db.delete(cert)
+        
+        audit = AuditLog(
+            id=uuid.uuid4(),
+            user_id=current_user.id,
+            action="CERTIFICATE_DELETED",
+            target_type="certificate",
+            target_id=certificate_id,
+            status="SUCCESS"
+        )
+        db.add(audit)
+        db.commit()
+
+        return {"success": True, "message": "Sertifikat berhasil dihapus"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "INTERNAL_ERROR", "message": f"Gagal menghapus sertifikat dari database: {str(e)}"}
+        )
+

@@ -243,8 +243,8 @@ export default function App() {
       ) {
         navigateTo('/dashboard');
       }
-      // If switching to admin mode and on /signing or /account, route to /dashboard
-      if (nextMode === 'admin' && (p === '/signing' || p === '/account')) {
+      // If switching to admin mode and on /account, route to /dashboard
+      if (nextMode === 'admin' && p === '/account') {
         navigateTo('/dashboard');
       }
     };
@@ -326,9 +326,6 @@ export default function App() {
     }
 
     if (path === '/signing') {
-      if (currentRole === 'SUPER_ADMIN' || effectiveViewMode === 'admin') {
-        return <ForbiddenPage onNavigate={navigateTo} />;
-      }
       return <SigningPage onNavigate={navigateTo} viewMode={effectiveViewMode} />;
     }
 

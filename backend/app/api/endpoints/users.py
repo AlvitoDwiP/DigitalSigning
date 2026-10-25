@@ -19,6 +19,7 @@ from app.schemas.user import (
 )
 from app.schemas.certificate import CertificateResponse, RegenerateCertificateRequest, RegenerateCertificateResponse
 from app.services import pki_api_client
+from app.services.pki_cleanup import cleanup_local_pki_materials
 from app.services.bulk_user_importer import parse_and_validate_bulk_csv
 from app.services.certificate_counter import allocate_certificate_number
 from app.core.security import get_password_hash, verify_password
@@ -536,24 +537,72 @@ def delete_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
+
+    # Kumpulkan seluruh path sertifikat sebelum data dihapus dari database
+    user_certs = db.query(Certificate).filter(Certificate.user_id == user_id).all()
+    cert_paths = [c.certificate_path for c in user_certs if c.certificate_path] + [c.p12_reference for c in user_certs if c.p12_reference]
+
+    # 1. Panggil PKI service internal jika tersedia
     try:
         pki_api_client.delete_user_materials(user.nik)
     except Exception:
-        _record_audit(db, current_user.id, "USER_DELETED", user_id, "FAILED", commit=True)
-        raise HTTPException(
-            status_code=500, 
-            detail={"code": "PKI_CLEANUP_FAILED", "message": "Failed to cleanup PKI materials, user not deleted"}
-        )
+        # Jika pki_service tidak berjalan (misal pada host local dev), cleanup lokal akan menangani
+        pass
+
+    # 2. Pembersihan file fisik lokal (fail-safe cleanup untuk pki/issued dan sign-api/p12)
+    cleanup_local_pki_materials(user.nik, cert_paths=cert_paths)
 
     try:
-        db.query(Certificate).filter(Certificate.user_id == user_id).delete()
+        # Putus dependensi hierarki referensi sebelum delete
+        cert_ids = [c.id for c in user_certs]
+        if cert_ids:
+            db.query(Certificate).filter(Certificate.replaced_by.in_(cert_ids)).update({"replaced_by": None}, synchronize_session=False)
+        db.query(Certificate).filter(Certificate.user_id == user_id).delete(synchronize_session=False)
         db.delete(user)
         _record_audit(db, current_user.id, "USER_DELETED", user_id, "SUCCESS", commit=True)
         return {"success": True, "message": "User berhasil dihapus"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail={"code": "INTERNAL_ERROR", "message": "Failed to delete user metadata from DB"})
+        raise HTTPException(status_code=500, detail={"code": "INTERNAL_ERROR", "message": f"Failed to delete user metadata from DB: {str(e)}"})
+
+@router.delete("/{user_id}/certificates/{certificate_id}", response_model=dict)
+def delete_user_certificate(
+    user_id: uuid.UUID,
+    certificate_id: uuid.UUID,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"]))
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    cert = db.query(Certificate).filter(Certificate.id == certificate_id, Certificate.user_id == user_id).first()
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificate not found for this user")
+
+    cert_paths = []
+    if cert.certificate_path:
+        cert_paths.append(cert.certificate_path)
+    if cert.p12_reference:
+        cert_paths.append(cert.p12_reference)
+
+    # 1. Bersihkan file fisik di sign-api/p12 dan pki/issued
+    try:
+        pki_api_client.delete_user_materials(user.nik)
+    except Exception:
+        pass
+    cleanup_local_pki_materials(user.nik, cert_paths=cert_paths)
+
+    # 2. Hapus data sertifikat dari database
+    try:
+        db.query(Certificate).filter(Certificate.replaced_by == certificate_id).update({"replaced_by": None}, synchronize_session=False)
+        db.delete(cert)
+        db.commit()
+        _record_audit(db, current_user.id, "CERTIFICATE_DELETED", certificate_id, "SUCCESS", target_type="certificate", commit=True)
+        return {"success": True, "message": "Sertifikat berhasil dihapus"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail={"code": "INTERNAL_ERROR", "message": f"Failed to delete certificate: {str(e)}"})
 
 @router.get("/{user_id}/certificates", response_model=dict)
 def get_user_certificates(

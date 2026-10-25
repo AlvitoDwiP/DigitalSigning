@@ -2,13 +2,14 @@ import { useState } from 'react';
 import type { UserCertificate } from '../../../types/users';
 import { formatDate } from '../UsersTable';
 import { StatusChip } from '../../ui/StatusChip';
-import { IconRefresh, IconLock, IconCopy, IconCheckCircle, IconCertificate } from '../../icons/Icons';
+import { IconRefresh, IconLock, IconCopy, IconCheckCircle, IconCertificate, IconTrash } from '../../icons/Icons';
 import { parseSubjectDetails, statusSertifikat } from '../../../lib/labels';
 
 interface ActiveCertificateCardProps {
   certificate: UserCertificate | null;
   onRegenerate: () => void;
   onChangePfx: () => void;
+  onDeleteCertificate?: () => void;
   disabled?: boolean;
 }
 
@@ -39,6 +40,7 @@ export function ActiveCertificateCard({
   certificate,
   onRegenerate,
   onChangePfx,
+  onDeleteCertificate,
   disabled = false,
 }: ActiveCertificateCardProps) {
   const [copiedFingerprint, setCopiedFingerprint] = useState(false);
@@ -108,6 +110,18 @@ export function ActiveCertificateCard({
         </div>
 
         <div className="cert-actions-group">
+          {onDeleteCertificate && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-danger-text btn-cert-action"
+              onClick={onDeleteCertificate}
+              disabled={disabled}
+              aria-label="Hapus sertifikat aktif"
+            >
+              <IconTrash size={16} aria-hidden="true" />
+              <span>Hapus sertifikat</span>
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-ghost btn-cert-action"

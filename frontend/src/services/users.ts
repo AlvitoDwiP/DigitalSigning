@@ -112,5 +112,12 @@ export async function deleteUser(userId: string): Promise<DeleteUserApiResponse>
   });
 }
 
+export async function deleteUserCertificate(userId: string, certificateId: string): Promise<{ success: boolean; message: string }> {
+  return requestApi<{ success: boolean; message: string }>(`/api/v1/users/${userId}/certificates/${certificateId}`, {
+    method: 'DELETE',
+  });
+}
+
+
 
 

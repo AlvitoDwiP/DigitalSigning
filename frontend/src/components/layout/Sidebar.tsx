@@ -66,7 +66,6 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
         path: '/signing',
         label: 'Penandatanganan',
         icon: IconSignature,
-        isReserved: true,
         reservedBadge: 'Soon',
       },
     ];
@@ -74,7 +73,7 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
 
   if (role === 'ADMIN') {
     if (viewMode === 'user') {
-      // Admin pada Mode Pengguna: Menampilkan navigasi User dengan penanda Soon untuk Penandatanganan
+      // Admin pada Mode Pengguna: Menampilkan navigasi User
       return [
         {
           id: 'dashboard',
@@ -93,13 +92,12 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
           path: '/signing',
           label: 'Penandatanganan',
           icon: IconSignature,
-          isReserved: true,
           reservedBadge: 'Soon',
         },
       ];
     }
 
-    // Admin pada Mode Admin: Menu administrasi dengan penanda Soon untuk Penandatanganan
+    // Admin pada Mode Admin: Menu administrasi
     return [
       {
         id: 'dashboard',
@@ -130,13 +128,12 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
         path: '/signing',
         label: 'Penandatanganan',
         icon: IconSignature,
-        isReserved: true,
         reservedBadge: 'Soon',
       },
     ];
   }
 
-  // Role: USER (Phase 1: Dashboard, Kelola Akun, Penandatanganan Soon)
+  // Role: USER (Dashboard, Kelola Akun, Penandatanganan)
   return [
     {
       id: 'dashboard',
@@ -155,7 +152,6 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
       path: '/signing',
       label: 'Penandatanganan',
       icon: IconSignature,
-      isReserved: true,
       reservedBadge: 'Soon',
     },
   ];
@@ -270,8 +266,8 @@ export function Sidebar({
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, minWidth: 0, textAlign: 'left' }}>
                       <span className="nav-label">{item.label}</span>
-                      {item.isReserved && (
-                        <span className="sidebar-badge-soon">{item.reservedBadge || 'Soon'}</span>
+                      {item.reservedBadge && (
+                        <span className="sidebar-badge-soon">{item.reservedBadge}</span>
                       )}
                     </div>
                   </button>

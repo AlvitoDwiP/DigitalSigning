@@ -465,24 +465,37 @@ def delete_user_pki_materials(nik: str) -> dict:
     try_delete(archive_p12)
     
     if issued_dir.exists():
+        matched_dirs = set()
         for p12_file in issued_dir.glob(f"*/{nik_safe}.p12"):
-            out_dir = p12_file.parent
+            matched_dirs.add(p12_file.parent)
+
+        for meta_file in issued_dir.glob("*/*-meta.txt"):
+            try:
+                content = meta_file.read_text(encoding="utf-8", errors="ignore")
+                if re.search(rf"NIK\s*:\s*{nik_safe}\b", content):
+                    matched_dirs.add(meta_file.parent)
+            except Exception:
+                pass
+
+        for out_dir in matched_dirs:
             person_slug = out_dir.name
-            
             try_delete(out_dir / f"{person_slug}.key")
             try_delete(out_dir / f"{person_slug}.csr")
             try_delete(out_dir / f"{person_slug}.crt")
             try_delete(out_dir / f"{person_slug}.pfx")
             try_delete(out_dir / f"{person_slug}-meta.txt")
-            try_delete(p12_file)
-            
+            try_delete(out_dir / f"{nik_safe}.p12")
+
             try:
+                for child in list(out_dir.iterdir()):
+                    try_delete(child)
                 if not any(out_dir.iterdir()):
                     out_dir.rmdir()
+                    deleted_files.append(str(out_dir))
             except Exception:
                 pass
-                
+
     if failed_files:
         raise PKIEngineError("Partial cleanup failure", "PARTIAL_CLEANUP_FAILURE", 500)
-        
+
     return {"success": True, "deleted": deleted_files}

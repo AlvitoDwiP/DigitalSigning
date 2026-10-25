@@ -25,6 +25,7 @@ interface UserDashboardViewProps {
 
 export function UserDashboardView({
   data,
+  onNavigate,
   onRefresh,
   isRefreshing = false,
 }: UserDashboardViewProps) {
@@ -247,7 +248,7 @@ export function UserDashboardView({
         </div>
       </div>
 
-      {/* Kartu 3: Layanan Penandatanganan Dokumen (Soon) */}
+      {/* Kartu 3: Layanan Penandatanganan Dokumen */}
       <div className="card user-sign-placeholder-card" aria-labelledby="user-sign-title">
         <div className="user-sign-content">
           <div className="user-sign-icon-circle" aria-hidden="true">
@@ -258,15 +259,19 @@ export function UserDashboardView({
               <h2 id="user-sign-title" className="user-sign-title">Penandatanganan Dokumen</h2>
               <span className="badge-soon">Soon</span>
             </div>
+            <p style={{ fontSize: '12.5px', color: 'var(--muted)', marginTop: '2px', lineHeight: 1.4 }}>
+              Sematkan tanda tangan digital dan stempel visual pada berkas PDF Anda.
+            </p>
           </div>
         </div>
         <div className="user-sign-action">
           <Button
-            variant="secondary"
+            variant="primary"
             size="sm"
-            disabled
-            aria-disabled="true"
-            title="Fitur Penandatanganan dokumen akan tersedia pada Phase 2"
+            onClick={() => {
+              if (onNavigate) onNavigate('/signing');
+            }}
+            aria-label="Mulai Penandatanganan Dokumen (Soon)"
           >
             Mulai Penandatanganan (Soon)
           </Button>

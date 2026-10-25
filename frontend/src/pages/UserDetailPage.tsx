@@ -5,6 +5,7 @@ import {
   regenerateUserCertificate,
   changeUserPfxPassword,
   deleteUser,
+  deleteUserCertificate,
 } from '../services/users';
 import { UserSummaryTab } from '../components/users/detail/UserSummaryTab';
 import { UserInfoCard } from '../components/users/detail/UserInfoCard';
@@ -14,6 +15,7 @@ import { UserActivityTab } from '../components/users/detail/UserActivityTab';
 import { RegenerateDialog } from '../components/users/detail/RegenerateDialog';
 import { ChangePfxDialog } from '../components/users/detail/ChangePfxDialog';
 import { UserDeleteDialog } from '../components/users/UserDeleteDialog';
+import { CertificateDeleteDialog } from '../components/users/detail/CertificateDeleteDialog';
 import { StatusChip } from '../components/ui/StatusChip';
 import { NikDisplay } from '../components/ui/NikDisplay';
 import { statusAkun } from '../lib/labels';
@@ -74,6 +76,11 @@ export function UserDetailPage({ userId, onNavigate, initialTab }: UserDetailPag
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Delete Certificate Actions
+  const [isDeleteCertOpen, setIsDeleteCertOpen] = useState(false);
+  const [isDeletingCert, setIsDeletingCert] = useState(false);
+  const [deleteCertError, setDeleteCertError] = useState<string | null>(null);
 
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
@@ -248,6 +255,41 @@ export function UserDetailPage({ userId, onNavigate, initialTab }: UserDetailPag
       }
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // Delete Certificate Handlers
+  const handleOpenDeleteCert = () => {
+    setDeleteCertError(null);
+    setIsDeleteCertOpen(true);
+  };
+
+  const handleCloseDeleteCert = () => {
+    if (!isDeletingCert) {
+      setIsDeleteCertOpen(false);
+      setDeleteCertError(null);
+    }
+  };
+
+  const handleConfirmDeleteCert = async () => {
+    if (!user || !user.active_certificate) return;
+    setIsDeletingCert(true);
+    setDeleteCertError(null);
+
+    try {
+      const res = await deleteUserCertificate(user.id, user.active_certificate.id);
+      if (res.success) {
+        setIsDeleteCertOpen(false);
+        showFeedback('Sertifikat berhasil dihapus dari sistem dan penyimpanan berkas server.');
+        await loadData();
+      } else {
+        const msg = (res as any).detail?.message || res.message || 'Gagal menghapus sertifikat.';
+        setDeleteCertError(msg);
+      }
+    } catch (err: any) {
+      setDeleteCertError(err.message || 'Gagal menghapus sertifikat dari sistem.');
+    } finally {
+      setIsDeletingCert(false);
     }
   };
 
@@ -470,7 +512,8 @@ export function UserDetailPage({ userId, onNavigate, initialTab }: UserDetailPag
                   certificate={user.active_certificate}
                   onRegenerate={handleOpenRegenerate}
                   onChangePfx={handleOpenChangePfx}
-                  disabled={isRegenerating || isChangingPfx}
+                  onDeleteCertificate={handleOpenDeleteCert}
+                  disabled={isRegenerating || isChangingPfx || isDeletingCert}
                 />
                 <CertificateHistoryCard
                   history={user.certificate_history}
@@ -513,6 +556,15 @@ export function UserDetailPage({ userId, onNavigate, initialTab }: UserDetailPag
         error={deleteError}
         onConfirm={handleConfirmDelete}
         onClose={handleCloseDelete}
+      />
+
+      <CertificateDeleteDialog
+        user={user}
+        isOpen={isDeleteCertOpen}
+        isDeleting={isDeletingCert}
+        error={deleteCertError}
+        onConfirm={handleConfirmDeleteCert}
+        onClose={handleCloseDeleteCert}
       />
     </div>
   );
