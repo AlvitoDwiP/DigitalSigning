@@ -81,7 +81,7 @@ export function AccountPassphraseCard({ onSuccess }: AccountPassphraseCardProps)
 
       <div className="detail-card-body">
         <p className="dialog-main-text mb-4">
-          Ganti passphrase untuk membuka berkas sertifikat digital (.p12/.pfx) Anda.
+          Ganti passphrase untuk membuka berkas sertifikat digital Anda.
         </p>
 
         <form onSubmit={handleSubmit} className="account-two-col-form">

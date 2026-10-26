@@ -22,7 +22,13 @@ router = APIRouter()
 def signing_root_reserved(current_user: User = Depends(deps.get_current_user)):
     """
     Route root dicadangkan untuk Phase 2 (mengembalikan 501 Not Implemented).
+    SUPER_ADMIN dilarang mengakses fitur penandatanganan.
     """
+    if current_user.role == "SUPER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Role SUPER_ADMIN tidak memiliki fitur penandatanganan."}
+        )
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail={
@@ -54,6 +60,13 @@ async def sign_document(
     - SUPER_ADMIN dibatasi dan tidak memiliki akses ke fitur penandatanganan.
     - Pada Phase 1: Fitur dinonaktifkan secara aman dan mengembalikan 501 Not Implemented.
     """
+    # SUPER_ADMIN dilarang mengakses fitur penandatanganan
+    if current_user.role == "SUPER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Role SUPER_ADMIN tidak memiliki fitur penandatanganan."}
+        )
+
     # Batas Phase 1 vs Phase 2: TTE dinonaktifkan pada Phase 1
     if not settings.ENABLE_PDF_SIGNING:
         raise HTTPException(
@@ -69,13 +82,6 @@ async def sign_document(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "INVALID_INPUT", "message": "Berkas PDF wajib diunggah."}
-        )
-
-    # SUPER_ADMIN dilarang menandatangani dokumen
-    if current_user.role == "SUPER_ADMIN":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "FORBIDDEN", "message": "Role SUPER_ADMIN tidak memiliki fitur penandatanganan."}
         )
 
     # Hanya role USER dan ADMIN yang diizinkan

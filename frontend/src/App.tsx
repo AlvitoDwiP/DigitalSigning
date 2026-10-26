@@ -90,6 +90,18 @@ export default function App() {
   useEffect(() => {
     const handlePopState = () => {
       const path = normalizePath(window.location.pathname || '/dashboard');
+      if (path === '/account') {
+        const hash = window.location.hash;
+        if (hash === '#regenerate') {
+          setAccountInitialTab('regenerate');
+        } else if (hash === '#password') {
+          setAccountInitialTab('password');
+        } else if (hash === '#passphrase') {
+          setAccountInitialTab('passphrase');
+        } else {
+          setAccountInitialTab('detail');
+        }
+      }
       if (path === '/login') {
         setIsAuthenticated(false);
       } else {
@@ -120,14 +132,23 @@ export default function App() {
   }, []);
 
   const navigateTo = (path: string) => {
-    if (normalizePath(path) !== '/account') {
+    const norm = normalizePath(path);
+    if (norm !== '/account') {
       setAccountInitialTab(undefined);
+    } else {
+      if (path.includes('#regenerate')) {
+        setAccountInitialTab('regenerate');
+      } else if (path.includes('#password')) {
+        setAccountInitialTab('password');
+      } else if (path.includes('#passphrase')) {
+        setAccountInitialTab('passphrase');
+      }
     }
-    setCurrentPath(path);
+    setCurrentPath(norm);
     if (typeof window !== 'undefined' && window.history) {
       window.history.pushState({}, '', path);
     }
-    if (normalizePath(path) === '/login') {
+    if (norm === '/login') {
       setIsAuthenticated(false);
     }
   };
@@ -326,6 +347,9 @@ export default function App() {
     }
 
     if (path === '/signing') {
+      if (currentRole === 'SUPER_ADMIN') {
+        return <ForbiddenPage onNavigate={navigateTo} />;
+      }
       return <SigningPage onNavigate={navigateTo} viewMode={effectiveViewMode} />;
     }
 

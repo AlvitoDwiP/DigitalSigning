@@ -622,8 +622,21 @@ def regenerate_user_certificate(
     user_id: uuid.UUID,
     req: Optional[RegenerateCertificateRequest] = None,
     db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"]))
+    current_user: User = Depends(deps.get_current_user)
 ):
+    if current_user.role not in ["SUPER_ADMIN", "ADMIN", "USER"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operation not permitted"
+        )
+
+    # Validasi hak akses: Pengguna biasa (USER) hanya dapat me-regenerate sertifikat miliknya sendiri
+    if current_user.role == "USER" and current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Pengguna hanya dapat meregenerasi sertifikat miliknya sendiri"}
+        )
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -633,30 +646,34 @@ def regenerate_user_certificate(
 
     active_cert = db.query(Certificate).filter(
         Certificate.user_id == user_id,
-        Certificate.status == "ACTIVE"
-    ).first()
+        Certificate.status.in_(["ACTIVE", "EXPIRED"])
+    ).order_by(Certificate.created_at.desc()).first()
     if not active_cert:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "NO_ACTIVE_CERTIFICATE", "message": "User tidak memiliki sertifikat aktif untuk di-regenerate"}
+            detail={"code": "NO_ACTIVE_CERTIFICATE", "message": "User tidak memiliki sertifikat aktif atau kedaluwarsa untuk di-regenerate"}
         )
 
-    # Verifikasi Password Admin yang sedang login
-    admin_pwd = None
+    # Verifikasi Password:
+    # Jika ADMIN / SUPER_ADMIN: verifikasi password admin yang login
+    # Jika USER: verifikasi password akun pengguna yang login
+    input_pwd = None
     if req:
-        admin_pwd = req.admin_password or req.password
+        input_pwd = req.password or req.admin_password
 
-    if not admin_pwd or not admin_pwd.strip():
+    if not input_pwd or not input_pwd.strip():
+        pwd_msg = "Password akun Anda wajib diisi untuk verifikasi konfirmasi" if current_user.role == "USER" else "Password akun Admin wajib diisi untuk verifikasi"
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "INVALID_INPUT", "message": "Password akun Admin wajib diisi untuk verifikasi"}
+            detail={"code": "INVALID_INPUT", "message": pwd_msg}
         )
 
-    if not verify_password(admin_pwd, current_user.password_hash):
+    if not verify_password(input_pwd, current_user.password_hash):
         _record_audit(db, current_user.id, "CERTIFICATE_REGENERATED", user.id, "FAILED", commit=True)
+        err_msg = "Password akun salah. Verifikasi gagal." if current_user.role == "USER" else "Password admin salah. Verifikasi gagal."
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "INVALID_CREDENTIALS", "message": "Password admin salah. Verifikasi gagal."}
+            detail={"code": "INVALID_CREDENTIALS", "message": err_msg}
         )
 
     pfx_pass = settings.DEFAULT_PFX_PASS

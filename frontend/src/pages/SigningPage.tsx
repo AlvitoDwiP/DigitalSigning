@@ -41,7 +41,8 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
 
   // 2. State Pengaturan Halaman & Footer
   const [targetPageOption, setTargetPageOption] = useState<TargetPageOption>('last');
-  const [specificPage, setSpecificPage] = useState<number>(1);
+  const [specificStartPage, setSpecificStartPage] = useState<number>(1);
+  const [specificEndPage, setSpecificEndPage] = useState<number>(1);
   const [positionPreset, setPositionPreset] = useState<FooterPositionPreset>('bottom-right');
   const [coords, setCoords] = useState<FooterCoordinates>(() => getPresetCoordinates('bottom-right'));
 
@@ -74,11 +75,13 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
       const count = await countPdfPages(file);
       setPageCount(count);
       setCurrentPage(count); // Buka langsung ke halaman terakhir (target umum footer)
-      setSpecificPage(count);
+      setSpecificStartPage(1);
+      setSpecificEndPage(count);
     } catch {
       setPageCount(1);
       setCurrentPage(1);
-      setSpecificPage(1);
+      setSpecificStartPage(1);
+      setSpecificEndPage(1);
     } finally {
       setIsLoadingPages(false);
     }
@@ -94,19 +97,16 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
 
   const handlePositionPresetChange = (preset: FooterPositionPreset) => {
     setPositionPreset(preset);
-    if (preset !== 'custom') {
-      setCoords(getPresetCoordinates(preset));
-    }
-  };
-
-  const handleCoordsChange = (newCoords: FooterCoordinates) => {
-    setCoords(newCoords);
-    setPositionPreset('custom');
+    setCoords(getPresetCoordinates(preset));
   };
 
   // Validasi form sebelum konfirmasi
   const isSpecificPageValid =
-    targetPageOption !== 'specific' || (specificPage >= 1 && specificPage <= pageCount);
+    targetPageOption !== 'specific' ||
+    (specificStartPage >= 1 &&
+     specificStartPage <= pageCount &&
+     specificEndPage >= specificStartPage &&
+     specificEndPage <= pageCount);
 
   const isFormValid = Boolean(pdfFile) && isSpecificPageValid;
 
@@ -116,7 +116,7 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
       if (!pdfFile) {
         setErrorMsg('Pilih dokumen PDF terlebih dahulu.');
       } else if (!isSpecificPageValid) {
-        setErrorMsg('Nomor halaman melebihi jumlah halaman dokumen.');
+        setErrorMsg('Rentang nomor halaman target tidak valid.');
       }
       return;
     }
@@ -164,7 +164,8 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     setStampFile(null);
     setPageCount(1);
     setCurrentPage(1);
-    setSpecificPage(1);
+    setSpecificStartPage(1);
+    setSpecificEndPage(1);
     setPositionPreset('bottom-right');
     setCoords(getPresetCoordinates('bottom-right'));
     setSignedResult(null);
@@ -178,21 +179,18 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
       ? `Semua Halaman (1 – ${pageCount})`
       : targetPageOption === 'last'
       ? `Halaman Terakhir (Hal. ${pageCount})`
-      : `Halaman ${specificPage} dari ${pageCount}`;
+      : specificStartPage === specificEndPage
+      ? `Halaman ${specificStartPage} dari ${pageCount}`
+      : `Halaman ${specificStartPage} s.d. ${specificEndPage} (dari ${pageCount} halaman)`;
 
   return (
     <div className="tte-page-wrapper">
       {/* Header Halaman Sesuai Spesifikasi */}
       <div className="page-header-row tte-page-header">
         <div className="page-header">
-          <div className="tte-title-badge-group">
-            <h1 className="page-title">Tanda Tangani Dokumen</h1>
-            <span className="tte-mode-pill" title="Fitur antarmuka aktif untuk demonstrasi dan uji tata letak">
-              Mode Pratinjau TTE
-            </span>
-          </div>
+          <h1 className="page-title">TANDA TANGANI DOKUMEN</h1>
           <p className="page-subtitle">
-            Tambahkan tanda tangan elektronik dan pratinjau footer verifikasi pada dokumen PDF.
+            Tambahkan tanda tangan elektronik dan pratinjau verifikasi pada dokumen PDF.
           </p>
         </div>
       </div>
@@ -262,17 +260,20 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
               onChangeTargetPageOption={(opt) => {
                 setTargetPageOption(opt);
                 if (opt === 'last') setCurrentPage(pageCount);
-                if (opt === 'specific') setCurrentPage(specificPage);
+                if (opt === 'specific') setCurrentPage(specificStartPage);
               }}
-              specificPage={specificPage}
-              onChangeSpecificPage={(p) => {
-                setSpecificPage(p);
+              specificStartPage={specificStartPage}
+              specificEndPage={specificEndPage}
+              onChangeSpecificStartPage={(p) => {
+                setSpecificStartPage(p);
+                setCurrentPage(p);
+              }}
+              onChangeSpecificEndPage={(p) => {
+                setSpecificEndPage(p);
                 setCurrentPage(p);
               }}
               positionPreset={positionPreset}
               onChangePositionPreset={handlePositionPresetChange}
-              coords={coords}
-              onChangeCoords={handleCoordsChange}
               displayOptions={displayOptions}
               onChangeDisplayOptions={setDisplayOptions}
               stampFile={stampFile}
@@ -299,9 +300,9 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
             currentPage={currentPage}
             onChangeCurrentPage={setCurrentPage}
             targetPageOption={targetPageOption}
-            specificPage={specificPage}
+            specificStartPage={specificStartPage}
+            specificEndPage={specificEndPage}
             coords={coords}
-            onChangeCoords={handleCoordsChange}
             displayOptions={displayOptions}
             stampFile={stampFile}
             signerName={signerName}

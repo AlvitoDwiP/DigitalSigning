@@ -107,6 +107,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
     return Object.keys(errors).length === 0;
   };
 
+  const DEFAULT_PASSWORD = 'Konstitusi100%';
   const DEFAULT_PASSPHRASE = 'Mkri006!';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,7 +121,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
     setIsSubmitting(true);
 
     try {
-      const finalPassword = password.trim() ? password : DEFAULT_PASSPHRASE;
+      const finalPassword = password.trim() ? password : DEFAULT_PASSWORD;
       const finalPfx = pfxPassword.trim() ? pfxPassword : DEFAULT_PASSPHRASE;
       const finalConfirmPfx = pfxPassword.trim() ? confirmPfxPassword : DEFAULT_PASSPHRASE;
 
@@ -316,6 +317,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
       </div>
 
       {/* Section 2: Account Login Password */}
+      {/* Section 2: Password */}
       <div className="generate-form-section">
         <div className="form-section-header">
           <h3 className="form-section-title">
@@ -325,12 +327,6 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
           <p className="form-section-desc">
             Dipakai untuk autentikasi masuk pengguna ke platform.
           </p>
-          <div className="passphrase-default-hint">
-            <IconLock size={18} className="hint-icon" aria-hidden="true" />
-            <span>
-              Jika kata sandi tidak diisi, maka akan otomatis terisi dengan password basic.
-            </span>
-          </div>
         </div>
 
         <div className="form-grid">
@@ -338,7 +334,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-password"
               label="Kata sandi"
-              placeholder="Otomatis terisi password basic jika kosong"
+              placeholder="Masukkan kata sandi (opsional)"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -349,7 +345,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
               helperText={
                 isPasswordValid
                   ? 'Kata sandi memenuhi syarat keamanan (minimal 8 karakter, huruf kapital, dan simbol).'
-                  : (password ? 'Minimal 8 karakter, ada satu huruf kapital dan satu simbol.' : 'Kosongkan untuk otomatis menggunakan password basic')
+                  : (password ? 'Minimal 8 karakter, ada satu huruf kapital dan satu simbol.' : 'Opsional. Kosongkan untuk menggunakan kata sandi default sistem.')
               }
               disabled={isSubmitting}
             />
@@ -359,7 +355,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-confirm-password"
               label="Konfirmasi kata sandi"
-              placeholder="Otomatis terisi password basic jika kosong"
+              placeholder="Ulangi kata sandi"
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
@@ -370,7 +366,7 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
               helperText={
                 isConfirmPasswordValid
                   ? 'Konfirmasi kata sandi cocok'
-                  : (password ? 'Ketik ulang kata sandi yang diinputkan' : 'Kosongkan untuk otomatis menggunakan password basic')
+                  : (password ? 'Ketik ulang kata sandi yang diinputkan' : 'Kosongkan jika kata sandi tidak diisi')
               }
               disabled={isSubmitting}
             />
@@ -388,12 +384,6 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
           <p className="form-section-desc">
             Dipakai untuk membuka berkas sertifikat pengguna. Berbeda dari kata sandi login.
           </p>
-          <div className="passphrase-default-hint">
-            <IconShield size={18} className="hint-icon" aria-hidden="true" />
-            <span>
-              Jika passphrase tidak diisi, maka akan otomatis terisi dengan password basic.
-            </span>
-          </div>
         </div>
 
         <div className="form-grid">
@@ -401,11 +391,11 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-pfx-pass"
               label="Passphrase"
-              placeholder="Otomatis terisi password basic jika kosong"
+              placeholder="Masukkan passphrase sertifikat (opsional)"
               helperText={
                 isPfxValid
                   ? 'Passphrase memenuhi syarat (min. 8 karakter)'
-                  : (pfxPassword ? 'Minimal 8 karakter' : 'Kosongkan untuk otomatis menggunakan password basic')
+                  : (pfxPassword ? 'Minimal 8 karakter' : 'Opsional. Kosongkan untuk menggunakan passphrase default sistem.')
               }
               value={pfxPassword}
               onChange={(e) => {
@@ -422,11 +412,11 @@ export function GenerateSingleUserForm({ onSuccess }: GenerateSingleUserFormProp
             <PasswordInput
               id="gen-user-confirm-pfx-pass"
               label="Ulangi passphrase"
-              placeholder="Otomatis terisi password basic jika kosong"
+              placeholder="Ulangi passphrase"
               helperText={
                 isConfirmPfxValid
                   ? 'Konfirmasi passphrase cocok'
-                  : (pfxPassword ? 'Ulangi passphrase yang dimasukkan di atas' : 'Kosongkan untuk otomatis menggunakan password basic')
+                  : (pfxPassword ? 'Ulangi passphrase yang dimasukkan di atas' : 'Kosongkan jika passphrase tidak diisi')
               }
               value={confirmPfxPassword}
               onChange={(e) => {

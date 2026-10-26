@@ -259,25 +259,70 @@ def test_role_change_in_db_takes_immediate_effect_with_old_jwt(client: TestClien
 def test_regenerate_permissions_and_password_verification(client: TestClient, auth_headers: dict, seed_users: dict):
     """
     Regenerate sertifikat:
-    - USER ditolak HTTP 403 (tanpa memanggil PKI)
+    - USER mencoba me-regenerate pengguna LAIN ditolak HTTP 403 (tanpa memanggil PKI)
+    - USER mencoba me-regenerate miliknya sendiri dengan password salah ditolak HTTP 400
+    - USER me-regenerate miliknya sendiri dengan password benar berhasil HTTP 200
     - ADMIN dengan password salah ditolak HTTP 400 (tanpa memanggil PKI)
     - ADMIN dengan password benar berhasil (memanggil PKI stage & commit)
     """
     target_user = seed_users["user"]
+    admin_user = seed_users["admin"]
 
-    # 1. USER mencoba regenerate -> 403, PKI tidak dipanggil
+    # 1. USER mencoba regenerate sertifikat pengguna LAIN -> 403 FORBIDDEN, PKI tidak dipanggil
     with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage_u, \
          patch("app.api.endpoints.users.pki_api_client.regenerate_commit") as mock_commit_u:
         res_u = client.post(
-            f"/api/v1/users/{target_user.id}/certificates/regenerate",
-            json={"admin_password": "Password123!"},
+            f"/api/v1/users/{admin_user.id}/certificates/regenerate",
+            json={"password": "Password123!"},
             headers=auth_headers["user"]
         )
         assert res_u.status_code == 403
+        assert res_u.json()["error"]["code"] == "FORBIDDEN"
         mock_stage_u.assert_not_called()
         mock_commit_u.assert_not_called()
 
-    # 2. ADMIN mencoba regenerate dengan password salah -> 400 INVALID_CREDENTIALS, PKI tidak dipanggil
+    # 2. USER mencoba regenerate sertifikat miliknya sendiri dengan password SALAH -> 400
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage_w_u, \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit") as mock_commit_w_u:
+        res_w_u = client.post(
+            f"/api/v1/users/{target_user.id}/certificates/regenerate",
+            json={"password": "SalahPassword999!"},
+            headers=auth_headers["user"]
+        )
+        assert res_w_u.status_code == 400
+        assert res_w_u.json()["error"]["code"] == "INVALID_CREDENTIALS"
+        mock_stage_w_u.assert_not_called()
+        mock_commit_w_u.assert_not_called()
+
+    # 3. USER mencoba regenerate sertifikat miliknya sendiri dengan password BENAR -> 200 SUCCESS
+    mock_stage_res_user = {
+        "staging_token": "token-regen-user-own",
+        "target_user_dir": "/path/dir",
+        "target_archive_p12": "/path/archive.p12",
+        "metadata": {
+            "serial_number": "SER-USER-OWN-123",
+            "subject": f"CN={target_user.name}",
+            "issuer": "Intermediate CA",
+            "fingerprint_sha256": "123456abcdef123456abcdef123456abcdef123456abcdef123456abcdef1234",
+            "certificate_path": "/path/user_new.crt",
+            "p12_reference": "/path/user_new.p12",
+            "issued_at": "2026-10-01T00:00:00Z",
+            "expires_at": "2028-10-01T00:00:00Z",
+        }
+    }
+    with patch("app.api.endpoints.users.pki_api_client.regenerate_stage", return_value=mock_stage_res_user) as mock_stage_u_s, \
+         patch("app.api.endpoints.users.pki_api_client.regenerate_commit", return_value={"status": "SUCCESS"}) as mock_commit_u_s:
+        res_u_s = client.post(
+            f"/api/v1/users/{target_user.id}/certificates/regenerate",
+            json={"password": "Password123!"},
+            headers=auth_headers["user"]
+        )
+        assert res_u_s.status_code == 200
+        assert res_u_s.json()["success"] is True
+        mock_stage_u_s.assert_called_once()
+        mock_commit_u_s.assert_called_once()
+
+    # 4. ADMIN mencoba regenerate dengan password salah -> 400 INVALID_CREDENTIALS, PKI tidak dipanggil
     with patch("app.api.endpoints.users.pki_api_client.regenerate_stage") as mock_stage_w, \
          patch("app.api.endpoints.users.pki_api_client.regenerate_commit") as mock_commit_w:
         res_w = client.post(
@@ -290,7 +335,7 @@ def test_regenerate_permissions_and_password_verification(client: TestClient, au
         mock_stage_w.assert_not_called()
         mock_commit_w.assert_not_called()
 
-    # 3. ADMIN mencoba regenerate dengan password benar -> 200 SUCCESS
+    # 5. ADMIN mencoba regenerate dengan password benar -> 200 SUCCESS
     mock_stage_res = {
         "staging_token": "token-regen-auth-test",
         "target_user_dir": "/path/dir",
@@ -362,4 +407,28 @@ def test_dashboard_view_mode_and_role_safety(client: TestClient, auth_headers: d
     # 5. ADMIN mode=invalid -> ditolak 400
     res_invalid_mode = client.get("/api/v1/dashboard/?mode=unknown", headers=admin_headers)
     assert res_invalid_mode.status_code == 400
+
+
+def test_super_admin_forbidden_from_signatures_endpoints(client: TestClient, auth_headers: dict):
+    """
+    SUPER_ADMIN secara tegas dilarang mengakses seluruh endpoint penandatanganan:
+    - POST /api/v1/signatures -> 403 Forbidden
+    - POST /api/v1/signatures/sign -> 403 Forbidden
+    """
+    super_admin_headers = auth_headers["super_admin"]
+
+    # 1. Root signatures endpoint
+    res_root = client.post("/api/v1/signatures", headers=super_admin_headers)
+    assert res_root.status_code == 403
+    assert res_root.json()["error"]["code"] == "FORBIDDEN"
+
+    # 2. Sign document endpoint
+    res_sign = client.post(
+        "/api/v1/signatures/sign",
+        headers=super_admin_headers,
+        files={"pdf": ("doc.pdf", b"%PDF-1.4...", "application/pdf")},
+        data={"passphrase": "secret"}
+    )
+    assert res_sign.status_code == 403
+    assert res_sign.json()["error"]["code"] == "FORBIDDEN"
 

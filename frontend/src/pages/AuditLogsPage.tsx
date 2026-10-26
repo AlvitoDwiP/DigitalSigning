@@ -101,7 +101,7 @@ export function AuditLogsPage({ onNavigate: _onNavigate }: AuditLogsPageProps) {
       {/* 1. Judul dan Deskripsi */}
       <header className="page-header">
         <div className="page-header-content">
-          <h1 className="page-title">Audit Log</h1>
+          <h1 className="page-title">AUDIT LOG</h1>
           <p className="page-subtitle">
             Catatan semua aktivitas di platform. Catatan ini tidak bisa diubah atau dihapus.
           </p>

@@ -71,10 +71,10 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
 
   const currentRole = authUser?.role;
   const dashboardTitle = isUserView
-    ? 'Dashboard User'
+    ? 'DASHBOARD USER'
     : currentRole === 'SUPER_ADMIN'
-    ? 'Dashboard Super Admin'
-    : 'Dashboard Admin';
+    ? 'DASHBOARD SUPER ADMIN'
+    : 'DASHBOARD ADMIN';
 
   // Konfigurasi animasi dan dialog refresh sesuai role
   let refreshRoleConfig = {
@@ -165,7 +165,10 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
           </div>
 
           {/* 1. Statistics Cards (Total User, Active, Expired) */}
-          <StatsSection statistics={data.statistics} />
+          <StatsSection
+            statistics={data.statistics}
+            onCardClick={() => onNavigate('/users')}
+          />
 
           {/* 2. Expiry Section (Nearest Expiry & Buckets Side-by-Side) */}
           <section className="dashboard-expiry-grid" aria-label="Informasi Masa Berlaku Sertifikat">

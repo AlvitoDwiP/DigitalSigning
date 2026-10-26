@@ -13,11 +13,11 @@ export interface FooterCoordinates {
 export const A4_WIDTH_PT = 595.28;
 export const A4_HEIGHT_PT = 841.89;
 
-// Default dimensi footer TTE (Lebar ~200 pt, Tinggi ~68 pt)
-export const DEFAULT_FOOTER_WIDTH = 200;
-export const DEFAULT_FOOTER_HEIGHT = 68;
+// Default dimensi footer TTE (Lebar ~220 pt, Tinggi ~70 pt)
+export const DEFAULT_FOOTER_WIDTH = 220;
+export const DEFAULT_FOOTER_HEIGHT = 70;
 
-export type FooterPositionPreset = 'bottom-left' | 'bottom-center' | 'bottom-right' | 'custom';
+export type FooterPositionPreset = 'bottom-left' | 'bottom-center' | 'bottom-right';
 
 export type TargetPageOption = 'all' | 'last' | 'specific';
 
@@ -25,8 +25,8 @@ export type TargetPageOption = 'all' | 'last' | 'specific';
  * Menghitung koordinat berdasarkan preset posisi cepat pada lembar A4.
  */
 export function getPresetCoordinates(preset: FooterPositionPreset): FooterCoordinates {
-  const marginX = 40;
-  const marginY = 40;
+  const marginX = 36;
+  const marginY = 36;
   const width = DEFAULT_FOOTER_WIDTH;
   const height = DEFAULT_FOOTER_HEIGHT;
 
@@ -47,7 +47,8 @@ export function getPresetCoordinates(preset: FooterPositionPreset): FooterCoordi
         ury: marginY + height,
       };
     }
-    case 'bottom-right': {
+    case 'bottom-right':
+    default: {
       const rightX = A4_WIDTH_PT - marginX - width;
       return {
         llx: Math.round(rightX),
@@ -56,14 +57,6 @@ export function getPresetCoordinates(preset: FooterPositionPreset): FooterCoordi
         ury: marginY + height,
       };
     }
-    case 'custom':
-    default:
-      return {
-        llx: marginX,
-        lly: marginY,
-        urx: marginX + width,
-        ury: marginY + height,
-      };
   }
 }
 

@@ -419,3 +419,5 @@ V	281020042917Z		119F	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Ni Putu Eka Sa
 V	281020042918Z		11A0	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Eko Sulistyo/OU=Tata Usaha
 V	281020042919Z		11A1	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Rina Marlina/OU=Perpustakaan
 V	281023063144Z		11A2	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Rahmat Muhajir Nugroho/OU=Universitas Ahmad Dahlan
+V	281025015755Z		11A3	unknown	/C=ID/O=Mahkamah Konstitusi/CN=Alvito Dwinova Permana/OU=Pustik
+V	281025071958Z		11A4	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Rizky Ramadhan/OU=Fakultas Teknik

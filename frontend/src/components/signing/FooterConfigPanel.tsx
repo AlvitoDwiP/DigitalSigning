@@ -1,19 +1,12 @@
 import { useState, ChangeEvent } from 'react';
 import {
   IconCheckCircle,
-  IconAlertTriangle,
   IconTrash,
-  IconShield,
   IconUpload
 } from '../icons/Icons';
 import {
   FooterPositionPreset,
   TargetPageOption,
-  FooterCoordinates,
-  DEFAULT_FOOTER_WIDTH,
-  DEFAULT_FOOTER_HEIGHT,
-  A4_WIDTH_PT,
-  A4_HEIGHT_PT,
 } from '../../utils/pdfHelper';
 
 export interface FooterDisplayOptions {
@@ -28,12 +21,12 @@ interface FooterConfigPanelProps {
   pageCount: number;
   targetPageOption: TargetPageOption;
   onChangeTargetPageOption: (opt: TargetPageOption) => void;
-  specificPage: number;
-  onChangeSpecificPage: (page: number) => void;
+  specificStartPage: number;
+  specificEndPage: number;
+  onChangeSpecificStartPage: (page: number) => void;
+  onChangeSpecificEndPage: (page: number) => void;
   positionPreset: FooterPositionPreset;
   onChangePositionPreset: (preset: FooterPositionPreset) => void;
-  coords: FooterCoordinates;
-  onChangeCoords: (newCoords: FooterCoordinates) => void;
   displayOptions: FooterDisplayOptions;
   onChangeDisplayOptions: (opts: FooterDisplayOptions) => void;
   stampFile: File | null;
@@ -55,12 +48,12 @@ export function FooterConfigPanel({
   pageCount,
   targetPageOption,
   onChangeTargetPageOption,
-  specificPage,
-  onChangeSpecificPage,
+  specificStartPage,
+  specificEndPage,
+  onChangeSpecificStartPage,
+  onChangeSpecificEndPage,
   positionPreset,
   onChangePositionPreset,
-  coords,
-  onChangeCoords,
   displayOptions,
   onChangeDisplayOptions,
   stampFile,
@@ -76,20 +69,13 @@ export function FooterConfigPanel({
   onReset,
   isValid,
 }: FooterConfigPanelProps) {
-  const [showManualCoords, setShowManualCoords] = useState(positionPreset === 'custom');
   const [stampError, setStampError] = useState<string | null>(null);
 
   const isSpecificPageInvalid =
-    targetPageOption === 'specific' && (specificPage < 1 || specificPage > pageCount);
-
-  // Validasi batas koordinat A4
-  const isOutOfBounds =
-    coords.llx < 0 ||
-    coords.lly < 0 ||
-    coords.urx > A4_WIDTH_PT ||
-    coords.ury > A4_HEIGHT_PT ||
-    coords.urx <= coords.llx ||
-    coords.ury <= coords.lly;
+    targetPageOption === 'specific' &&
+    (specificStartPage < 1 ||
+     specificEndPage > pageCount ||
+     specificStartPage > specificEndPage);
 
   const handleStampChange = (e: ChangeEvent<HTMLInputElement>) => {
     setStampError(null);
@@ -102,12 +88,6 @@ export function FooterConfigPanel({
       }
       onSelectStamp(file);
     }
-  };
-
-  const handleCoordChange = (field: keyof FooterCoordinates, val: number) => {
-    const num = isNaN(val) ? 0 : val;
-    const updated = { ...coords, [field]: num };
-    onChangeCoords(updated);
   };
 
   return (
@@ -165,29 +145,47 @@ export function FooterConfigPanel({
           </label>
         </div>
 
-        {/* Input halaman spesifik jika dipilih */}
+        {/* Input rentang halaman spesifik jika dipilih */}
         {targetPageOption === 'specific' && (
           <div className="tte-specific-page-box">
-            <label className="input-label" htmlFor="specific-page-input">
-              Nomor Halaman Target (1 s.d. {pageCount})
+            <label className="input-label" htmlFor="specific-start-page-input">
+              Rentang Halaman Target (1 s.d. {pageCount})
             </label>
             <div className="tte-specific-page-input-row">
+              <span className="tte-range-label">Mulai</span>
               <input
-                id="specific-page-input"
+                id="specific-start-page-input"
                 type="number"
                 min={1}
                 max={pageCount || 1}
                 className={`form-control ${isSpecificPageInvalid ? 'is-invalid' : ''}`}
-                value={specificPage}
-                onChange={(e) => onChangeSpecificPage(parseInt(e.target.value, 10) || 1)}
-                aria-describedby="page-validation-hint"
+                value={specificStartPage}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  onChangeSpecificStartPage(isNaN(val) ? 1 : val);
+                }}
+                aria-label="Halaman awal target"
+              />
+              <span className="tte-range-label">sampai</span>
+              <input
+                id="specific-end-page-input"
+                type="number"
+                min={1}
+                max={pageCount || 1}
+                className={`form-control ${isSpecificPageInvalid ? 'is-invalid' : ''}`}
+                value={specificEndPage}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  onChangeSpecificEndPage(isNaN(val) ? (pageCount || 1) : val);
+                }}
+                aria-label="Halaman akhir target"
               />
               <span className="tte-specific-page-helper">dari total {pageCount} halaman</span>
             </div>
 
             {isSpecificPageInvalid && (
               <p id="page-validation-hint" className="tte-error-text" role="alert">
-                Nomor halaman melebihi jumlah halaman dokumen (1 – {pageCount}).
+                Rentang halaman tidak valid (pastikan antara 1 s.d. {pageCount} dan halaman awal tidak melebihi halaman akhir).
               </p>
             )}
           </div>
@@ -211,122 +209,26 @@ export function FooterConfigPanel({
             <button
               type="button"
               className={`tte-preset-btn ${positionPreset === 'bottom-left' ? 'is-active' : ''}`}
-              onClick={() => {
-                onChangePositionPreset('bottom-left');
-                setShowManualCoords(false);
-              }}
+              onClick={() => onChangePositionPreset('bottom-left')}
             >
               Bawah Kiri
             </button>
             <button
               type="button"
               className={`tte-preset-btn ${positionPreset === 'bottom-center' ? 'is-active' : ''}`}
-              onClick={() => {
-                onChangePositionPreset('bottom-center');
-                setShowManualCoords(false);
-              }}
+              onClick={() => onChangePositionPreset('bottom-center')}
             >
               Bawah Tengah
             </button>
             <button
               type="button"
               className={`tte-preset-btn ${positionPreset === 'bottom-right' ? 'is-active' : ''}`}
-              onClick={() => {
-                onChangePositionPreset('bottom-right');
-                setShowManualCoords(false);
-              }}
+              onClick={() => onChangePositionPreset('bottom-right')}
             >
               Bawah Kanan
             </button>
-            <button
-              type="button"
-              className={`tte-preset-btn ${positionPreset === 'custom' || showManualCoords ? 'is-active' : ''}`}
-              onClick={() => {
-                onChangePositionPreset('custom');
-                setShowManualCoords(true);
-              }}
-            >
-              Atur Manual
-            </button>
           </div>
         </div>
-
-        {/* Pengaturan Koordinat Manual (Collapsible) */}
-        {showManualCoords && (
-          <div className="tte-manual-coords-container">
-            <div className="tte-manual-coords-header">
-              <span className="tte-manual-coords-title">Koordinat Manual & Ukuran (pt)</span>
-              <span className="tte-manual-coords-note">A4: 595 × 842 pt</span>
-            </div>
-
-            <div className="tte-coords-grid">
-              <div className="tte-coord-input-wrap">
-                <label htmlFor="coord-llx" className="tte-coord-label">Posisi X (pt)</label>
-                <input
-                  id="coord-llx"
-                  type="number"
-                  className="form-control"
-                  value={Math.round(coords.llx)}
-                  onChange={(e) => {
-                    const newX = parseFloat(e.target.value) || 0;
-                    const width = coords.urx - coords.llx || DEFAULT_FOOTER_WIDTH;
-                    onChangeCoords({ ...coords, llx: newX, urx: newX + width });
-                  }}
-                />
-              </div>
-
-              <div className="tte-coord-input-wrap">
-                <label htmlFor="coord-lly" className="tte-coord-label">Posisi Y (pt)</label>
-                <input
-                  id="coord-lly"
-                  type="number"
-                  className="form-control"
-                  value={Math.round(coords.lly)}
-                  onChange={(e) => {
-                    const newY = parseFloat(e.target.value) || 0;
-                    const height = coords.ury - coords.lly || DEFAULT_FOOTER_HEIGHT;
-                    onChangeCoords({ ...coords, lly: newY, ury: newY + height });
-                  }}
-                />
-              </div>
-
-              <div className="tte-coord-input-wrap">
-                <label htmlFor="coord-w" className="tte-coord-label">Lebar (pt)</label>
-                <input
-                  id="coord-w"
-                  type="number"
-                  className="form-control"
-                  value={Math.round(coords.urx - coords.llx)}
-                  onChange={(e) => {
-                    const w = Math.max(80, parseFloat(e.target.value) || DEFAULT_FOOTER_WIDTH);
-                    handleCoordChange('urx', coords.llx + w);
-                  }}
-                />
-              </div>
-
-              <div className="tte-coord-input-wrap">
-                <label htmlFor="coord-h" className="tte-coord-label">Tinggi (pt)</label>
-                <input
-                  id="coord-h"
-                  type="number"
-                  className="form-control"
-                  value={Math.round(coords.ury - coords.lly)}
-                  onChange={(e) => {
-                    const h = Math.max(40, parseFloat(e.target.value) || DEFAULT_FOOTER_HEIGHT);
-                    handleCoordChange('ury', coords.lly + h);
-                  }}
-                />
-              </div>
-            </div>
-
-            {isOutOfBounds && (
-              <p className="tte-error-text" role="alert" style={{ marginTop: '8px' }}>
-                <IconAlertTriangle size={14} aria-hidden="true" />
-                <span>Footer berada di luar area lembar dokumen A4 (595 × 842 pt).</span>
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Elemen Informasi yang Ditampilkan pada Footer */}
         <div className="tte-form-group">
@@ -457,9 +359,8 @@ export function FooterConfigPanel({
 
         {/* Kotak Edukasi TTE */}
         <div className="tte-edu-box">
-          <IconShield size={18} className="tte-edu-icon" aria-hidden="true" />
           <p className="tte-edu-text">
-            <strong>Catatan Keabsahan:</strong> Footer visual ini merupakan representasi tampilan informasi. Integritas dan keabsahan hukum dokumen dijamin melalui sertifikat digital kriptografis (X.509) yang disematkan secara tak kasat mata di dalam struktur berkas PDF.
+            <strong>Catatan Keabsahan:</strong> Footer visual ini merupakan representasi tampilan informasi. Integritas dan keabsahan hukum dokumen dijamin melalui sertifikat digital yang disematkan didalam struktur berkas PDF.
           </p>
         </div>
       </div>
@@ -479,7 +380,9 @@ export function FooterConfigPanel({
                 ? `Semua Halaman (1 – ${pageCount || 1})`
                 : targetPageOption === 'last'
                 ? `Halaman Terakhir (${pageCount || 1})`
-                : `Halaman ${specificPage}`}
+                : specificStartPage === specificEndPage
+                ? `Halaman ${specificStartPage}`
+                : `Halaman ${specificStartPage} s.d. ${specificEndPage}`}
             </span>
           </li>
           <li>
@@ -493,9 +396,7 @@ export function FooterConfigPanel({
                 ? 'Bawah Kiri'
                 : positionPreset === 'bottom-center'
                 ? 'Bawah Tengah'
-                : positionPreset === 'bottom-right'
-                ? 'Bawah Kanan'
-                : `Manual (X:${Math.round(coords.llx)}, Y:${Math.round(coords.lly)})`}
+                : 'Bawah Kanan'}
             </span>
           </li>
         </ul>

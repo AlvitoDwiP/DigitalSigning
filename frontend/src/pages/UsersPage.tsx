@@ -196,7 +196,7 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
       {/* Page Header */}
       <header className="page-header">
         <div className="page-header-content">
-          <h1 className="page-title">Pengguna</h1>
+          <h1 className="page-title">PENGGUNA</h1>
           <p className="page-subtitle">
             Kelola akun pengguna dan sertifikatnya.
           </p>

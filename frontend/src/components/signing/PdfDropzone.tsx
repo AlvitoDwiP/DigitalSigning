@@ -79,7 +79,7 @@ export function PdfDropzone({
         <span className="tte-step-badge">1</span>
         <div>
           <h2 className="tte-step-title">Pilih Dokumen PDF</h2>
-          <p className="tte-step-desc">Unggah dokumen yang akan dibubuhi tanda tangan elektronik</p>
+          <p className="tte-step-desc">Unggah dokumen yang akan dilakukan tanda tangan elektronik</p>
         </div>
       </div>
 

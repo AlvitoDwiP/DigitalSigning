@@ -24,7 +24,7 @@ export function GeneratePage({ onNavigate }: GeneratePageProps) {
       {/* Page Header */}
       <header className="page-header">
         <div className="page-header-content">
-          <h1 className="page-title">Buat pengguna baru</h1>
+          <h1 className="page-title">BUAT PENGGUNA BARU</h1>
           <p className="page-subtitle">
             Buat akun pengguna baru beserta sertifikat digitalnya.
           </p>

@@ -12,6 +12,8 @@ import {
   IconSignature,
   IconCopy,
   IconCheckCircle,
+  IconAlertTriangle,
+  IconArrowRight,
 } from '../icons/Icons';
 import { NikDisplay } from '../ui/NikDisplay';
 import { formatWaktuIndonesia, statusSertifikat } from '../../lib/labels';
@@ -31,6 +33,12 @@ export function UserDashboardView({
 }: UserDashboardViewProps) {
   const { user, active_certificate, has_active_certificate } = data;
   const [copiedCertNum, setCopiedCertNum] = useState(false);
+
+  const daysRemaining = active_certificate ? active_certificate.days_remaining : null;
+  const isExpired = active_certificate
+    ? (active_certificate.status === 'EXPIRED' || active_certificate.days_remaining <= 0)
+    : false;
+  const isExpiringSoon = has_active_certificate && active_certificate && (active_certificate.days_remaining <= 30 || isExpired);
 
   const handleCopyCertNum = async (num: string) => {
     try {
@@ -69,7 +77,7 @@ export function UserDashboardView({
       {/* Page Header */}
       <div className="page-header-row">
         <div className="page-header">
-          <h1 className="page-title">Dashboard User</h1>
+          <h1 className="page-title">DASHBOARD USER</h1>
           <p className="page-subtitle">
             Selamat datang, <strong className="user-welcome-name">{user.name}</strong>. Ringkasan sertifikat dan informasi akun Anda.
           </p>
@@ -87,6 +95,59 @@ export function UserDashboardView({
           </Button>
         </div>
       </div>
+
+      {/* Peringatan Masa Berlaku Sertifikat <= 30 Hari */}
+      {isExpiringSoon && (
+        <div
+          className={`cert-expiry-alert-banner ${
+            isExpired ? 'banner-expired' : 'banner-warning'
+          }`}
+          role="alert"
+          aria-live="assertive"
+        >
+          <div className="cert-alert-left">
+            <div className="cert-alert-icon-wrap" aria-hidden="true">
+              <span className="cert-alert-ripple" />
+              <span className="cert-alert-ripple cert-alert-ripple-delayed" />
+              <div className="cert-alert-icon-circle">
+                <IconAlertTriangle size={24} />
+              </div>
+            </div>
+            <div className="cert-alert-content">
+              <div className="cert-alert-heading-row">
+                <h3 className="cert-alert-title">PERINGATAN!</h3>
+              </div>
+              <p className="cert-alert-message">
+                {isExpired ? (
+                  <>
+                    Masa berlaku sertifikat Digital Elektronik Anda <strong>TELAH HABIS</strong>. Harap segera melakukan penerbitan ulang agar hak akses tanda tangan digital dan keabsahan dokumen Anda tidak terputus!
+                  </>
+                ) : (
+                  <>
+                    Masa berlaku sertifikat Digital Elektronik Anda tersisa <strong>{daysRemaining} HARI LAGI</strong>. Harap segera melakukan penerbitan ulang agar hak akses tanda tangan digital dan keabsahan dokumen Anda tidak terputus!
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="cert-alert-actions">
+            <button
+              type="button"
+              className="btn-cert-alert-action btn-cert-alert-action-primary"
+              onClick={() => {
+                if (onNavigate) {
+                  onNavigate('/account#regenerate');
+                } else {
+                  window.location.href = '/account#regenerate';
+                }
+              }}
+            >
+              <span>Terbitkan Ulang Sekarang</span>
+              <IconArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Grid 2 Kolom untuk Sertifikat & Akun */}
       <div className="user-dashboard-grid">

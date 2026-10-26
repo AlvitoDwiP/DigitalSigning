@@ -170,7 +170,7 @@ export function AdminsPage({ onNavigate: _onNavigate }: AdminsPageProps) {
       <header className="page-header">
         <div className="page-header-content">
           <div className="page-header-title-group">
-            <h1 className="page-title">Management Admin</h1>
+            <h1 className="page-title">MANAGEMENT ADMIN</h1>
           </div>
           <p className="page-subtitle">
             Kelola daftar akun Administrator sistem dan tetapkan peran Admin kepada pengguna terdaftar.

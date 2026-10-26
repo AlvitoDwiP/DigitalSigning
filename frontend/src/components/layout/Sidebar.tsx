@@ -61,13 +61,6 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
         label: 'Kelola Akun',
         icon: IconUser,
       },
-      {
-        id: 'signing',
-        path: '/signing',
-        label: 'Penandatanganan',
-        icon: IconSignature,
-        reservedBadge: 'Soon',
-      },
     ];
   }
 

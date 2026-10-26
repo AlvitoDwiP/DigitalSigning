@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AccountData } from '../types/account';
 import { fetchAccount } from '../services/account';
 import { AccountProfileCard } from '../components/account/AccountProfileCard';
+import { AccountRegenerateCard } from '../components/account/AccountRegenerateCard';
 import { AccountPasswordCard } from '../components/account/AccountPasswordCard';
 import { AccountPassphraseCard } from '../components/account/AccountPassphraseCard';
 import { AccountSkeleton } from '../components/account/AccountSkeleton';
@@ -17,7 +18,7 @@ import {
   IconKey,
 } from '../components/icons/Icons';
 
-export type AccountTab = 'detail' | 'password' | 'passphrase';
+export type AccountTab = 'detail' | 'regenerate' | 'password' | 'passphrase';
 
 interface AccountPageProps {
   onNavigate?: (path: string) => void;
@@ -30,8 +31,10 @@ export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPage
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AccountTab>(() => {
     if (initialTab) return initialTab;
-    if (typeof window !== 'undefined' && window.location.hash === '#password') {
-      return 'password';
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#regenerate') return 'regenerate';
+      if (window.location.hash === '#password') return 'password';
+      if (window.location.hash === '#passphrase') return 'passphrase';
     }
     return 'detail';
   });
@@ -39,8 +42,10 @@ export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPage
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
-    } else if (typeof window !== 'undefined' && window.location.hash === '#password') {
-      setActiveTab('password');
+    } else if (typeof window !== 'undefined') {
+      if (window.location.hash === '#regenerate') setActiveTab('regenerate');
+      else if (window.location.hash === '#password') setActiveTab('password');
+      else if (window.location.hash === '#passphrase') setActiveTab('passphrase');
     }
   }, [initialTab]);
 
@@ -95,7 +100,7 @@ export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPage
       {/* Page Header */}
       <header className="page-header">
         <div className="page-header-content">
-          <h1 className="page-title">Kelola Akun</h1>
+          <h1 className="page-title">KELOLA AKUN</h1>
           <p className="page-subtitle">
             Pengaturan profil pribadi, perubahan kata sandi login, dan pembaruan passphrase sertifikat digital.
           </p>
@@ -185,6 +190,19 @@ export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPage
               <button
                 type="button"
                 role="tab"
+                id="tab-regenerate"
+                aria-selected={activeTab === 'regenerate'}
+                aria-controls="pane-regenerate"
+                className={`user-detail-tab-btn ${activeTab === 'regenerate' ? 'active' : ''}`}
+                onClick={() => setActiveTab('regenerate')}
+              >
+                <IconRefresh size={17} aria-hidden="true" />
+                <span>Terbitkan Ulang Sertifikat</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
                 id="tab-password"
                 aria-selected={activeTab === 'password'}
                 aria-controls="pane-password"
@@ -215,6 +233,16 @@ export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPage
             {activeTab === 'detail' && (
               <div id="pane-detail" role="tabpanel" aria-labelledby="tab-detail">
                 <AccountProfileCard
+                  account={account}
+                  onSuccess={showFeedback}
+                  onRefresh={loadAccount}
+                />
+              </div>
+            )}
+
+            {activeTab === 'regenerate' && (
+              <div id="pane-regenerate" role="tabpanel" aria-labelledby="tab-regenerate" className="account-tab-card-wrapper">
+                <AccountRegenerateCard
                   account={account}
                   onSuccess={showFeedback}
                   onRefresh={loadAccount}
