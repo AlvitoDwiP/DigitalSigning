@@ -119,3 +119,15 @@ uploads/
 *.swo
 *.sublime-project
 *.sublime-workspace
+
+# ==========================================
+# AI Agent & Assistant Files
+# ==========================================
+.agents/
+AGENTS.md
+.agent/
+
+# ==========================================
+# Documentation
+# ==========================================
+docs/
