@@ -66,7 +66,7 @@ def _build_certificate_model(
         sequence_number=sequence_number,
         issued_year=issued_year,
         subject=cert_metadata.get("subject", ""),
-        issuer=cert_metadata.get("issuer", "Intermediate CA"),
+        issuer=cert_metadata.get("issuer", "Pustik CA"),
         fingerprint_sha256=cert_metadata.get("fingerprint_sha256", "").replace(":", ""),
         certificate_path=cert_metadata.get("certificate_path", ""),
         p12_reference=cert_metadata.get("p12_reference", ""),
@@ -627,11 +627,6 @@ def regenerate_user_certificate(
         Certificate.user_id == user_id,
         Certificate.status.in_(["ACTIVE", "EXPIRED"])
     ).order_by(Certificate.created_at.desc()).first()
-    if not active_cert:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "NO_ACTIVE_CERTIFICATE", "message": "User tidak memiliki sertifikat aktif atau kedaluwarsa untuk di-regenerate"}
-        )
 
     # Verifikasi Password:
     # Jika ADMIN / SUPER_ADMIN: verifikasi password admin yang login
@@ -708,10 +703,11 @@ def regenerate_user_certificate(
             )
 
     new_cert_id = uuid.uuid4()
-    old_cert_id = active_cert.id
+    old_cert_id = active_cert.id if active_cert else None
     try:
-        active_cert.status = "REPLACED"
-        active_cert.updated_at = datetime.datetime.now(datetime.timezone.utc)
+        if active_cert:
+            active_cert.status = "REPLACED"
+            active_cert.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
         new_cert = _build_certificate_model(
             db=db,
@@ -722,9 +718,12 @@ def regenerate_user_certificate(
         db.add(new_cert)
         db.flush()
 
-        active_cert.replaced_by = new_cert_id
+        if active_cert:
+            active_cert.replaced_by = new_cert_id
+            _record_audit(db, current_user.id, "CERTIFICATE_REGENERATED", user.id, "SUCCESS")
+        else:
+            _record_audit(db, current_user.id, "CERTIFICATE_GENERATED", user.id, "SUCCESS")
 
-        _record_audit(db, current_user.id, "CERTIFICATE_REGENERATED", user.id, "SUCCESS")
         db.commit()
         db.refresh(new_cert)
 

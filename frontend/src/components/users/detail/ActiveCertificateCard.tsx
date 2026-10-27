@@ -67,10 +67,35 @@ export function ActiveCertificateCard({
             </h2>
             <span className="cert-status-none">Belum diterbitkan</span>
           </div>
+
+          <div className="cert-actions-group">
+            <button
+              type="button"
+              className="btn btn-primary btn-cert-action"
+              onClick={onRegenerate}
+              disabled={disabled}
+              id="btn-issue-cert-header"
+            >
+              <IconRefresh size={16} aria-hidden="true" />
+              <span>Terbitkan sertifikat</span>
+            </button>
+          </div>
         </div>
         <div className="detail-card-body empty-cert-body">
           <div className="empty-cert-notice">
             <p>Pengguna ini belum memiliki sertifikat digital aktif. Kredensial penandatanganan belum diterbitkan untuk akun ini.</p>
+            <div style={{ marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={onRegenerate}
+                disabled={disabled}
+                id="btn-issue-cert-body"
+              >
+                <IconRefresh size={16} style={{ marginRight: '8px' }} aria-hidden="true" />
+                <span>Terbitkan Sertifikat Baru</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -158,7 +183,7 @@ export function ActiveCertificateCard({
 
           <div className="cert-detail-item">
             <dt className="cert-detail-label">Diterbitkan oleh</dt>
-            <dd className="cert-detail-value">{certificate.issuer}</dd>
+            <dd className="cert-detail-value">{(certificate.issuer === 'Intermediate CA' || !certificate.issuer) ? 'Pustik CA' : certificate.issuer}</dd>
           </div>
 
           <div className="cert-detail-item col-span-2">

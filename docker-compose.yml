@@ -65,6 +65,7 @@ services:
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - PKI_SERVICE_URL=http://pki_service:8001
       - PKI_SERVICE_TOKEN=${PKI_SERVICE_TOKEN:-dev-internal-pki-secret-token-2026}
+      - ISSUED_DIR=/app/pki/issued
       - P12_ARCHIVE_DIR=/app/sign-api/p12
       - DEFAULT_PFX_PASS=${DEFAULT_PFX_PASS:-Mkri006!}
       - DEFAULT_USER_PASS=${DEFAULT_USER_PASS:-Konstitusi100%}
@@ -75,6 +76,7 @@ services:
       - ./backend/app:/app/app
       - ./backend/alembic:/app/alembic
       - ./backend/tests:/app/tests:ro
+      - ./pki/issued:/app/pki/issued:ro
       - ./sign-api/p12:/app/sign-api/p12:ro
       - ./frontend/dist:/app/frontend/dist:ro
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"

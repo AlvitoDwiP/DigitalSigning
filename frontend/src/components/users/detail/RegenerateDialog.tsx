@@ -116,7 +116,7 @@ export function RegenerateDialog({
           {/* Body */}
           <div className="dialog-body">
             <p id="regenerate-dialog-description" className="dialog-main-text">
-              Masukkan password akun Anda untuk mengonfirmasi penerbitan ulang sertifikat bagi <strong>{user.name}</strong>.
+              Masukkan password akun Anda untuk mengonfirmasi {user.active_certificate ? 'penerbitan ulang' : 'penerbitan'} sertifikat bagi <strong>{user.name}</strong>.
             </p>
 
             {activeError && (

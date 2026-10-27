@@ -253,8 +253,9 @@ body {
 }
 
 body {
-  padding: 28px;
-  background-color: var(--outer);
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
 }
 
 body:has(.app-layout),
@@ -264,7 +265,9 @@ body:has(.login-container) {
 }
 
 #root {
-  min-height: calc(100vh - 56px);
+  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
 }
@@ -555,15 +558,16 @@ a.card:focus-visible {
 }
 
 /* ==========================================================================
-   AppShell Layout Structure (Section 4 & 5: Melayang, Radius 20px)
+   AppShell Layout Structure (Full Screen Edge-to-Edge)
    ========================================================================== */
 .app-layout {
   display: flex;
-  height: calc(100vh - 56px);
-  max-height: calc(100vh - 56px);
+  height: 100vh;
+  max-height: 100vh;
+  width: 100vw;
   background-color: var(--bg);
-  border-radius: 20px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
   position: relative;
 }
@@ -1746,8 +1750,8 @@ textarea.form-control:focus {
    Login Page (Exact Match to Reference Screenshot)
    ========================================================================== */
 .login-container {
-  height: calc(100vh - 56px);
-  max-height: calc(100vh - 56px);
+  height: 100vh;
+  max-height: 100vh;
   width: 100%;
   display: flex;
   align-items: center;
@@ -1928,7 +1932,6 @@ textarea.form-control:focus {
   filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.35));
   user-select: none;
   -webkit-user-drag: none;
-  vertical-align: bottom;
 }
 
 /* --- RIGHT PANEL: LOGIN FORM --- */
@@ -3026,10 +3029,10 @@ button.expiry-user-item:hover .expiry-user-action {
   }
 
   .app-layout {
-    border-radius: 16px;
+    border-radius: 0;
     height: auto;
     max-height: none;
-    min-height: calc(100vh - 24px);
+    min-height: 100vh;
     overflow: visible;
   }
 

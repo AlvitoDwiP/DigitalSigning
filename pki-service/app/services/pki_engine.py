@@ -206,7 +206,7 @@ def generate_single(name: str, nik: str, email: str, organization: str, ou: str,
     return {
         "serial_number": serial,
         "subject": f"/C=ID/O={organization}/OU={ou}/CN={name}/emailAddress={email}",
-        "issuer": "Intermediate CA",
+        "issuer": "Pustik CA",
         "fingerprint_sha256": fingerprint,
         "issued_at": not_before,
         "expires_at": not_after,
@@ -307,7 +307,7 @@ def generate_staged(name: str, nik: str, email: str, organization: str, ou: str,
         "metadata": {
             "serial_number": serial,
             "subject": f"/C=ID/O={organization}/OU={ou}/CN={name}/emailAddress={email}",
-            "issuer": "Intermediate CA",
+            "issuer": "Pustik CA",
             "fingerprint_sha256": fingerprint,
             "issued_at": not_before,
             "expires_at": not_after,
@@ -329,11 +329,12 @@ def commit_staged(staging_token: str, target_user_dir: str, target_archive_p12: 
             shutil.copy2(item, target_dir / item.name)
             
     staging_archive = staging_path / "archive"
-    if staging_archive.exists():
+    if staging_archive.exists() and target_archive_p12:
         for p12 in staging_archive.glob("*.p12"):
             archive_target = Path(target_archive_p12)
-            archive_target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(p12, archive_target)
+            if "sign-api" not in str(archive_target):
+                archive_target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(p12, archive_target)
             
     shutil.rmtree(staging_path, ignore_errors=True)
     return True
@@ -405,7 +406,7 @@ def generate_bulk(requests: list) -> dict:
                         if "subject" not in meta:
                             meta["subject"] = "CN=Unknown"
                     if "issuer" not in meta:
-                        meta["issuer"] = "Intermediate CA"
+                        meta["issuer"] = "Pustik CA"
                 results.append(item)
             except json.JSONDecodeError:
                 continue

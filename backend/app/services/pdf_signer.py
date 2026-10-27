@@ -39,22 +39,44 @@ def get_p12_archive_dir() -> Path:
     return local_path
 
 
+def get_issued_dir() -> Path:
+    env_issued = getattr(settings, "ISSUED_DIR", None) or os.getenv("ISSUED_DIR")
+    if env_issued and Path(env_issued).exists():
+        return Path(env_issued).resolve()
+    from app.core.config import BASE_DIR
+    local_path = (BASE_DIR / "pki" / "issued").resolve()
+    return local_path
+
+
 def resolve_p12_path(nik: str) -> Path:
     safe_nik = sanitize_nik(nik)
+
+    # 1. Prioritas utama: cari berkas .p12 langsung di subfolder direktori pki/issued/
+    issued_dir = get_issued_dir()
+    if issued_dir.exists():
+        candidates = list(issued_dir.glob(f"*/{safe_nik}.p12"))
+        if candidates and candidates[0].is_file():
+            target = candidates[0].resolve()
+            try:
+                target.relative_to(issued_dir)
+                return target
+            except Exception:
+                raise PDFSignerError("FORBIDDEN", "Akses path sertifikat di luar direktori yang diizinkan.")
+
+    # 2. Fallback jika masih tersimpan di archive sign-api/p12 (kompatibilitas transisi)
     p12_dir = get_p12_archive_dir()
     target = (p12_dir / f"{safe_nik}.p12").resolve()
+    if target.is_file():
+        try:
+            target.relative_to(p12_dir)
+            return target
+        except Exception:
+            raise PDFSignerError("FORBIDDEN", "Akses path sertifikat di luar direktori yang diizinkan.")
 
-    try:
-        target.relative_to(p12_dir)
-    except Exception:
-        raise PDFSignerError("FORBIDDEN", "Akses path sertifikat di luar direktori yang diizinkan.")
-
-    if not target.is_file():
-        raise PDFSignerError(
-            "CERTIFICATE_NOT_FOUND",
-            f"Berkas sertifikat digital (.p12) untuk NIK {safe_nik} tidak ditemukan."
-        )
-    return target
+    raise PDFSignerError(
+        "CERTIFICATE_NOT_FOUND",
+        f"Berkas sertifikat digital (.p12) untuk NIK {safe_nik} tidak ditemukan di direktori issued."
+    )
 
 
 def parse_bounding_box(

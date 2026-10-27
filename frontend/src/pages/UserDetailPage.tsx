@@ -161,16 +161,19 @@ export function UserDetailPage({ userId, onNavigate, initialTab }: UserDetailPag
       });
       if (res.success) {
         setIsRegenerateOpen(false);
-        showFeedback('Sertifikat baru berhasil diterbitkan dan status sertifikat lama telah diperbarui.');
+        const successMsg = user.active_certificate
+          ? 'Sertifikat baru berhasil diterbitkan dan status sertifikat lama telah diperbarui.'
+          : 'Sertifikat baru berhasil diterbitkan.';
+        showFeedback(successMsg);
         await loadData();
       } else {
         const msg = typeof res.detail === 'string'
           ? res.detail
-          : (res.detail?.message || res.message || 'Sertifikat gagal diterbitkan. Sertifikat lama masih berlaku. Coba lagi.');
+          : (res.detail?.message || res.message || 'Sertifikat gagal diterbitkan. Silakan coba lagi.');
         setRegenerateError(msg);
       }
     } catch (err: any) {
-      setRegenerateError(err.message || 'Sertifikat gagal diterbitkan. Sertifikat lama masih berlaku. Coba lagi.');
+      setRegenerateError(err.message || 'Sertifikat gagal diterbitkan. Silakan coba lagi.');
     } finally {
       setIsRegenerating(false);
     }

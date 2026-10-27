@@ -114,9 +114,11 @@ openssl pkcs12 -export -inkey "$KEY" -in "$CRT" -certfile "$CHAIN" \
   -name "$CN – $ORG_NAME (TTE)" -passout env:PFX_PASS -out "$P12_NIK"
 
 # ==================== ARCHIVE (IDENTIK) ====================
-mkdir -p "$P12_ARCHIVE_DIR"
-cp -f "$P12_NIK" "$P12_ARCHIVE_DIR/${NIK_SAFE}.p12"
-chmod 600 "$P12_ARCHIVE_DIR/${NIK_SAFE}.p12" || true
+if [[ -n "${P12_ARCHIVE_DIR:-}" && "$P12_ARCHIVE_DIR" != *"/sign-api/"* && "$P12_ARCHIVE_DIR" != *"/sign-api" && "$P12_ARCHIVE_DIR" != "NONE" ]]; then
+  mkdir -p "$P12_ARCHIVE_DIR"
+  cp -f "$P12_NIK" "$P12_ARCHIVE_DIR/${NIK_SAFE}.p12"
+  chmod 600 "$P12_ARCHIVE_DIR/${NIK_SAFE}.p12" || true
+fi
 
 # ==================== META ====================
 {
@@ -133,4 +135,6 @@ chmod 600 "$P12_ARCHIVE_DIR/${NIK_SAFE}.p12" || true
 
 echo "SELESAI ✅"
 echo "Output dir : $OUT_DIR"
-echo "Arsip P12  : $P12_ARCHIVE_DIR/${NIK_SAFE}.p12"
+if [[ -n "${P12_ARCHIVE_DIR:-}" && "$P12_ARCHIVE_DIR" != *"/sign-api/"* && "$P12_ARCHIVE_DIR" != *"/sign-api" && "$P12_ARCHIVE_DIR" != "NONE" ]]; then
+  echo "Arsip P12  : $P12_ARCHIVE_DIR/${NIK_SAFE}.p12"
+fi

@@ -54,7 +54,7 @@ class RegenerateCertificateNewCertData(BaseModel):
 
 
 class RegenerateCertificateData(BaseModel):
-    old_certificate_id: uuid.UUID
+    old_certificate_id: Optional[uuid.UUID] = None
     new_certificate: RegenerateCertificateNewCertData
 
 

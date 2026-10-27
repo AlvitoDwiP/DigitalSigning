@@ -79,8 +79,9 @@ class Settings(BaseSettings):
     PKI_SERVICE_URL: str = os.getenv("PKI_SERVICE_URL", "http://pki_service:8001")
     PKI_SERVICE_TOKEN: str = os.getenv("PKI_SERVICE_TOKEN", "dev-internal-pki-secret-token-2026")
 
-    # PKI Engine & Storage integration (for local fallback / shared archive)
+    # PKI Engine & Storage integration (for local fallback / canonical issued)
     PKI_ENGINE_DIR: str = os.getenv("PKI_ENGINE_DIR", "/app/pki/scripts")
+    ISSUED_DIR: str = os.getenv("ISSUED_DIR", "/app/pki/issued")
     P12_ARCHIVE_DIR: str = os.getenv("P12_ARCHIVE_DIR", "/app/sign-api/p12")
     PKI_TIMEOUT: int = int(os.getenv("PKI_TIMEOUT", "30"))
     MAX_AUDIT_LOGS: int = int(os.getenv("MAX_AUDIT_LOGS", "5000"))

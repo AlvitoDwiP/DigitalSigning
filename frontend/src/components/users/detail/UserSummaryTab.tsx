@@ -72,7 +72,7 @@ export function UserSummaryTab({ user, onSwitchTab }: UserSummaryTabProps) {
 
                   <div className="user-detail-item">
                     <dt className="user-detail-label">Penerbit (CA)</dt>
-                    <dd className="user-detail-value font-medium">{activeCert.issuer}</dd>
+                    <dd className="user-detail-value font-medium">{(activeCert.issuer === 'Intermediate CA' || !activeCert.issuer) ? 'Pustik CA' : activeCert.issuer}</dd>
                   </div>
                 </dl>
 
