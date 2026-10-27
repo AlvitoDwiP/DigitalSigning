@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.models.user import User
-from app.models.audit_log import AuditLog
+from app.services.audit import record_audit
 from app.schemas.user import User as UserSchema
 
 router = APIRouter()
@@ -89,16 +89,7 @@ def assign_admin(
     user.role = "ADMIN"
 
     # Buat audit log
-    audit = AuditLog(
-        id=uuid.uuid4(),
-        user_id=current_user.id,
-        action="ADMIN_ASSIGNED",
-        target_type="user",
-        target_id=user.id,
-        status="SUCCESS"
-    )
-    db.add(audit)
-    db.commit()
+    record_audit(db, current_user.id, "ADMIN_ASSIGNED", user.id, status="SUCCESS", commit=True)
     db.refresh(user)
 
     return {
@@ -135,16 +126,7 @@ def remove_admin(
     user.role = "USER"
 
     # Buat audit log
-    audit = AuditLog(
-        id=uuid.uuid4(),
-        user_id=current_user.id,
-        action="ADMIN_REMOVED",
-        target_type="user",
-        target_id=user.id,
-        status="SUCCESS"
-    )
-    db.add(audit)
-    db.commit()
+    record_audit(db, current_user.id, "ADMIN_REMOVED", user.id, status="SUCCESS", commit=True)
     db.refresh(user)
 
     return {

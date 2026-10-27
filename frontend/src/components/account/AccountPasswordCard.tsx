@@ -1,198 +1,88 @@
-import { useState } from 'react';
 import { changeAccountLoginPassword } from '../../services/account';
 import { getAuthUser, setAuthUser } from '../../services/api';
-import { PasswordInput } from '../ui/PasswordInput';
-import { IconLock, IconAlertTriangle } from '../icons/Icons';
+import { AccountSecretCard } from './AccountSecretCard';
 
 interface AccountPasswordCardProps {
   onSuccess: (msg: string) => void;
 }
 
+const PASSWORD_POLICY_HINTS = [
+  'Minimal 8 karakter',
+  'Mengandung minimal 1 huruf besar (uppercase)',
+  'Mengandung minimal 1 simbol / karakter non-alfanumerik',
+];
+
 export function AccountPasswordCard({ onSuccess }: AccountPasswordCardProps) {
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const isPasswordValid = (val: string) =>
+    Boolean(val.length >= 8 && /[A-Z]/.test(val) && /[^a-zA-Z0-9]/.test(val));
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const validateForm = (oldVal: string, newVal: string, confirmVal: string) => {
+    if (!oldVal) return 'Password lama wajib diisi.';
+    if (!newVal) return 'Password baru wajib diisi.';
+    if (newVal.length < 8) return 'Password baru minimal 8 karakter.';
+    if (!/[A-Z]/.test(newVal)) {
+      return 'Password baru harus mengandung setidaknya satu huruf besar (A-Z).';
+    }
+    if (!/[^a-zA-Z0-9]/.test(newVal)) {
+      return 'Password baru harus mengandung setidaknya satu karakter simbol/non-alfanumerik.';
+    }
+    if (newVal === oldVal) {
+      return 'Password baru tidak boleh sama dengan password lama.';
+    }
+    if (newVal !== confirmVal) {
+      return 'Konfirmasi password tidak cocok.';
+    }
+    return null;
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!oldPassword) {
-      setError('Password lama wajib diisi.');
-      return;
-    }
-    if (!newPassword) {
-      setError('Password baru wajib diisi.');
-      return;
-    }
-    if (newPassword.length < 8) {
-      setError('Password baru minimal 8 karakter.');
-      return;
-    }
-    if (!/[A-Z]/.test(newPassword)) {
-      setError('Password baru harus mengandung setidaknya satu huruf besar (A-Z).');
-      return;
-    }
-    if (!/[^a-zA-Z0-9]/.test(newPassword)) {
-      setError('Password baru harus mengandung setidaknya satu karakter simbol/non-alfanumerik.');
-      return;
-    }
-    if (newPassword === oldPassword) {
-      setError('Password baru tidak boleh sama dengan password lama.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Konfirmasi password tidak cocok.');
-      return;
-    }
-
-    setIsProcessing(true);
+  const handleAfterSuccess = () => {
     try {
-      const res = await changeAccountLoginPassword({
-        old_password: oldPassword,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
-      });
-
-      if (res.success) {
-        // Clear sensitive inputs
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setError(null);
-        try {
-          const user = getAuthUser();
-          if (user) {
-            setAuthUser({ ...user, must_change_password: false });
-          }
-        } catch {
-          // ignore
-        }
-        onSuccess('Password login berhasil diubah.');
-      } else {
-        const msg = typeof res.detail === 'string'
-          ? res.detail
-          : (res.detail?.message || res.message || 'Gagal mengubah password login.');
-        setError(msg);
+      const user = getAuthUser();
+      if (user) {
+        setAuthUser({ ...user, must_change_password: false });
       }
-    } catch (err: any) {
-      setError(err.message || 'Gagal mengubah password login.');
-    } finally {
-      setIsProcessing(false);
+    } catch {
+      // ignore
     }
   };
 
   return (
-    <section className="detail-card account-card" aria-labelledby="account-password-title">
-      <div className="detail-card-header">
-        <div className="card-title-group">
-          <IconLock size={20} className="card-title-icon" aria-hidden="true" />
-          <h2 id="account-password-title" className="detail-card-title">
-            Ubah Password Login
-          </h2>
-        </div>
-      </div>
-
-      <div className="detail-card-body">
-        <p className="dialog-main-text mb-4">
-          Perbarui kata sandi akun Anda untuk autentikasi masuk ke platform.
-        </p>
-
-        <form onSubmit={handleSubmit} className="account-two-col-form">
-          <div className="account-form-cols">
-            <div className="account-form-col">
-              <PasswordInput
-                id="account-old-login-password"
-                name="old_password"
-                label="Password Lama"
-                placeholder="Ketik password saat ini"
-                value={oldPassword}
-                onChange={(e) => {
-                  setOldPassword(e.target.value);
-                  setError(null);
-                }}
-                disabled={isProcessing}
-                autoComplete="current-password"
-                required
-              />
-
-              <div className="password-policy-hints">
-                <span className="policy-hint-title">Ketentuan Password:</span>
-                <ul className="policy-hints-list">
-                  <li>Minimal 8 karakter</li>
-                  <li>Mengandung minimal 1 huruf besar (uppercase)</li>
-                  <li>Mengandung minimal 1 simbol / karakter non-alfanumerik</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="account-form-col">
-              {(() => {
-                const isNewPassValid = Boolean(newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[^a-zA-Z0-9]/.test(newPassword));
-                const isConfirmPassValid = Boolean(newPassword && confirmPassword && confirmPassword === newPassword && isNewPassValid);
-
-                return (
-                  <>
-                    <PasswordInput
-                      id="account-new-login-password"
-                      name="new_password"
-                      label="Password Baru"
-                      placeholder="Min. 8 karakter, 1 huruf besar, 1 simbol"
-                      helperText={isNewPassValid ? 'Password baru memenuhi syarat' : undefined}
-                      value={newPassword}
-                      onChange={(e) => {
-                        setNewPassword(e.target.value);
-                        setError(null);
-                      }}
-                      isValid={isNewPassValid}
-                      disabled={isProcessing}
-                      autoComplete="new-password"
-                      required
-                    />
-
-                    <PasswordInput
-                      id="account-confirm-login-password"
-                      name="confirm_password"
-                      label="Konfirmasi Password Baru"
-                      placeholder="Ketik ulang password baru"
-                      helperText={isConfirmPassValid ? 'Konfirmasi password cocok' : undefined}
-                      value={confirmPassword}
-                      onChange={(e) => {
-                        setConfirmPassword(e.target.value);
-                        setError(null);
-                      }}
-                      isValid={isConfirmPassValid}
-                      disabled={isProcessing}
-                      autoComplete="new-password"
-                      required
-                    />
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-
-          {error && (
-            <div className="dialog-error-banner form-error-banner" role="alert">
-              <IconAlertTriangle size={16} aria-hidden="true" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <div className="account-form-actions">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isProcessing}
-            >
-              {isProcessing ? 'Menyimpan...' : 'Perbarui Password Login'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </section>
+    <AccountSecretCard
+      titleId="account-password-title"
+      title="Ubah Password Login"
+      description="Perbarui kata sandi akun Anda untuk autentikasi masuk ke platform."
+      policyTitle="Ketentuan Password:"
+      policyHints={PASSWORD_POLICY_HINTS}
+      oldInput={{
+        id: 'account-old-login-password',
+        name: 'old_password',
+        label: 'Password Lama',
+        placeholder: 'Ketik password saat ini',
+      }}
+      newInput={{
+        id: 'account-new-login-password',
+        name: 'new_password',
+        label: 'Password Baru',
+        placeholder: 'Min. 8 karakter, 1 huruf besar, 1 simbol',
+      }}
+      confirmInput={{
+        id: 'account-confirm-login-password',
+        name: 'confirm_password',
+        label: 'Konfirmasi Password Baru',
+        placeholder: 'Ketik ulang password baru',
+      }}
+      newHelperText="Password baru memenuhi syarat"
+      confirmHelperText="Konfirmasi password cocok"
+      submitButtonText="Perbarui Password Login"
+      successMessage="Password login berhasil diubah."
+      defaultErrorMessage="Gagal mengubah password login."
+      isNewValid={isPasswordValid}
+      validateForm={validateForm}
+      onSubmit={(old_password, new_password, confirm_password) =>
+        changeAccountLoginPassword({ old_password, new_password, confirm_password })
+      }
+      onAfterSuccess={handleAfterSuccess}
+      onSuccess={onSuccess}
+    />
   );
 }

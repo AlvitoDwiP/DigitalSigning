@@ -6,6 +6,7 @@ import { AccountRegenerateCard } from '../components/account/AccountRegenerateCa
 import { AccountPasswordCard } from '../components/account/AccountPasswordCard';
 import { AccountPassphraseCard } from '../components/account/AccountPassphraseCard';
 import { AccountSkeleton } from '../components/account/AccountSkeleton';
+import { extractErrorMessage } from '../components/account/accountUtils';
 import { StatusChip } from '../components/ui/StatusChip';
 import { NikDisplay } from '../components/ui/NikDisplay';
 import { statusAkun } from '../lib/labels';
@@ -25,28 +26,35 @@ interface AccountPageProps {
   initialTab?: AccountTab;
 }
 
+const ACCOUNT_TABS: Array<{
+  id: AccountTab;
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
+}> = [
+  { id: 'detail', label: 'Detail Akun', icon: IconUser },
+  { id: 'regenerate', label: 'Terbitkan Ulang Sertifikat', icon: IconRefresh },
+  { id: 'password', label: 'Ganti Password', icon: IconLock },
+  { id: 'passphrase', label: 'Ganti Passphrase', icon: IconKey },
+];
+
+function resolveInitialTab(tab?: AccountTab): AccountTab {
+  if (tab) return tab;
+  if (typeof window !== 'undefined') {
+    if (window.location.hash === '#regenerate') return 'regenerate';
+    if (window.location.hash === '#password') return 'password';
+    if (window.location.hash === '#passphrase') return 'passphrase';
+  }
+  return 'detail';
+}
+
 export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPageProps) {
   const [account, setAccount] = useState<AccountData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<AccountTab>(() => {
-    if (initialTab) return initialTab;
-    if (typeof window !== 'undefined') {
-      if (window.location.hash === '#regenerate') return 'regenerate';
-      if (window.location.hash === '#password') return 'password';
-      if (window.location.hash === '#passphrase') return 'passphrase';
-    }
-    return 'detail';
-  });
+  const [activeTab, setActiveTab] = useState<AccountTab>(() => resolveInitialTab(initialTab));
 
   useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
-    } else if (typeof window !== 'undefined') {
-      if (window.location.hash === '#regenerate') setActiveTab('regenerate');
-      else if (window.location.hash === '#password') setActiveTab('password');
-      else if (window.location.hash === '#passphrase') setActiveTab('passphrase');
-    }
+    setActiveTab(resolveInitialTab(initialTab));
   }, [initialTab]);
 
   // Success Feedback Toast
@@ -79,10 +87,7 @@ export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPage
       if (res.success && res.data) {
         setAccount(res.data);
       } else {
-        const msg = typeof res.detail === 'string'
-          ? res.detail
-          : (res.detail?.message || res.message || 'Gagal memuat data akun');
-        setError(msg);
+        setError(extractErrorMessage(res, 'Gagal memuat data akun'));
       }
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat memuat data akun.');
@@ -138,7 +143,7 @@ export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPage
         </div>
       ) : account ? (
         <div className="account-grid-layout">
-          {/* Header Card & Tab Bar (seperti Gambar 2) */}
+          {/* Header Card & Tab Bar */}
           <div className="user-detail-header-card">
             <div className="user-detail-hero-top">
               <div className="user-profile-header">
@@ -174,57 +179,25 @@ export function AccountPage({ onNavigate: _onNavigate, initialTab }: AccountPage
 
             {/* Tab Navigation Bar */}
             <div className="user-detail-tabs-bar" role="tablist" aria-label="Tab Pengaturan Akun">
-              <button
-                type="button"
-                role="tab"
-                id="tab-detail"
-                aria-selected={activeTab === 'detail'}
-                aria-controls="pane-detail"
-                className={`user-detail-tab-btn ${activeTab === 'detail' ? 'active' : ''}`}
-                onClick={() => setActiveTab('detail')}
-              >
-                <IconUser size={17} aria-hidden="true" />
-                <span>Detail Akun</span>
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                id="tab-regenerate"
-                aria-selected={activeTab === 'regenerate'}
-                aria-controls="pane-regenerate"
-                className={`user-detail-tab-btn ${activeTab === 'regenerate' ? 'active' : ''}`}
-                onClick={() => setActiveTab('regenerate')}
-              >
-                <IconRefresh size={17} aria-hidden="true" />
-                <span>Terbitkan Ulang Sertifikat</span>
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                id="tab-password"
-                aria-selected={activeTab === 'password'}
-                aria-controls="pane-password"
-                className={`user-detail-tab-btn ${activeTab === 'password' ? 'active' : ''}`}
-                onClick={() => setActiveTab('password')}
-              >
-                <IconLock size={17} aria-hidden="true" />
-                <span>Ganti Password</span>
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                id="tab-passphrase"
-                aria-selected={activeTab === 'passphrase'}
-                aria-controls="pane-passphrase"
-                className={`user-detail-tab-btn ${activeTab === 'passphrase' ? 'active' : ''}`}
-                onClick={() => setActiveTab('passphrase')}
-              >
-                <IconKey size={17} aria-hidden="true" />
-                <span>Ganti Passphrase</span>
-              </button>
+              {ACCOUNT_TABS.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    id={`tab-${tab.id}`}
+                    aria-selected={isActive}
+                    aria-controls={`pane-${tab.id}`}
+                    className={`user-detail-tab-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <Icon size={17} aria-hidden="true" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

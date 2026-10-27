@@ -8,9 +8,9 @@ from typing import Optional
 from app.api import deps
 from app.models.user import User
 from app.models.certificate import Certificate
-from app.models.audit_log import AuditLog
 from app.schemas.user import User as UserSchema, validate_password_policy
 from app.services import pki_api_client
+from app.services.audit import record_audit
 from app.core.security import verify_password, get_password_hash
 
 router = APIRouter()
@@ -120,29 +120,10 @@ def change_account_pfx_password(
             new_password=req.new_password
         )
     except Exception:
-        audit = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="PFX_PASSWORD_CHANGED",
-            target_type="user",
-            target_id=current_user.id,
-            status="FAILED"
-        )
-        db.add(audit)
-        db.commit()
+        record_audit(db, current_user.id, "PFX_PASSWORD_CHANGED", current_user.id, status="FAILED", commit=True)
         raise
         
-    audit = AuditLog(
-        id=uuid.uuid4(),
-        user_id=current_user.id,
-        action="PFX_PASSWORD_CHANGED",
-        target_type="user",
-        target_id=current_user.id,
-        status="SUCCESS"
-    )
-    db.add(audit)
-    db.commit()
-    
+    record_audit(db, current_user.id, "PFX_PASSWORD_CHANGED", current_user.id, status="SUCCESS", commit=True)
     return {"success": True, "message": "Passphrase berhasil diubah"}
 
 @router.post("/password", response_model=dict)

@@ -7,12 +7,25 @@ import {
   IconAlertTriangle,
   IconCheckCircle,
 } from '../icons/Icons';
+import { extractErrorMessage } from './accountUtils';
 
 interface AccountRegenerateCardProps {
   account: AccountData;
   onSuccess: (msg: string) => void;
   onRefresh?: () => Promise<void> | void;
 }
+
+const REGENERATE_SECURITY_HINTS = [
+  'Verifikasi kata sandi akun diperlukan demi keamanan identitas digital Anda.',
+  'Kunci baru akan dibangkitkan secara aman di server',
+  'Sertifikat baru langsung aktif seketika setelah proses penerbitan ulang berhasil.',
+];
+
+const REGENERATE_POLICY_HINTS = [
+  'Gunakan fitur ini apabila sertifikat digital Anda mendekati masa kedaluwarsa.',
+  'Seluruh dokumen PDF yang telah Anda tandatangani sebelumnya tetap sah dan valid secara hukum.',
+  'Sertifikat digital Anda akan diperbarui dengan passphrase yang tetap sama.',
+];
 
 export function AccountRegenerateCard({
   account,
@@ -51,11 +64,7 @@ export function AccountRegenerateCard({
           await onRefresh();
         }
       } else {
-        const msg =
-          typeof res.detail === 'string'
-            ? res.detail
-            : res.detail?.message || res.message || 'Gagal menerbitkan ulang sertifikat.';
-        setError(msg);
+        setError(extractErrorMessage(res, 'Gagal menerbitkan ulang sertifikat.'));
       }
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat memproses penerbitan ulang sertifikat.');
@@ -103,26 +112,32 @@ export function AccountRegenerateCard({
               <div className="password-policy-hints">
                 <span className="policy-hint-title">Keamanan & Otorisasi:</span>
                 <ul className="policy-hints-list">
-                  <li>Verifikasi kata sandi akun diperlukan demi keamanan identitas digital Anda.</li>
-                  <li>Kunci baru akan dibangkitkan secara aman di server</li>
-                  <li>Sertifikat baru langsung aktif seketika setelah proses penerbitan ulang berhasil.</li>
+                  {REGENERATE_SECURITY_HINTS.map((hint, idx) => (
+                    <li key={idx}>{hint}</li>
+                  ))}
                 </ul>
               </div>
             </div>
 
             {/* Kolom Kanan: Ketentuan & Informasi Sertifikat (Warna Semantik: Info / Biru Muda) */}
             <div className="account-form-col">
-              <div className="card-semantic-info" style={{ padding: '14px 16px', borderRadius: '8px', fontSize: '12.5px' }}>
-                <span className="card-semantic-title" style={{ margin: '0 0 8px 0', fontSize: '13px', display: 'block' }}>
+              <div
+                className="card-semantic-info"
+                style={{ padding: '14px 16px', borderRadius: '8px', fontSize: '12.5px' }}
+              >
+                <span
+                  className="card-semantic-title"
+                  style={{ margin: '0 0 8px 0', fontSize: '13px', display: 'block' }}
+                >
                   Ketentuan Penerbitan ulang Sertifikat:
                 </span>
                 <p style={{ margin: '0 0 10px 0', fontSize: '12.5px', lineHeight: 1.55 }}>
                   Penerbitan ulang sertifikat akan menonaktifkan sertifikat digital lama dan langsung menerbitkan sertifikat yang berlaku selama <strong>2 tahun ke depan</strong>.
                 </p>
                 <ul className="policy-hints-list" style={{ color: 'inherit' }}>
-                  <li>Gunakan fitur ini apabila sertifikat digital Anda mendekati masa kedaluwarsa.</li>
-                  <li>Seluruh dokumen PDF yang telah Anda tandatangani sebelumnya tetap sah dan valid secara hukum.</li>
-                  <li>Sertifikat digital Anda akan diperbarui dengan passphrase yang tetap sama.</li>
+                  {REGENERATE_POLICY_HINTS.map((hint, idx) => (
+                    <li key={idx}>{hint}</li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -130,14 +145,22 @@ export function AccountRegenerateCard({
 
           {/* Feedback & Error Banners (Warna Semantik: Danger / Success) */}
           {error && (
-            <div className="card-semantic-danger form-error-banner" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px' }}>
+            <div
+              className="card-semantic-danger form-error-banner"
+              role="alert"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px' }}
+            >
               <IconAlertTriangle size={16} className="card-semantic-icon" aria-hidden="true" style={{ flexShrink: 0 }} />
               <span>{error}</span>
             </div>
           )}
 
           {successInfo && (
-            <div className="card-semantic-success form-error-banner" role="status" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px' }}>
+            <div
+              className="card-semantic-success form-error-banner"
+              role="status"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '8px' }}
+            >
               <IconCheckCircle size={16} className="card-semantic-icon" aria-hidden="true" style={{ flexShrink: 0 }} />
               <span>{successInfo}</span>
             </div>

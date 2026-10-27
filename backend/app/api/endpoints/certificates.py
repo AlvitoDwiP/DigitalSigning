@@ -9,7 +9,7 @@ from sqlalchemy import or_
 from app.api import deps
 from app.models.certificate import Certificate
 from app.models.user import User
-from app.models.audit_log import AuditLog
+from app.services.audit import record_audit
 from app.schemas.certificate import PublicCertificateItem
 from app.services import pki_api_client
 from app.services.pki_cleanup import cleanup_local_pki_materials
@@ -200,16 +200,15 @@ def delete_certificate(
         db.query(Certificate).filter(Certificate.replaced_by == certificate_id).update({"replaced_by": None}, synchronize_session=False)
         db.delete(cert)
         
-        audit = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
+        record_audit(
+            db,
+            actor_id=current_user.id,
             action="CERTIFICATE_DELETED",
-            target_type="certificate",
             target_id=certificate_id,
-            status="SUCCESS"
+            status="SUCCESS",
+            target_type="certificate",
+            commit=True
         )
-        db.add(audit)
-        db.commit()
 
         return {"success": True, "message": "Sertifikat berhasil dihapus"}
     except Exception as e:

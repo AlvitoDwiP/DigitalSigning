@@ -28,28 +28,7 @@ from app.core.config import settings
 router = APIRouter()
 
 
-def _record_audit(
-    db: Session,
-    actor_id: Optional[uuid.UUID],
-    action: str,
-    target_id: Optional[uuid.UUID],
-    status: str = "SUCCESS",
-    target_type: str = "user",
-    commit: bool = False
-) -> AuditLog:
-    """Helper untuk pencatatan audit log agar konsisten dan ringkas."""
-    audit = AuditLog(
-        id=uuid.uuid4(),
-        user_id=actor_id,
-        action=action,
-        target_type=target_type,
-        target_id=target_id,
-        status=status
-    )
-    db.add(audit)
-    if commit:
-        db.commit()
-    return audit
+from app.services.audit import record_audit as _record_audit
 
 
 def _build_certificate_model(

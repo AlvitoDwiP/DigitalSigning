@@ -11,7 +11,7 @@ from app.api import deps
 from app.core.config import settings
 from app.models.user import User
 from app.models.certificate import Certificate
-from app.models.audit_log import AuditLog
+from app.services.audit import record_audit
 from app.services import pdf_signer
 
 router = APIRouter()
@@ -189,16 +189,7 @@ async def sign_document(
         )
     except pdf_signer.PDFSignerError as e:
         # Catat audit log kegagalan penandatanganan
-        audit_fail = AuditLog(
-            id=uuid.uuid4(),
-            user_id=current_user.id,
-            action="DOCUMENT_SIGNED",
-            target_type="user",
-            target_id=target_user.id,
-            status="FAILED"
-        )
-        db.add(audit_fail)
-        db.commit()
+        record_audit(db, current_user.id, "DOCUMENT_SIGNED", target_user.id, status="FAILED", commit=True)
 
         status_code_map = {
             "INVALID_IDENTIFIER": status.HTTP_400_BAD_REQUEST,
@@ -219,16 +210,7 @@ async def sign_document(
         )
 
     # Catat audit log keberhasilan penandatanganan operasional
-    audit_success = AuditLog(
-        id=uuid.uuid4(),
-        user_id=current_user.id,
-        action="DOCUMENT_SIGNED",
-        target_type="user",
-        target_id=target_user.id,
-        status="SUCCESS"
-    )
-    db.add(audit_success)
-    db.commit()
+    record_audit(db, current_user.id, "DOCUMENT_SIGNED", target_user.id, status="SUCCESS", commit=True)
 
     # Siapkan nama file keluaran
     orig_name = Path(pdf.filename).name
