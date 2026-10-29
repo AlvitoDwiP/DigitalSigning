@@ -236,12 +236,12 @@ export function ActiveCertificateCard({
           {/* Technical Section: Full Fingerprint with Copy Button */}
           <div className="cert-detail-item col-span-2 cert-tech-fingerprint-box">
             <div className="fingerprint-header-row">
-              <dt className="cert-detail-label">Sidik jari digital</dt>
+              <dt className="cert-detail-label">Hash</dt>
               <button
                 type="button"
                 className="btn-copy-fingerprint"
                 onClick={() => handleCopyFingerprint(certificate.fingerprint_sha256)}
-                aria-label="Salin sidik jari digital ke clipboard"
+                aria-label="Salin hash ke clipboard"
               >
                 {copiedFingerprint ? (
                   <>

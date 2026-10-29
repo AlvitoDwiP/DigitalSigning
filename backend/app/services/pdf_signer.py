@@ -4,8 +4,10 @@ import re
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Optional, Tuple, Dict, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
+from cryptography import x509
+from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat import backends
 from endesive.pdf import cms
@@ -152,6 +154,7 @@ def sign_pdf(
     lly: Optional[float] = None,
     urx: Optional[float] = None,
     ury: Optional[float] = None,
+    visible: bool = True,
     stamp_bytes: Optional[bytes] = None,
     stamp_filename: Optional[str] = None,
     reason: str = "Digital Signature Platform",
@@ -159,6 +162,8 @@ def sign_pdf(
 ) -> bytes:
     """
     Menandatangani PDF menggunakan pustaka endesive secara in-process.
+    Mendukung mode Visible (dengan visual stamp/QR di koordinat tertentu)
+    dan mode Invisible (tanda tangan kriptografis PAdES murni tanpa visual widget).
     Menerapkan pembersihan berkas temporary stempel secara terjamin.
     """
     if not pdf_bytes or len(pdf_bytes) < 4 or not pdf_bytes.startswith(b"%PDF"):
@@ -169,53 +174,31 @@ def sign_pdf(
 
     p12_path = resolve_p12_path(nik)
     key, cert, othercerts = load_p12_credentials(p12_path, passphrase)
-    rect = parse_bounding_box(llx, lly, urx, ury)
-    x0, y0, x1, y1 = rect
-    w = max(0.0, x1 - x0)
-    h = max(0.0, y1 - y0)
 
+    # Gunakan zona waktu WIB (UTC+7) agar jam penandatanganan di pembaca PDF (PDFgear / Acrobat) sesuai waktu lokal
+    wib_tz = timezone(timedelta(hours=7))
+    signing_date = datetime.now(wib_tz).strftime("D:%Y%m%d%H%M%S+07'00'")
     tmp_stamp_path: Optional[str] = None
+
+    # Ekstrak Common Name (CN) dari sertifikat penandatangan untuk field /Name pada dictionary /Sig
+    signer_cn = nik
     try:
-        if stamp_bytes and len(stamp_bytes) > 0:
-            # Validasi format gambar menggunakan Pillow
-            try:
-                with Image.open(io.BytesIO(stamp_bytes)) as img:
-                    img_format = (img.format or "").upper()
-                    if img_format not in ("PNG", "JPEG", "JPG"):
-                        raise PDFSignerError("INVALID_IMAGE", "Berkas stempel harus berformat PNG atau JPEG.")
-            except Exception as img_err:
-                if isinstance(img_err, PDFSignerError):
-                    raise
-                raise PDFSignerError("INVALID_IMAGE", "Berkas stempel visual tidak dapat diproses atau rusak.")
+        cn_attrs = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+        if cn_attrs and cn_attrs[0].value:
+            signer_cn = str(cn_attrs[0].value)
+    except Exception:
+        pass
 
-            ext = ".png" if (stamp_filename and stamp_filename.lower().endswith(".png")) else ".jpg"
-            tmp = NamedTemporaryFile(delete=False, suffix=ext)
-            tmp.write(stamp_bytes)
-            tmp.flush()
-            tmp.close()
-            tmp_stamp_path = tmp.name
-
-        signing_date = datetime.now(timezone.utc).strftime("D:%Y%m%d%H%M%S+00'00'")
-
-        if tmp_stamp_path:
-            signature_manual = [["image", "sigimg", 0, 0, w, h, True, True]]
-            manual_images = {"sigimg": tmp_stamp_path}
-        else:
-            signature_manual = []
-            manual_images = {}
-
+    try:
         dct: Dict[str, Any] = {
             "auto_sigfield": True,
             "sigpage": page - 1,  # endesive menggunakan 0-based page index
-            "signaturebox": (x0, y0, x1, y1),
             "signform": False,
             "sigfield": "Signature",
-            "signature_manual": signature_manual,
-            "manual_images": manual_images,
-            "manual_fonts": {},
             "aligned": 0,
             "sigflags": 3,
             "sigflagsft": 132,
+            "name": signer_cn,
             "reason": reason,
             "location": location,
             "contact": "",
@@ -223,8 +206,68 @@ def sign_pdf(
             "date": signing_date,
         }
 
+        if visible:
+            rect = parse_bounding_box(llx, lly, urx, ury)
+            x0, y0, x1, y1 = rect
+            w = max(0.0, x1 - x0)
+            h = max(0.0, y1 - y0)
+
+            if stamp_bytes and len(stamp_bytes) > 0:
+                # Validasi format gambar menggunakan Pillow & beri latar putih bersih (RGB)
+                # agar pembaca PDF (seperti PDFgear) tidak menampilkan blok highlight biru di balik alpha transparan
+                try:
+                    with Image.open(io.BytesIO(stamp_bytes)) as img:
+                        img_format = (img.format or "").upper()
+                        if img_format not in ("PNG", "JPEG", "JPG"):
+                            raise PDFSignerError("INVALID_IMAGE", "Berkas stempel harus berformat PNG atau JPEG.")
+
+                        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+                            rgba_img = img.convert("RGBA")
+                            white_bg = Image.new("RGB", rgba_img.size, (255, 255, 255))
+                            white_bg.paste(rgba_img, mask=rgba_img.split()[3])
+                            out_img = white_bg
+                        else:
+                            out_img = img.convert("RGB")
+
+                        tmp = NamedTemporaryFile(delete=False, suffix=".png")
+                        out_img.save(tmp, format="PNG")
+                        tmp.flush()
+                        tmp.close()
+                        tmp_stamp_path = tmp.name
+                except Exception as img_err:
+                    if isinstance(img_err, PDFSignerError):
+                        raise
+                    raise PDFSignerError("INVALID_IMAGE", "Berkas stempel visual tidak dapat diproses atau rusak.")
+
+            if tmp_stamp_path:
+                signature_manual = [["image", "sigimg", 0, 0, w, h, True, True]]
+                manual_images = {"sigimg": tmp_stamp_path}
+            else:
+                signature_manual = []
+                manual_images = {}
+
+            dct["signaturebox"] = (x0, y0, x1, y1)
+            dct["signature_manual"] = signature_manual
+            dct["manual_images"] = manual_images
+            dct["manual_fonts"] = {}
+        else:
+            # Mode Invisible: tetap gunakan signaturebox (0, 0, 0, 0) agar endesive membuat
+            # objek /AP /N bertipe StreamObject yang valid (bukan DictionaryObject kosong)
+            # serta mendaftarkan anotasi /Sig ke /Annots sehingga terdeteksi di semua alat cek TTE
+            dct["signaturebox"] = (0.0, 0.0, 0.0, 0.0)
+            dct["signature_manual"] = []
+            dct["manual_images"] = {}
+            dct["manual_fonts"] = {}
+
         try:
-            signed_tail = cms.sign(pdf_bytes, dct, key, cert, othercerts, "sha256")
+            signed_tail = cms.sign(
+                pdf_bytes,
+                dct,
+                key,
+                cert,
+                othercerts,
+                "sha256",
+            )
             return pdf_bytes + signed_tail
         except Exception as sign_err:
             raise PDFSignerError("SIGNING_FAILED", f"Gagal menyematkan tanda tangan digital: {str(sign_err)}")

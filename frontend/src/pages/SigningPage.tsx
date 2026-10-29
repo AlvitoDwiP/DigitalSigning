@@ -7,12 +7,19 @@ import {
 } from '../components/icons/Icons';
 import { getAuthUser } from '../services/api';
 import {
+  SignatureMode,
+  SignatureVisualType,
+  SignaturePlacement,
   FooterPositionPreset,
-  TargetPageOption,
-  FooterCoordinates,
-  getPresetCoordinates,
+  getDefaultPlacement,
+  getPresetPlacement,
+  placementToCoordinates,
   countPdfPages,
+  generateQrStampBlob,
+  A4_WIDTH_PT,
+  A4_HEIGHT_PT,
 } from '../utils/pdfHelper';
+import { signPdfDocument } from '../services/signatures';
 import { PdfDropzone } from '../components/signing/PdfDropzone';
 import {
   FooterConfigPanel,
@@ -39,14 +46,13 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
   const [isLoadingPages, setIsLoadingPages] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // 2. State Pengaturan Halaman & Footer
-  const [targetPageOption, setTargetPageOption] = useState<TargetPageOption>('last');
-  const [specificStartPage, setSpecificStartPage] = useState<number>(1);
-  const [specificEndPage, setSpecificEndPage] = useState<number>(1);
-  const [positionPreset, setPositionPreset] = useState<FooterPositionPreset>('bottom-right');
-  const [coords, setCoords] = useState<FooterCoordinates>(() => getPresetCoordinates('bottom-right'));
+  // 2. State TTE: Mode, Target Page (1 Halaman Saja), & Penempatan Kotak
+  const [signatureMode, setSignatureMode] = useState<SignatureMode>('visible');
+  const [visualType, setVisualType] = useState<SignatureVisualType>('qr_text');
+  const [targetPage, setTargetPage] = useState<number>(1);
+  const [placement, setPlacement] = useState<SignaturePlacement>(() => getDefaultPlacement(1));
 
-  // 3. State Tampilan Footer & Aset Gambar
+  // 3. State Tampilan & Aset Gambar
   const [displayOptions, setDisplayOptions] = useState<FooterDisplayOptions>({
     showQr: true,
     showSignerName: true,
@@ -64,7 +70,10 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
   // 5. State Hasil Penandatanganan
   const [signedResult, setSignedResult] = useState<{ blobUrl: string; filename: string } | null>(null);
 
-  // Handler Pemilihan File PDF
+  // 6. State Tab Navigasi Mobile ('form' | 'preview')
+  const [mobileTab, setMobileTab] = useState<'form' | 'preview'>('form');
+
+  // Handler Pemilihan File PDF (Membuka langsung di Halaman 1)
   const handleSelectPdf = async (file: File) => {
     setPdfFile(file);
     setSignedResult(null);
@@ -74,14 +83,14 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     try {
       const count = await countPdfPages(file);
       setPageCount(count);
-      setCurrentPage(count); // Buka langsung ke halaman terakhir (target umum footer)
-      setSpecificStartPage(1);
-      setSpecificEndPage(count);
+      setCurrentPage(1); // User requirement: membuka Halaman 1
+      setTargetPage(1);
+      setPlacement(getDefaultPlacement(1));
     } catch {
       setPageCount(1);
       setCurrentPage(1);
-      setSpecificStartPage(1);
-      setSpecificEndPage(1);
+      setTargetPage(1);
+      setPlacement(getDefaultPlacement(1));
     } finally {
       setIsLoadingPages(false);
     }
@@ -91,32 +100,34 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     setPdfFile(null);
     setPageCount(1);
     setCurrentPage(1);
+    setTargetPage(1);
     setSignedResult(null);
     setErrorMsg(null);
   };
 
-  const handlePositionPresetChange = (preset: FooterPositionPreset) => {
-    setPositionPreset(preset);
-    setCoords(getPresetCoordinates(preset));
+  const handlePresetSelect = (preset: FooterPositionPreset) => {
+    setPlacement((prev) =>
+      getPresetPlacement(preset, prev.page, A4_WIDTH_PT, A4_HEIGHT_PT, prev.width, prev.height)
+    );
   };
 
-  // Validasi form sebelum konfirmasi
-  const isSpecificPageValid =
-    targetPageOption !== 'specific' ||
-    (specificStartPage >= 1 &&
-     specificStartPage <= pageCount &&
-     specificEndPage >= specificStartPage &&
-     specificEndPage <= pageCount);
+  const handleTargetPageChange = (page: number) => {
+    setTargetPage(page);
+    setPlacement((prev) => ({ ...prev, page }));
+    if (page >= 1 && page <= pageCount) {
+      setCurrentPage(page);
+    }
+  };
 
-  const isFormValid = Boolean(pdfFile) && isSpecificPageValid;
+  const isFormValid = Boolean(pdfFile) && targetPage >= 1 && targetPage <= pageCount;
 
   // Buka modal konfirmasi passphrase
   const handleOpenConfirm = () => {
     if (!isFormValid) {
       if (!pdfFile) {
         setErrorMsg('Pilih dokumen PDF terlebih dahulu.');
-      } else if (!isSpecificPageValid) {
-        setErrorMsg('Rentang nomor halaman target tidak valid.');
+      } else if (targetPage < 1 || targetPage > pageCount) {
+        setErrorMsg(`Masukkan nomor halaman target yang valid (1 – ${pageCount}).`);
       }
       return;
     }
@@ -131,24 +142,60 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     setIsSubmitting(true);
     setErrorMsg(null);
 
+    // Format nama berkas keluaran: {nama file}_sign.pdf
+    const origName = pdfFile.name;
+    const stem = origName.replace(/\.[^/.]+$/, '');
+    const downloadFilename = `${stem}_sign.pdf`;
+
     try {
-      // Simulasi proses penandatanganan di sisi frontend (Mock state bertanda jelas untuk development)
-      await new Promise((resolve) => setTimeout(resolve, 1400));
+      let stampToSend: File | Blob | null = null;
+      if (signatureMode === 'visible') {
+        if (visualType === 'image' && stampFile) {
+          stampToSend = stampFile;
+        } else if (visualType === 'qr_text') {
+          const currentDateStr = new Date().toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          });
+          const currentTimeStr = new Date().toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          stampToSend = await generateQrStampBlob({
+            signerName,
+            organization,
+            dateStr: `${currentDateStr} ${currentTimeStr} WIB`,
+            width: placement.width,
+            height: placement.height,
+          });
+        }
+      }
 
-      const outputFilename = `[signed]_${pdfFile.name}`;
-      const blobUrl = window.URL.createObjectURL(pdfFile);
+      const coords = placementToCoordinates(placement);
 
-      setSignedResult({
-        blobUrl,
-        filename: outputFilename,
+      const result = await signPdfDocument({
+        pdf: pdfFile,
+        stamp: stampToSend,
+        page: placement.page,
+        llx: signatureMode === 'visible' ? coords.llx : undefined,
+        lly: signatureMode === 'visible' ? coords.lly : undefined,
+        urx: signatureMode === 'visible' ? coords.urx : undefined,
+        ury: signatureMode === 'visible' ? coords.ury : undefined,
+        visible: signatureMode === 'visible',
+        passphrase: _passphrase,
       });
 
+      const blobUrl = window.URL.createObjectURL(result.blob);
+      setSignedResult({
+        blobUrl,
+        filename: downloadFilename,
+      });
       setIsModalOpen(false);
 
-      // Otomatis unduh berkas hasil simulasi
       const downloadLink = document.createElement('a');
       downloadLink.href = blobUrl;
-      downloadLink.download = outputFilename;
+      downloadLink.download = downloadFilename;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
@@ -164,33 +211,38 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     setStampFile(null);
     setPageCount(1);
     setCurrentPage(1);
-    setSpecificStartPage(1);
-    setSpecificEndPage(1);
-    setPositionPreset('bottom-right');
-    setCoords(getPresetCoordinates('bottom-right'));
+    setTargetPage(1);
+    setSignatureMode('visible');
+    setVisualType('qr_text');
+    setPlacement(getDefaultPlacement(1));
     setSignedResult(null);
     setErrorMsg(null);
     setIsModalOpen(false);
   };
 
   // Ringkasan target halaman untuk modal konfirmasi
-  const targetPageSummary =
-    targetPageOption === 'all'
-      ? `Semua Halaman (1 – ${pageCount})`
-      : targetPageOption === 'last'
-      ? `Halaman Terakhir (Hal. ${pageCount})`
-      : specificStartPage === specificEndPage
-      ? `Halaman ${specificStartPage} dari ${pageCount}`
-      : `Halaman ${specificStartPage} s.d. ${specificEndPage} (dari ${pageCount} halaman)`;
+  const targetPageSummary = `Halaman ${placement.page} dari ${pageCount}`;
+  const signatureModeLabel =
+    signatureMode === 'visible' ? 'Terlihat (Visible Signature)' : 'Tak Terlihat (Invisible Signature)';
+  const visualFormatLabel =
+    signatureMode === 'visible'
+      ? visualType === 'qr_text'
+        ? 'QR Code'
+        : stampFile
+          ? `Gambar Paraf (${stampFile.name})`
+          : 'Gambar Paraf'
+      : undefined;
+  const dimensionsLabel =
+    signatureMode === 'visible' ? `${placement.width} × ${placement.height} pt` : undefined;
 
   return (
     <div className="tte-page-wrapper">
-      {/* Header Halaman Sesuai Spesifikasi */}
+      {/* Header Halaman */}
       <div className="page-header-row tte-page-header">
         <div className="page-header">
           <h1 className="page-title">TANDA TANGANI DOKUMEN</h1>
           <p className="page-subtitle">
-            Tambahkan tanda tangan elektronik dan pratinjau verifikasi pada dokumen PDF.
+            Tambahkan tanda tangan elektronik (TTE) pada satu halaman dokumen.
           </p>
         </div>
       </div>
@@ -238,8 +290,40 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
         </div>
       )}
 
+      {/* Mobile Stepper / Tab Switcher (Hanya tampil di tablet & mobile < 1025px) */}
+      <div className="tte-mobile-stepper" role="tablist" aria-label="Langkah Penandatanganan Mobile">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobileTab === 'form'}
+          className={`tte-mobile-stepper-btn ${mobileTab === 'form' ? 'is-active' : ''}`}
+          onClick={() => setMobileTab('form')}
+        >
+          <span className="tte-stepper-badge">1</span>
+          <span className="tte-stepper-label">Formulir TTE</span>
+          {pdfFile && <span className="tte-stepper-check" aria-hidden="true">✓</span>}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobileTab === 'preview'}
+          className={`tte-mobile-stepper-btn ${mobileTab === 'preview' ? 'is-active' : ''}`}
+          onClick={() => setMobileTab('preview')}
+          disabled={!pdfFile}
+          title={!pdfFile ? 'Unggah berkas PDF terlebih dahulu untuk melihat pratinjau' : undefined}
+        >
+          <span className="tte-stepper-badge">2</span>
+          <span className="tte-stepper-label">Pratinjau Lembar</span>
+          {pdfFile && (
+            <span className="tte-stepper-page-badge">
+              Hal {currentPage}/{pageCount}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Grid Utama: Panel Konfigurasi Kiri & Pratinjau Dokumen Kanan */}
-      <div className="tte-main-grid">
+      <div className={`tte-main-grid tte-mobile-view-${mobileTab}`}>
         {/* Kolom Kiri: Form Langkah Bertahap */}
         <div className="tte-left-col">
           {/* Langkah 1: Pilih Dokumen PDF */}
@@ -251,29 +335,20 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
             onRemoveFile={handleRemovePdf}
           />
 
-          {/* Langkah 2 & 3: Konfigurasi Footer TTE & Aksi (hanya tampil jika PDF terpilih) */}
+          {/* Langkah 2, 3, 4: Konfigurasi TTE & Aksi (hanya tampil jika PDF terpilih) */}
           {pdfFile && (
             <FooterConfigPanel
               pdfFile={pdfFile}
               pageCount={pageCount}
-              targetPageOption={targetPageOption}
-              onChangeTargetPageOption={(opt) => {
-                setTargetPageOption(opt);
-                if (opt === 'last') setCurrentPage(pageCount);
-                if (opt === 'specific') setCurrentPage(specificStartPage);
-              }}
-              specificStartPage={specificStartPage}
-              specificEndPage={specificEndPage}
-              onChangeSpecificStartPage={(p) => {
-                setSpecificStartPage(p);
-                setCurrentPage(p);
-              }}
-              onChangeSpecificEndPage={(p) => {
-                setSpecificEndPage(p);
-                setCurrentPage(p);
-              }}
-              positionPreset={positionPreset}
-              onChangePositionPreset={handlePositionPresetChange}
+              signatureMode={signatureMode}
+              onChangeSignatureMode={setSignatureMode}
+              targetPage={targetPage}
+              onChangeTargetPage={handleTargetPageChange}
+              visualType={visualType}
+              onChangeVisualType={setVisualType}
+              placement={placement}
+              onChangePlacement={setPlacement}
+              onPresetSelect={handlePresetSelect}
               displayOptions={displayOptions}
               onChangeDisplayOptions={setDisplayOptions}
               stampFile={stampFile}
@@ -288,25 +363,30 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
               onSubmitSign={handleOpenConfirm}
               onReset={handleReset}
               isValid={isFormValid}
+              onGoToPreview={() => setMobileTab('preview')}
             />
           )}
         </div>
 
-        {/* Kolom Kanan: Pratinjau Dokumen PDF & Footer Interaktif */}
+        {/* Kolom Kanan: Pratinjau Dokumen PDF Real & Kotak TTE Draggable/Resizable */}
         <div className="tte-right-col">
           <PdfInteractivePreview
             pdfFile={pdfFile}
             pageCount={pageCount}
             currentPage={currentPage}
             onChangeCurrentPage={setCurrentPage}
-            targetPageOption={targetPageOption}
-            specificStartPage={specificStartPage}
-            specificEndPage={specificEndPage}
-            coords={coords}
+            signatureMode={signatureMode}
+            visualType={visualType}
+            placement={placement}
+            onChangePlacement={setPlacement}
             displayOptions={displayOptions}
             stampFile={stampFile}
             signerName={signerName}
             organization={organization}
+            onSwitchToForm={() => setMobileTab('form')}
+            onOpenConfirmSign={handleOpenConfirm}
+            isFormValid={isFormValid}
+            isVisibleTab={mobileTab === 'preview'}
           />
         </div>
       </div>
@@ -319,9 +399,13 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
         documentName={pdfFile ? pdfFile.name : ''}
         targetPageSummary={targetPageSummary}
         signerName={signerName}
+        signatureModeLabel={signatureModeLabel}
+        visualFormatLabel={visualFormatLabel}
+        dimensionsLabel={dimensionsLabel}
         isSubmitting={isSubmitting}
         errorMsg={errorMsg}
       />
     </div>
   );
 }
+

@@ -382,3 +382,44 @@ export function IconDownload({ size = 18, className, ...props }: IconProps) {
   );
 }
 
+export function IconQrCode({ size = 18, className, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
+      <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.75" fill="currentColor" fillOpacity="0.15" />
+      <rect x="5.5" y="5.5" width="2" height="2" fill="currentColor" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.75" fill="currentColor" fillOpacity="0.15" />
+      <rect x="16.5" y="5.5" width="2" height="2" fill="currentColor" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.75" fill="currentColor" fillOpacity="0.15" />
+      <rect x="5.5" y="16.5" width="2" height="2" fill="currentColor" />
+      <path d="M14 14H17M17 14V17M14 17V20M17 20H20V17M14 14V17" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IconImage({ size = 18, className, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.75" fill="currentColor" fillOpacity="0.1" />
+      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+      <path d="M21 15L16 10L6 20M16 15L18 13L21 16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IconMove({ size = 18, className, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
+      <path d="M5 9L2 12M2 12L5 15M2 12H22M19 9L22 12M22 12L19 15M15 5L12 2M12 2L9 5M12 2V22M9 19L12 22M12 22L15 19" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IconSliders({ size = 18, className, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
+      <path d="M4 21V14M4 10V3M12 21V12M12 8V3M20 21V16M20 12V3M1 14H7M9 8H15M17 16H23" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+

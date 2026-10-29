@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ComponentType } from 'react';
 import {
   IconDashboard,
@@ -66,7 +66,7 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
 
   if (role === 'ADMIN') {
     if (viewMode === 'user') {
-      // Admin pada Mode Pengguna: Menampilkan navigasi User
+      // Admin pada Mode Pengguna: Menampilkan navigasi User (Dashboard, Kelola Akun, Penandatanganan)
       return [
         {
           id: 'dashboard',
@@ -85,12 +85,11 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
           path: '/signing',
           label: 'Penandatanganan',
           icon: IconSignature,
-          reservedBadge: 'Soon',
         },
       ];
     }
 
-    // Admin pada Mode Admin: Menu administrasi
+    // Admin pada Mode Admin: Menu administrasi (Dashboard, Pengguna, Generate, Audit Log)
     return [
       {
         id: 'dashboard',
@@ -116,13 +115,6 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
         label: 'Audit Log',
         icon: IconAudit,
       },
-      {
-        id: 'signing',
-        path: '/signing',
-        label: 'Penandatanganan',
-        icon: IconSignature,
-        reservedBadge: 'Soon',
-      },
     ];
   }
 
@@ -145,7 +137,6 @@ export function getNavItemsForRole(role: string, viewMode: 'admin' | 'user' = 'a
       path: '/signing',
       label: 'Penandatanganan',
       icon: IconSignature,
-      reservedBadge: 'Soon',
     },
   ];
 }
@@ -174,6 +165,11 @@ export function Sidebar({
   const authUser = getAuthUser();
   const currentRole = authUser?.role || 'ADMIN';
   const navItems = getNavItemsForRole(currentRole, viewMode);
+  const [activatingPath, setActivatingPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActivatingPath(null);
+  }, [currentPath]);
 
   // Lock scroll and handle escape key when mobile drawer is open
   useEffect(() => {
@@ -238,26 +234,62 @@ export function Sidebar({
         <nav className="sidebar-nav">
           <ul className="nav-list">
             {navItems.map((item) => {
-              const isActive = isPathActive(item.path);
+              const isCurrentActive = isPathActive(item.path);
+              const isActivating = activatingPath === item.path;
+              const isFilled = isActivating || (isCurrentActive && activatingPath === null);
+
+              let revealStateClass = 'nav-reveal-idle';
+              if (isActivating) {
+                revealStateClass = 'nav-reveal-activating';
+              } else if (isCurrentActive && activatingPath === null) {
+                revealStateClass = 'nav-reveal-active';
+              } else {
+                revealStateClass = 'nav-reveal-idle';
+              }
+
               const Icon = item.icon;
 
               return (
-                <li key={item.id} className="nav-item">
+                <li
+                  key={item.id}
+                  className={`nav-item ${isFilled ? 'nav-item-active' : ''}`}
+                >
                   <button
                     type="button"
-                    className={`nav-link ${isActive ? 'nav-link-active' : ''} ${item.isReserved ? 'nav-link-reserved' : ''}`}
-                    onClick={() => {
+                    className={`nav-link ${isFilled ? 'nav-link-filled nav-link-active' : ''} ${item.isReserved ? 'nav-link-reserved' : ''}`}
+                    onClick={(e) => {
                       if (item.isReserved) return;
-                      onNavigate(item.path);
-                      if (onCloseMobile) onCloseMobile();
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                      if (isCurrentActive || activatingPath) return;
+
+                      e.preventDefault();
+                      setActivatingPath(item.path);
+
+                      setTimeout(() => {
+                        onNavigate(item.path);
+                        if (onCloseMobile) onCloseMobile();
+                        setActivatingPath(null);
+                      }, 350);
                     }}
                     disabled={item.isReserved}
-                    aria-current={isActive ? 'page' : undefined}
+                    aria-current={isCurrentActive ? 'page' : undefined}
+                    title={item.label}
                   >
-                    <span className="nav-icon-wrapper" aria-hidden="true">
-                      <Icon size={20} />
+                    {/* Layer animasi lekukan & background wipe (clip-path) */}
+                    <span className={`nav-reveal-layer ${revealStateClass}`} aria-hidden="true">
+                      <span className="nav-reveal-pill" />
+                      <span className="nav-reveal-cutout nav-cutout-top" />
+                      <span className="nav-reveal-cutout nav-cutout-bottom" />
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, minWidth: 0, textAlign: 'left' }}>
+
+                    {/* Icon dengan hover wiggle effect */}
+                    <span className="nav-icon-wrapper" aria-hidden="true">
+                      <span className="nav-icon-inner">
+                        <Icon size={20} />
+                      </span>
+                    </span>
+
+                    <div className="nav-content-wrapper">
                       <span className="nav-label">{item.label}</span>
                       {item.reservedBadge && (
                         <span className="sidebar-badge-soon">{item.reservedBadge}</span>

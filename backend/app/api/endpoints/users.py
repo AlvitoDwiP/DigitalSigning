@@ -572,12 +572,13 @@ def delete_user_certificate(
         pass
     cleanup_local_pki_materials(user.nik, cert_paths=cert_paths)
 
-    # 2. Hapus data sertifikat dari database
+    # 2. Perbarui status sertifikat menjadi DELETED agar tetap tercatat di riwayat sertifikat dan audit log
     try:
         db.query(Certificate).filter(Certificate.replaced_by == certificate_id).update({"replaced_by": None}, synchronize_session=False)
-        db.delete(cert)
+        cert.status = "DELETED"
+        cert.updated_at = datetime.datetime.now(datetime.timezone.utc)
+        _record_audit(db, current_user.id, "CERTIFICATE_DELETED", user_id, "SUCCESS", target_type="user")
         db.commit()
-        _record_audit(db, current_user.id, "CERTIFICATE_DELETED", certificate_id, "SUCCESS", target_type="certificate", commit=True)
         return {"success": True, "message": "Sertifikat berhasil dihapus"}
     except Exception as e:
         db.rollback()

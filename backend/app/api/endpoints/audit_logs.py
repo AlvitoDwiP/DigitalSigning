@@ -152,8 +152,8 @@ def get_audit_logs(
             if c_info.get("user_id"):
                 target_id_effective = str(c_info["user_id"])
 
-        # Untuk aktivitas penerbitan/regenerasi sertifikat, jenis target terkait adalah pengguna
-        if log.action in ["CERTIFICATE_REGENERATED", "CERTIFICATE_GENERATED"]:
+        # Untuk aktivitas penerbitan/regenerasi/penghapusan sertifikat, jenis target terkait adalah pengguna
+        if log.action in ["CERTIFICATE_REGENERATED", "CERTIFICATE_GENERATED", "CERTIFICATE_DELETED"]:
             target_type_effective = "user"
 
         formatted_items.append({

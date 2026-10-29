@@ -1,12 +1,20 @@
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, DragEvent } from 'react';
 import {
   IconCheckCircle,
   IconTrash,
-  IconUpload
+  IconUpload,
+  IconRefresh,
+  IconEye,
+  IconEyeOff,
+  IconQrCode,
+  IconImage,
+  IconMove,
 } from '../icons/Icons';
 import {
+  SignatureMode,
+  SignatureVisualType,
+  SignaturePlacement,
   FooterPositionPreset,
-  TargetPageOption,
 } from '../../utils/pdfHelper';
 
 export interface FooterDisplayOptions {
@@ -16,17 +24,18 @@ export interface FooterDisplayOptions {
   showTimestamp: boolean;
 }
 
-interface FooterConfigPanelProps {
+export interface FooterConfigPanelProps {
   pdfFile: File | null;
   pageCount: number;
-  targetPageOption: TargetPageOption;
-  onChangeTargetPageOption: (opt: TargetPageOption) => void;
-  specificStartPage: number;
-  specificEndPage: number;
-  onChangeSpecificStartPage: (page: number) => void;
-  onChangeSpecificEndPage: (page: number) => void;
-  positionPreset: FooterPositionPreset;
-  onChangePositionPreset: (preset: FooterPositionPreset) => void;
+  signatureMode: SignatureMode;
+  onChangeSignatureMode: (mode: SignatureMode) => void;
+  targetPage: number;
+  onChangeTargetPage: (page: number) => void;
+  visualType: SignatureVisualType;
+  onChangeVisualType: (type: SignatureVisualType) => void;
+  placement: SignaturePlacement;
+  onChangePlacement: (placement: SignaturePlacement) => void;
+  onPresetSelect: (preset: FooterPositionPreset) => void;
   displayOptions: FooterDisplayOptions;
   onChangeDisplayOptions: (opts: FooterDisplayOptions) => void;
   stampFile: File | null;
@@ -41,384 +50,335 @@ interface FooterConfigPanelProps {
   onSubmitSign: () => void;
   onReset: () => void;
   isValid: boolean;
+  onGoToPreview?: () => void;
+  // Props kompatibilitas opsional
+  targetPageOption?: any;
+  onChangeTargetPageOption?: any;
+  specificStartPage?: any;
+  specificEndPage?: any;
+  onChangeSpecificStartPage?: any;
+  onChangeSpecificEndPage?: any;
+  positionPreset?: any;
+  onChangePositionPreset?: any;
 }
 
 export function FooterConfigPanel({
   pdfFile,
   pageCount,
-  targetPageOption,
-  onChangeTargetPageOption,
-  specificStartPage,
-  specificEndPage,
-  onChangeSpecificStartPage,
-  onChangeSpecificEndPage,
-  positionPreset,
-  onChangePositionPreset,
-  displayOptions,
-  onChangeDisplayOptions,
+  signatureMode,
+  onChangeSignatureMode,
+  targetPage,
+  onChangeTargetPage,
+  visualType,
+  onChangeVisualType,
+  placement: _placement,
+  onPresetSelect: _onPresetSelect,
+  displayOptions: _displayOptions,
+  onChangeDisplayOptions: _onChangeDisplayOptions,
   stampFile,
   onSelectStamp,
   onRemoveStamp,
-  signerName,
-  organization,
-  adminTargetNik,
-  onChangeAdminTargetNik,
-  isAdmin,
-  isUserView,
+  signerName: _signerName,
+  organization: _organization,
+  adminTargetNik: _adminTargetNik,
+  onChangeAdminTargetNik: _onChangeAdminTargetNik,
+  isAdmin: _isAdmin,
+  isUserView: _isUserView,
   onSubmitSign,
   onReset,
   isValid,
+  onGoToPreview,
 }: FooterConfigPanelProps) {
   const [stampError, setStampError] = useState<string | null>(null);
+  const [isStampDragOver, setIsStampDragOver] = useState(false);
 
-  const isSpecificPageInvalid =
-    targetPageOption === 'specific' &&
-    (specificStartPage < 1 ||
-     specificEndPage > pageCount ||
-     specificStartPage > specificEndPage);
+  const validateAndSelectStamp = (file: File) => {
+    setStampError(null);
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(png|jpg|jpeg)$/i)) {
+      setStampError('Gambar tanda tangan harus berformat PNG atau JPG.');
+      return;
+    }
+    onSelectStamp(file);
+  };
 
   const handleStampChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setStampError(null);
     if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-      if (!validTypes.includes(file.type) && !file.name.match(/\.(png|jpg|jpeg)$/i)) {
-        setStampError('Gambar tanda tangan harus berformat PNG atau JPG.');
-        return;
-      }
-      onSelectStamp(file);
+      validateAndSelectStamp(e.target.files[0]);
+    }
+  };
+
+  const handleStampDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsStampDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      validateAndSelectStamp(e.dataTransfer.files[0]);
     }
   };
 
   return (
     <div className="tte-config-panel">
-      {/* Langkah 2: Pilih Halaman untuk Footer */}
+      {/* Langkah 2: Pilih Mode Tanda Tangan (Visible / Invisible & Pilihan Format Visual) */}
       <div className="tte-step-card">
         <div className="tte-step-header">
           <span className="tte-step-badge">2</span>
           <div>
-            <h2 className="tte-step-title">Pilih Halaman untuk Footer</h2>
-            <p className="tte-step-desc">Tentukan halaman tempat footer TTE akan dibubuhkan</p>
+            <h2 className="tte-step-title">Mode Tanda Tangan (TTE)</h2>
+            <p className="tte-step-desc">Pilih mode visibilitas dan format tampilan tanda tangan</p>
           </div>
         </div>
 
-        <div className="tte-page-options-grid" role="radiogroup" aria-label="Pilihan Halaman Footer">
-          <label className={`tte-radio-card ${targetPageOption === 'last' ? 'is-selected' : ''}`}>
+        <div className="tte-mode-cards-grid" role="radiogroup" aria-label="Pilihan Mode TTE">
+          <label className={`tte-mode-card ${signatureMode === 'visible' ? 'is-selected' : ''}`}>
             <input
               type="radio"
-              name="target-page-opt"
-              checked={targetPageOption === 'last'}
-              onChange={() => onChangeTargetPageOption('last')}
+              name="tte-signature-mode"
+              checked={signatureMode === 'visible'}
+              onChange={() => onChangeSignatureMode('visible')}
             />
-            <div className="tte-radio-content">
-              <strong>Halaman Terakhir</strong>
-              <span>
-                {pdfFile ? `Hanya pada halaman ${pageCount}` : 'Halaman penutup dokumen'}
-              </span>
+            <div className="tte-mode-card-icon">
+              <IconEye size={20} />
+            </div>
+            <div className="tte-mode-card-content">
+              <strong>TTE Terlihat (Visible)</strong>
+              <span>Stempel QR / Paraf pada dokumen.</span>
             </div>
           </label>
 
-          <label className={`tte-radio-card ${targetPageOption === 'all' ? 'is-selected' : ''}`}>
+          <label className={`tte-mode-card ${signatureMode === 'invisible' ? 'is-selected' : ''}`}>
             <input
               type="radio"
-              name="target-page-opt"
-              checked={targetPageOption === 'all'}
-              onChange={() => onChangeTargetPageOption('all')}
+              name="tte-signature-mode"
+              checked={signatureMode === 'invisible'}
+              onChange={() => onChangeSignatureMode('invisible')}
             />
-            <div className="tte-radio-content">
-              <strong>Semua Halaman</strong>
-              <span>Setiap lembar dokumen ({pageCount || 1} halaman)</span>
+            <div className="tte-mode-card-icon">
+              <IconEyeOff size={20} />
             </div>
-          </label>
-
-          <label className={`tte-radio-card ${targetPageOption === 'specific' ? 'is-selected' : ''}`}>
-            <input
-              type="radio"
-              name="target-page-opt"
-              checked={targetPageOption === 'specific'}
-              onChange={() => onChangeTargetPageOption('specific')}
-            />
-            <div className="tte-radio-content">
-              <strong>Halaman Tertentu</strong>
-              <span>Pilih nomor lembar spesifik</span>
+            <div className="tte-mode-card-content">
+              <strong>TTE Tak Terlihat (Invisible)</strong>
+              <span>Kriptografis tanpa visual di PDF.</span>
             </div>
           </label>
         </div>
 
-        {/* Input rentang halaman spesifik jika dipilih */}
-        {targetPageOption === 'specific' && (
-          <div className="tte-specific-page-box">
-            <label className="input-label" htmlFor="specific-start-page-input">
-              Rentang Halaman Target (1 s.d. {pageCount})
-            </label>
-            <div className="tte-specific-page-input-row">
-              <span className="tte-range-label">Mulai</span>
-              <input
-                id="specific-start-page-input"
-                type="number"
-                min={1}
-                max={pageCount || 1}
-                className={`form-control ${isSpecificPageInvalid ? 'is-invalid' : ''}`}
-                value={specificStartPage}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  onChangeSpecificStartPage(isNaN(val) ? 1 : val);
-                }}
-                aria-label="Halaman awal target"
-              />
-              <span className="tte-range-label">sampai</span>
-              <input
-                id="specific-end-page-input"
-                type="number"
-                min={1}
-                max={pageCount || 1}
-                className={`form-control ${isSpecificPageInvalid ? 'is-invalid' : ''}`}
-                value={specificEndPage}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  onChangeSpecificEndPage(isNaN(val) ? (pageCount || 1) : val);
-                }}
-                aria-label="Halaman akhir target"
-              />
-              <span className="tte-specific-page-helper">dari total {pageCount} halaman</span>
+        {/* Pilihan Format Visual di dalam kartu Mode Tanda Tangan (saat Visible aktif) */}
+        {signatureMode === 'visible' && (
+          <div className="tte-form-group" style={{ marginTop: '4px', paddingTop: '8px', borderTop: '1px solid var(--line)' }}>
+            <label className="input-label">Pilihan Format Visual:</label>
+            <div className="tte-visual-type-toggle" role="tablist">
+              <button
+                type="button"
+                className={`tte-visual-type-btn ${visualType === 'qr_text' ? 'is-active' : ''}`}
+                onClick={() => onChangeVisualType('qr_text')}
+                role="tab"
+                aria-selected={visualType === 'qr_text'}
+              >
+                <IconQrCode size={16} />
+                <span>QR Code</span>
+              </button>
+              <button
+                type="button"
+                className={`tte-visual-type-btn ${visualType === 'image' ? 'is-active' : ''}`}
+                onClick={() => onChangeVisualType('image')}
+                role="tab"
+                aria-selected={visualType === 'image'}
+              >
+                <IconImage size={16} />
+                <span>Gambar Tanda Tangan / Paraf</span>
+              </button>
             </div>
 
-            {isSpecificPageInvalid && (
-              <p id="page-validation-hint" className="tte-error-text" role="alert">
-                Rentang halaman tidak valid (pastikan antara 1 s.d. {pageCount} dan halaman awal tidak melebihi halaman akhir).
-              </p>
+            {visualType === 'image' && (
+              <div style={{ marginTop: '6px' }}>
+                <input
+                  id="stamp-file-input"
+                  type="file"
+                  accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                  onChange={handleStampChange}
+                  style={{ display: 'none' }}
+                />
+
+                {stampError && (
+                  <p className="tte-error-text" role="alert" style={{ marginBottom: '6px' }}>
+                    {stampError}
+                  </p>
+                )}
+
+                {!stampFile ? (
+                  <div
+                    className={`tte-dropzone tte-stamp-dropzone ${isStampDragOver ? 'is-drag-over' : ''}`}
+                    onClick={() => document.getElementById('stamp-file-input')?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsStampDragOver(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsStampDragOver(false);
+                    }}
+                    onDrop={handleStampDrop}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        document.getElementById('stamp-file-input')?.click();
+                      }
+                    }}
+                    aria-label="Area unggah gambar tanda tangan"
+                  >
+                    <div className="tte-dropzone-icon-wrap" aria-hidden="true">
+                      <IconUpload size={22} />
+                    </div>
+                    <div className="tte-dropzone-texts">
+                      <strong className="tte-dropzone-main">Pilih Gambar atau seret berkas ke sini</strong>
+                      <span className="tte-dropzone-hint">PNG / JPG · Maksimal 5 MB</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="tte-file-card">
+                    <img
+                      src={URL.createObjectURL(stampFile)}
+                      alt="Pratinjau gambar tanda tangan"
+                      className="tte-stamp-thumb"
+                    />
+                    <div className="tte-file-meta">
+                      <span className="tte-file-name" title={stampFile.name}>
+                        {stampFile.name}
+                      </span>
+                      <div className="tte-file-details">
+                        <span>{(stampFile.size / 1024).toFixed(1)} KB</span>
+                        <span className="tte-file-dot" aria-hidden="true">•</span>
+                        <span>Gambar Paraf</span>
+                      </div>
+                    </div>
+                    <div className="tte-file-actions">
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm tte-file-action-btn"
+                        onClick={() => document.getElementById('stamp-file-input')?.click()}
+                        title="Ganti gambar tanda tangan"
+                        aria-label="Ganti gambar tanda tangan"
+                      >
+                        <IconRefresh size={14} aria-hidden="true" />
+                        <span>Ganti</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm tte-file-action-btn is-danger"
+                        onClick={onRemoveStamp}
+                        title="Hapus gambar tanda tangan"
+                        aria-label="Hapus gambar tanda tangan"
+                      >
+                        <IconTrash size={14} aria-hidden="true" />
+                        <span>Hapus</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Langkah 3: Atur Footer TTE */}
+      {/* Langkah 3: Halaman Target (Hanya 1 Halaman Saja) */}
       <div className="tte-step-card">
         <div className="tte-step-header">
           <span className="tte-step-badge">3</span>
           <div>
-            <h2 className="tte-step-title">Atur Footer TTE</h2>
-            <p className="tte-step-desc">Sesuaikan posisi dan elemen visual verifikasi tanda tangan</p>
+            <h2 className="tte-step-title">Pilih Satu Halaman Target</h2>
+            <p className="tte-step-desc">TTE ditempatkan pada 1 halaman spesifik yang Anda tentukan</p>
           </div>
         </div>
 
-        {/* Pilihan Posisi Preset */}
-        <div className="tte-form-group">
-          <label className="input-label">Pilihan Posisi Footer</label>
-          <div className="tte-presets-row" role="radiogroup" aria-label="Pilihan Posisi Footer">
+        <div className="tte-page-compact-row">
+          <div className="tte-page-quick-buttons" style={{ marginBottom: 0 }}>
             <button
               type="button"
-              className={`tte-preset-btn ${positionPreset === 'bottom-left' ? 'is-active' : ''}`}
-              onClick={() => onChangePositionPreset('bottom-left')}
+              className={`btn btn-sm ${targetPage === 1 ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => onChangeTargetPage(1)}
+              disabled={!pdfFile}
             >
-              Bawah Kiri
+              Awal
             </button>
-            <button
-              type="button"
-              className={`tte-preset-btn ${positionPreset === 'bottom-center' ? 'is-active' : ''}`}
-              onClick={() => onChangePositionPreset('bottom-center')}
-            >
-              Bawah Tengah
-            </button>
-            <button
-              type="button"
-              className={`tte-preset-btn ${positionPreset === 'bottom-right' ? 'is-active' : ''}`}
-              onClick={() => onChangePositionPreset('bottom-right')}
-            >
-              Bawah Kanan
-            </button>
-          </div>
-        </div>
-
-        {/* Elemen Informasi yang Ditampilkan pada Footer */}
-        <div className="tte-form-group">
-          <label className="input-label">Informasi pada Footer</label>
-          <div className="tte-checkbox-list">
-            <label className="tte-checkbox-item">
-              <input
-                type="checkbox"
-                checked={displayOptions.showQr}
-                onChange={(e) =>
-                  onChangeDisplayOptions({ ...displayOptions, showQr: e.target.checked })
-                }
-              />
-              <span>QR code verifikasi keaslian dokumen</span>
-            </label>
-
-            <label className="tte-checkbox-item">
-              <input
-                type="checkbox"
-                checked={displayOptions.showSignerName}
-                onChange={(e) =>
-                  onChangeDisplayOptions({ ...displayOptions, showSignerName: e.target.checked })
-                }
-              />
-              <span>Nama penandatangan ({signerName})</span>
-            </label>
-
-            <label className="tte-checkbox-item">
-              <input
-                type="checkbox"
-                checked={displayOptions.showOrganization}
-                onChange={(e) =>
-                  onChangeDisplayOptions({ ...displayOptions, showOrganization: e.target.checked })
-                }
-              />
-              <span>Organisasi / Unit ({organization})</span>
-            </label>
-
-            <label className="tte-checkbox-item">
-              <input
-                type="checkbox"
-                checked={displayOptions.showTimestamp}
-                onChange={(e) =>
-                  onChangeDisplayOptions({ ...displayOptions, showTimestamp: e.target.checked })
-                }
-              />
-              <span>Waktu penandatanganan (otomatis waktu sekarang)</span>
-            </label>
-          </div>
-        </div>
-
-        {/* Gambar Tanda Tangan (PNG/JPG) Opsional */}
-        <div className="tte-form-group">
-          <label className="input-label" htmlFor="stamp-file-input">
-            Gambar tanda tangan (PNG/JPG) <span className="tte-label-optional">(Opsional)</span>
-          </label>
-          <p className="tte-hint-text">
-            Representasi visual tanda tangan atau stempel basah. TTE kriptografis tetap sah walau tanpa gambar tanda tangan.
-          </p>
-
-          <input
-            id="stamp-file-input"
-            type="file"
-            accept=".png,.jpg,.jpeg,image/png,image/jpeg"
-            onChange={handleStampChange}
-            style={{ display: 'none' }}
-          />
-
-          {stampError && (
-            <p className="tte-error-text" role="alert" style={{ marginBottom: '8px' }}>
-              {stampError}
-            </p>
-          )}
-
-          {!stampFile ? (
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm tte-upload-stamp-btn"
-              onClick={() => document.getElementById('stamp-file-input')?.click()}
-            >
-              <IconUpload size={15} aria-hidden="true" />
-              <span>Pilih Gambar Tanda Tangan (PNG/JPG)</span>
-            </button>
-          ) : (
-            <div className="tte-stamp-preview-card">
-              <img
-                src={URL.createObjectURL(stampFile)}
-                alt="Pratinjau gambar tanda tangan"
-                className="tte-stamp-thumb"
-              />
-              <div className="tte-stamp-meta">
-                <span className="tte-stamp-name">{stampFile.name}</span>
-                <span className="tte-stamp-size">{(stampFile.size / 1024).toFixed(1)} KB</span>
-              </div>
+            {pageCount > 1 && (
               <button
                 type="button"
-                className="btn btn-ghost btn-sm tte-stamp-delete-btn"
-                onClick={onRemoveStamp}
-                title="Hapus gambar tanda tangan"
-                aria-label="Hapus gambar tanda tangan"
+                className={`btn btn-sm ${targetPage === pageCount ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => onChangeTargetPage(pageCount)}
+                disabled={!pdfFile}
               >
-                <IconTrash size={15} aria-hidden="true" />
+                Akhir
               </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Input NIK Khusus Admin jika menandatangani atas nama NIK lain */}
-        {isAdmin && !isUserView && (
-          <div className="tte-form-group" style={{ borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
-            <label className="input-label" htmlFor="admin-target-nik-input">
-              NIK Target Penandatangan <span className="tte-label-optional">(Khusus Admin)</span>
+          <div className="tte-target-input-inline">
+            <label className="tte-inline-page-label" htmlFor="target-single-page-input">
+              Pilih Halaman:
             </label>
             <input
-              id="admin-target-nik-input"
-              type="text"
-              maxLength={16}
-              className="form-control"
-              placeholder="Kosongkan untuk NIK akun Anda sendiri"
-              value={adminTargetNik}
-              onChange={(e) => onChangeAdminTargetNik(e.target.value)}
+              id="target-single-page-input"
+              type="number"
+              min={0}
+              max={pageCount || 1}
+              className="form-control tte-inline-page-input"
+              value={targetPage}
+              onChange={(e) => {
+                const valStr = e.target.value.trim();
+                if (valStr === '') {
+                  onChangeTargetPage(0);
+                  return;
+                }
+                const val = parseInt(valStr, 10);
+                if (!isNaN(val)) {
+                  onChangeTargetPage(Math.min(Math.max(0, val), pageCount || 1));
+                }
+              }}
+              disabled={!pdfFile}
             />
-            <span className="tte-hint-text">
-              Gunakan jika Admin menandatangani dokumen mewakili sertifikat pengguna terdaftar.
-            </span>
+            <span className="tte-page-total-label">/ {pageCount || 1}</span>
           </div>
-        )}
-
-        {/* Kotak Edukasi TTE */}
-        <div className="tte-edu-box">
-          <p className="tte-edu-text">
-            <strong>Catatan Keabsahan:</strong> Footer visual ini merupakan representasi tampilan informasi. Integritas dan keabsahan hukum dokumen dijamin melalui sertifikat digital yang disematkan didalam struktur berkas PDF.
-          </p>
         </div>
       </div>
 
-      {/* Ringkasan & Konfirmasi Tindakan */}
-      <div className="tte-step-card tte-summary-card">
-        <h3 className="tte-summary-title">Ringkasan Tindakan</h3>
-        <ul className="tte-summary-list">
-          <li>
-            <span className="tte-summary-label">Dokumen:</span>
-            <span className="tte-summary-val">{pdfFile ? pdfFile.name : 'Belum dipilih'}</span>
-          </li>
-          <li>
-            <span className="tte-summary-label">Halaman Footer:</span>
-            <span className="tte-summary-val">
-              {targetPageOption === 'all'
-                ? `Semua Halaman (1 – ${pageCount || 1})`
-                : targetPageOption === 'last'
-                ? `Halaman Terakhir (${pageCount || 1})`
-                : specificStartPage === specificEndPage
-                ? `Halaman ${specificStartPage}`
-                : `Halaman ${specificStartPage} s.d. ${specificEndPage}`}
-            </span>
-          </li>
-          <li>
-            <span className="tte-summary-label">Penandatangan:</span>
-            <span className="tte-summary-val">{signerName}</span>
-          </li>
-          <li>
-            <span className="tte-summary-label">Posisi Footer:</span>
-            <span className="tte-summary-val">
-              {positionPreset === 'bottom-left'
-                ? 'Bawah Kiri'
-                : positionPreset === 'bottom-center'
-                ? 'Bawah Tengah'
-                : 'Bawah Kanan'}
-            </span>
-          </li>
-        </ul>
+      {/* Tombol Pintas ke Pratinjau Lembar (Hanya Tampil di Mobile / Tablet) */}
+      {onGoToPreview && (
+        <button
+          type="button"
+          className="btn btn-secondary tte-mobile-preview-shortcut-wrap"
+          onClick={onGoToPreview}
+        >
+          <IconMove size={15} aria-hidden="true" />
+          <span>Atur & Lihat Posisi TTE di Pratinjau Lembar (Hal. {targetPage}) →</span>
+        </button>
+      )}
 
-        <div className="tte-actions-row">
+      {/* Tombol Aksi Penandatanganan */}
+      <div className="tte-step-card tte-summary-card">
+        <div className="tte-actions-row tte-actions-row-inline">
           <button
             type="button"
-            className="btn btn-primary btn-lg tte-submit-btn"
+            className="btn btn-primary tte-submit-btn"
             disabled={!isValid || !pdfFile}
             onClick={onSubmitSign}
           >
-            <IconCheckCircle size={18} aria-hidden="true" />
+            <IconCheckCircle size={17} aria-hidden="true" />
             <span>Tanda Tangani Dokumen</span>
           </button>
 
           {pdfFile && (
             <button
               type="button"
-              className="btn btn-ghost tte-reset-btn"
+              className="btn btn-secondary tte-reset-btn-inline"
               onClick={onReset}
             >
-              Reset Konfigurasi
+              Reset
             </button>
           )}
         </div>

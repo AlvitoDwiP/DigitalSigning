@@ -4,9 +4,8 @@ import {
   IconEye,
   IconEyeOff,
   IconClose,
-  IconShield,
   IconAlertTriangle,
-  IconRefresh
+  IconRefresh,
 } from '../icons/Icons';
 
 interface PassphraseConfirmDialogProps {
@@ -16,6 +15,9 @@ interface PassphraseConfirmDialogProps {
   documentName: string;
   targetPageSummary: string;
   signerName: string;
+  signatureModeLabel?: string;
+  visualFormatLabel?: string;
+  dimensionsLabel?: string;
   isSubmitting: boolean;
   errorMsg: string | null;
 }
@@ -27,6 +29,9 @@ export function PassphraseConfirmDialog({
   documentName,
   targetPageSummary,
   signerName,
+  signatureModeLabel,
+  visualFormatLabel,
+  dimensionsLabel,
   isSubmitting,
   errorMsg,
 }: PassphraseConfirmDialogProps) {
@@ -75,7 +80,11 @@ export function PassphraseConfirmDialog({
         {/* Header Modal */}
         <div className="dialog-header">
           <div className="dialog-header-title-group">
-            <div className="dialog-icon-badge" aria-hidden="true" style={{ background: 'rgba(0, 90, 50, 0.1)', color: 'var(--primary)' }}>
+            <div
+              className="dialog-icon-badge"
+              aria-hidden="true"
+              style={{ background: 'rgba(0, 90, 50, 0.1)', color: 'var(--primary)' }}
+            >
               <IconLock size={20} />
             </div>
             <div>
@@ -104,12 +113,32 @@ export function PassphraseConfirmDialog({
             <div className="tte-modal-summary-box">
               <div className="tte-modal-summary-row">
                 <span className="tte-modal-summary-label">Dokumen:</span>
-                <span className="tte-modal-summary-val" title={documentName}>{documentName}</span>
+                <span className="tte-modal-summary-val" title={documentName}>
+                  {documentName}
+                </span>
               </div>
+              {signatureModeLabel && (
+                <div className="tte-modal-summary-row">
+                  <span className="tte-modal-summary-label">Mode TTE:</span>
+                  <span className="tte-modal-summary-val">{signatureModeLabel}</span>
+                </div>
+              )}
               <div className="tte-modal-summary-row">
                 <span className="tte-modal-summary-label">Target Halaman:</span>
                 <span className="tte-modal-summary-val">{targetPageSummary}</span>
               </div>
+              {visualFormatLabel && (
+                <div className="tte-modal-summary-row">
+                  <span className="tte-modal-summary-label">Format Visual:</span>
+                  <span className="tte-modal-summary-val">{visualFormatLabel}</span>
+                </div>
+              )}
+              {dimensionsLabel && (
+                <div className="tte-modal-summary-row">
+                  <span className="tte-modal-summary-label">Ukuran TTE:</span>
+                  <span className="tte-modal-summary-val">{dimensionsLabel}</span>
+                </div>
+              )}
               <div className="tte-modal-summary-row">
                 <span className="tte-modal-summary-label">Penandatangan:</span>
                 <span className="tte-modal-summary-val">{signerName}</span>
@@ -118,7 +147,7 @@ export function PassphraseConfirmDialog({
 
             {/* Error Message */}
             {errorMsg && (
-              <div className="alert-danger" role="alert" style={{ marginBottom: '14px' }}>
+              <div className="alert alert-danger" role="alert" style={{ marginBottom: '14px' }}>
                 <IconAlertTriangle size={18} aria-hidden="true" />
                 <span>{errorMsg}</span>
               </div>
@@ -127,15 +156,15 @@ export function PassphraseConfirmDialog({
             {/* Input Passphrase */}
             <div className="form-group" style={{ marginBottom: '12px' }}>
               <label className="input-label" htmlFor="tte-passphrase-input">
-                Passphrase Sertifikat Digital (.p12) <span style={{ color: 'var(--danger)' }}>*</span>
+                Passphrase Sertifikat Digital <span style={{ color: 'var(--danger)' }}>*</span>
               </label>
-              <div className="password-input-wrapper">
+              <div className="tte-password-input-wrapper">
                 <input
                   ref={inputRef}
                   id="tte-passphrase-input"
                   type={showPassphrase ? 'text' : 'password'}
-                  className="form-control"
-                  placeholder="Masukkan passphrase sertifikat Anda..."
+                  className="tte-password-input"
+                  placeholder="Masukkan Passphrase Sertifikat Digital"
                   value={passphrase}
                   onChange={(e) => setPassphrase(e.target.value)}
                   disabled={isSubmitting}
@@ -143,7 +172,7 @@ export function PassphraseConfirmDialog({
                 />
                 <button
                   type="button"
-                  className="password-toggle-btn"
+                  className="tte-password-toggle-btn"
                   onClick={() => setShowPassphrase(!showPassphrase)}
                   disabled={isSubmitting}
                   aria-label={showPassphrase ? 'Sembunyikan passphrase' : 'Lihat passphrase'}
@@ -152,10 +181,9 @@ export function PassphraseConfirmDialog({
                   {showPassphrase ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                 </button>
               </div>
-              <span className="form-hint" style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <IconShield size={13} aria-hidden="true" />
-                <span>Passphrase hanya diproses di memori saat penandatanganan dan tidak pernah disimpan.</span>
-              </span>
+              <p className="form-hint" style={{ marginTop: '6px' }}>
+                Passphrase hanya diproses di memori saat penandatanganan dan tidak pernah disimpan.
+              </p>
             </div>
           </div>
 

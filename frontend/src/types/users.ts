@@ -7,7 +7,7 @@ export interface UserCertificate {
   fingerprint_sha256: string;
   issued_at: string;
   expires_at: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'REPLACED' | string;
+  status: 'ACTIVE' | 'EXPIRED' | 'REPLACED' | 'DELETED' | string;
 }
 
 export interface UserItem {

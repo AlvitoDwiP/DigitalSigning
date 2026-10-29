@@ -99,12 +99,12 @@ def test_p12_volume_is_read_only_in_container():
             f.write(b"probe")
 
 
-def test_signing_endpoint_disabled_in_phase_1_default(client: TestClient, auth_headers: dict):
+def test_signing_endpoint_disabled_in_phase_1_default(client: TestClient, auth_headers: dict, monkeypatch):
     """
-    Pada konfigurasi Phase 1 standar (ENABLE_PDF_SIGNING=False), endpoint
+    Ketika flag penandatanganan dinonaktifkan (ENABLE_PDF_SIGNING=False), endpoint
     /api/v1/signatures/sign wajib menolak eksekusi dan mengembalikan HTTP 501 Not Implemented.
     """
-    assert settings.ENABLE_PDF_SIGNING is False
+    monkeypatch.setattr(settings, "ENABLE_PDF_SIGNING", False)
 
     files = {"pdf": ("document.pdf", VALID_PDF, "application/pdf")}
     data = {"passphrase": "SomePassphrase123!"}
@@ -173,7 +173,7 @@ def test_user_can_sign_pdf_successfully(
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
     assert "Content-Disposition" in response.headers
-    assert "signed" in response.headers["Content-Disposition"]
+    assert "_sign.pdf" in response.headers["Content-Disposition"]
     assert response.headers["X-Signer-NIK"] == user.nik
 
     # Verifikasi berkas hasil tanda tangan memuat marker PDF & signature CMS

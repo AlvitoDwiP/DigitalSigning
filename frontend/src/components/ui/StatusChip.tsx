@@ -3,6 +3,7 @@ export type StatusType =
   | 'ACTIVE'
   | 'EXPIRED'
   | 'REPLACED'
+  | 'DELETED'
   | 'INACTIVE'
   | 'SUCCESS'
   | 'FAILED'
@@ -32,6 +33,7 @@ export function StatusChip({ status, label, className = '' }: StatusChipProps) {
       statusClass = 'chip-expired';
       break;
     case 'FAILED':
+    case 'DELETED':
       statusClass = 'chip-failed';
       break;
     case 'REPLACED':

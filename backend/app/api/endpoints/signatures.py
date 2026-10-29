@@ -42,11 +42,12 @@ def signing_root_reserved(current_user: User = Depends(deps.get_current_user)):
 async def sign_document(
     pdf: Optional[UploadFile] = File(default=None, description="Dokumen PDF yang akan ditandatangani"),
     stamp: Optional[UploadFile] = File(default=None, description="Berkas stempel visual (PNG/JPG) opsional"),
-    page: int = Form(default=1, description="Nomor halaman (1-based)"),
+    page: int = Form(default=1, description="Nomor halaman (0 = sampul/halaman pertama, atau 1-based)"),
     llx: Optional[float] = Form(default=None, description="Lower-Left X coordinate (points)"),
     lly: Optional[float] = Form(default=None, description="Lower-Left Y coordinate (points)"),
     urx: Optional[float] = Form(default=None, description="Upper-Right X coordinate (points)"),
     ury: Optional[float] = Form(default=None, description="Upper-Right Y coordinate (points)"),
+    visible: bool = Form(default=True, description="Mode tanda tangan: True (visible) atau False (invisible)"),
     passphrase_form: Optional[str] = Form(default=None, alias="passphrase"),
     x_p12_password: Optional[str] = Header(default=None),
     nik_param: Optional[str] = Form(default=None, alias="nik"),
@@ -67,6 +68,13 @@ async def sign_document(
             detail={"code": "FORBIDDEN", "message": "Role SUPER_ADMIN tidak memiliki fitur penandatanganan."}
         )
 
+    # Hanya role USER dan ADMIN (pada mode pengguna) yang diizinkan menandatangani dokumen
+    if current_user.role not in ("USER", "ADMIN"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Akses ditolak."}
+        )
+
     # Batas Phase 1 vs Phase 2: TTE dinonaktifkan pada Phase 1
     if not settings.ENABLE_PDF_SIGNING:
         raise HTTPException(
@@ -77,40 +85,16 @@ async def sign_document(
             }
         )
 
-    # Validasi input untuk Phase 2
+    # Validasi input berkas PDF
     if not pdf or not pdf.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "INVALID_INPUT", "message": "Berkas PDF wajib diunggah."}
         )
 
-    # Hanya role USER dan ADMIN yang diizinkan
-    if current_user.role not in ("USER", "ADMIN"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "FORBIDDEN", "message": "Akses ditolak."}
-        )
-
-    # Tentukan NIK target:
-    # Untuk USER: NIK WAJIB berasal dari akunnya sendiri (proteksi IDOR).
-    # Untuk ADMIN: dapat menentukan NIK target atau menggunakan NIK akunnya sendiri.
-    if current_user.role == "USER":
-        target_nik = current_user.nik
-        target_user = current_user
-    else:
-        # ADMIN
-        if nik_param and nik_param.strip():
-            safe_nik = nik_param.strip()
-            target_user = db.query(User).filter(User.nik == safe_nik).first()
-            if not target_user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"code": "NOT_FOUND", "message": f"Pengguna dengan NIK {safe_nik} tidak ditemukan."}
-                )
-            target_nik = target_user.nik
-        else:
-            target_nik = current_user.nik
-            target_user = current_user
+    # NIK penandatangan selalu diambil dari akun USER yang sedang aktif (proteksi IDOR)
+    target_nik = current_user.nik
+    target_user = current_user
 
     # Verifikasi status akun pengguna target
     if target_user.status != "ACTIVE":
@@ -184,6 +168,7 @@ async def sign_document(
             lly=lly,
             urx=urx,
             ury=ury,
+            visible=visible,
             stamp_bytes=stamp_bytes,
             stamp_filename=stamp_filename
         )
@@ -212,10 +197,10 @@ async def sign_document(
     # Catat audit log keberhasilan penandatanganan operasional
     record_audit(db, current_user.id, "DOCUMENT_SIGNED", target_user.id, status="SUCCESS", commit=True)
 
-    # Siapkan nama file keluaran
+    # Siapkan nama file keluaran: {nama file}_sign.pdf
     orig_name = Path(pdf.filename).name
     stem = Path(orig_name).stem
-    out_name = f"{stem}_signed.pdf"
+    out_name = f"{stem}_sign.pdf"
 
     headers = {
         "Content-Disposition": f'attachment; filename="{out_name}"',

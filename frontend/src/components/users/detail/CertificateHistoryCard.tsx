@@ -52,7 +52,7 @@ export function CertificateHistoryCard({ history }: CertificateHistoryCardProps)
                   <th scope="col">Status</th>
                   <th scope="col">Diterbitkan pada</th>
                   <th scope="col">Berlaku sampai</th>
-                  <th scope="col">Sidik jari digital</th>
+                  <th scope="col">Hash</th>
                 </tr>
               </thead>
               <tbody>
@@ -76,8 +76,8 @@ export function CertificateHistoryCard({ history }: CertificateHistoryCardProps)
                           type="button"
                           className="btn-copy-fingerprint-sm"
                           onClick={() => handleCopyFingerprint(cert.id, cert.fingerprint_sha256)}
-                          title="Salin sidik jari digital"
-                          aria-label={`Salin sidik jari digital untuk sertifikat ${cert.serial_number}`}
+                          title="Salin hash"
+                          aria-label={`Salin hash untuk sertifikat ${cert.serial_number}`}
                         >
                           {copiedId === cert.id ? (
                             <IconCheckCircle size={13} aria-hidden="true" />

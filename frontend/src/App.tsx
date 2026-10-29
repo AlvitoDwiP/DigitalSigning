@@ -347,7 +347,7 @@ export default function App() {
     }
 
     if (path === '/signing') {
-      if (currentRole === 'SUPER_ADMIN') {
+      if (currentRole === 'SUPER_ADMIN' || (currentRole === 'ADMIN' && effectiveViewMode === 'admin')) {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
       return <SigningPage onNavigate={navigateTo} viewMode={effectiveViewMode} />;

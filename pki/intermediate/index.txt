@@ -424,3 +424,7 @@ V	281025071958Z		11A4	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Rizky Ramadhan
 V	281026061030Z		11A5	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
 V	281026062432Z		11A6	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Fitri Handayani/OU=Fakultas Ekonomi
 V	281026064544Z		11A7	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
+V	281026131415Z		11A8	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
+V	281026133401Z		11A9	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
+V	281026133442Z		11AA	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
+V	281026135845Z		11AB	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik

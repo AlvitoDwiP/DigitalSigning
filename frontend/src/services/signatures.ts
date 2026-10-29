@@ -2,12 +2,13 @@ import { getAuthToken, ApiError } from './api';
 
 export interface SignDocumentParams {
   pdf: File;
-  stamp?: File | null;
+  stamp?: File | Blob | null;
   page: number;
   llx?: number;
   lly?: number;
   urx?: number;
   ury?: number;
+  visible?: boolean;
   passphrase: string;
   nik?: string; // Khusus role ADMIN jika menandatangani atas nama NIK lain
 }
@@ -22,13 +23,17 @@ export async function signPdfDocument(params: SignDocumentParams): Promise<SignD
   const formData = new FormData();
   formData.append('pdf', params.pdf);
   if (params.stamp) {
-    formData.append('stamp', params.stamp);
+    const stampFilename = params.stamp instanceof File ? params.stamp.name : 'qr_stamp.png';
+    formData.append('stamp', params.stamp, stampFilename);
   }
   formData.append('page', String(params.page || 1));
   if (params.llx !== undefined) formData.append('llx', String(params.llx));
   if (params.lly !== undefined) formData.append('lly', String(params.lly));
   if (params.urx !== undefined) formData.append('urx', String(params.urx));
   if (params.ury !== undefined) formData.append('ury', String(params.ury));
+  if (params.visible !== undefined) {
+    formData.append('visible', String(params.visible));
+  }
   formData.append('passphrase', params.passphrase);
   if (params.nik) {
     formData.append('nik', params.nik.trim());

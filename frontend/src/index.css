@@ -922,6 +922,11 @@ a.card:focus-visible {
 
 .nav-item {
   position: relative;
+  z-index: 1;
+}
+
+.nav-item.nav-item-active {
+  z-index: 3;
 }
 
 .nav-link {
@@ -940,10 +945,10 @@ a.card:focus-visible {
   text-align: left;
   border-radius: 22px 0 0 22px;
   position: relative;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: color 0.25s ease;
 }
 
-.nav-link:hover:not(.nav-link-active) {
+.nav-link:hover:not(.nav-link-filled) {
   background-color: rgba(255, 255, 255, 0.12);
   color: #FFFFFF;
 }
@@ -953,52 +958,118 @@ a.card:focus-visible {
   outline-offset: -2px;
 }
 
-/* Lekukan Terbalik 22px pada Menu Aktif (Menyatu ke Konten) */
+/* Status menu aktif & activating */
+.nav-link-filled,
 .nav-link-active,
 .nav-link[aria-current="page"] {
-  background-color: var(--bg) !important;
   color: var(--accent-text) !important;
   font-weight: 600 !important;
-  border-radius: 22px 0 0 22px;
-  position: relative;
 }
 
-.nav-link-active::before,
-.nav-link[aria-current="page"]::before,
-.nav-link-active::after,
-.nav-link[aria-current="page"]::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  width: 22px;
-  height: 22px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.nav-link-active::before,
-.nav-link[aria-current="page"]::before {
-  top: -22px;
-  background: radial-gradient(circle at 0 0, transparent 22px, var(--bg) 22.5px);
-}
-
-.nav-link-active::after,
-.nav-link[aria-current="page"]::after {
-  bottom: -22px;
-  background: radial-gradient(circle at 0 100%, transparent 22px, var(--bg) 22.5px);
-}
-
+.nav-link-filled .nav-icon-wrapper,
 .nav-link-active .nav-icon-wrapper {
   color: var(--accent-text) !important;
 }
 
+/* Layer Lekukan & Background Putih yang dianimasikan dengan clip-path wipe */
+.nav-reveal-layer {
+  position: absolute;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  top: -22px;
+  bottom: -22px;
+  z-index: 1;
+}
+
+/* Idle (tidak aktif): terpotong penuh dari kanan ke kiri */
+.nav-reveal-layer.nav-reveal-idle {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 350ms cubic-bezier(.65, 0, .35, 1);
+}
+
+/* Activating: animasi wipe mengalir dari kiri ke kanan */
+.nav-reveal-layer.nav-reveal-activating {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 350ms cubic-bezier(.65, 0, .35, 1);
+}
+
+/* Active: posisi penuh terbuka tanpa transisi awal */
+.nav-reveal-layer.nav-reveal-active {
+  clip-path: inset(0 0 0 0);
+}
+
+/* Badan pill utama dengan warna background halaman (var(--bg)) */
+.nav-reveal-pill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22px;
+  bottom: 22px;
+  background-color: var(--bg);
+  border-radius: 22px 0 0 22px;
+}
+
+/* Lekukan kurva terbalik 22px (atas & bawah) */
+.nav-reveal-cutout {
+  position: absolute;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+}
+
+.nav-reveal-cutout.nav-cutout-top {
+  top: 0;
+  background: radial-gradient(circle at 0 0, transparent 22px, var(--bg) 22.5px);
+}
+
+.nav-reveal-cutout.nav-cutout-bottom {
+  bottom: 0;
+  background: radial-gradient(circle at 0 100%, transparent 22px, var(--bg) 22.5px);
+}
+
+/* Icon hover & wiggle effect */
 .nav-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   color: currentColor;
-  transition: color 0.2s ease;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.3s cubic-bezier(.65, 0, .35, 1), color 0.2s ease;
+}
+
+.nav-link:hover:not(.nav-link-filled) .nav-icon-wrapper {
+  transform: scale(1.12);
+}
+
+.nav-icon-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-link:hover:not(.nav-link-filled) .nav-icon-inner {
+  animation: nav-wiggle 0.45s ease-in-out;
+}
+
+@keyframes nav-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+
+.nav-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  position: relative;
+  z-index: 2;
 }
 
 .nav-label {
@@ -3104,6 +3175,21 @@ button.expiry-user-item:hover .expiry-user-action {
   }
 
   /* Lekukan menu aktif dinonaktifkan di mobile */
+  .nav-reveal-cutout {
+    display: none !important;
+  }
+
+  .nav-reveal-layer {
+    top: 0 !important;
+    bottom: 0 !important;
+  }
+
+  .nav-reveal-pill {
+    top: 0 !important;
+    bottom: 0 !important;
+    border-radius: 12px !important;
+  }
+
   .nav-link::before,
   .nav-link::after,
   .nav-link-active::before,
@@ -3113,14 +3199,14 @@ button.expiry-user-item:hover .expiry-user-action {
     display: none !important;
   }
 
+  .nav-link-filled,
   .nav-link-active,
   .nav-link[aria-current="page"] {
-    background-color: #FFFFFF !important;
     color: var(--accent-text) !important;
     border-radius: 12px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   }
 
+  .nav-link-filled .nav-icon-wrapper,
   .nav-link-active .nav-icon-wrapper {
     color: var(--accent-text) !important;
   }
@@ -7935,16 +8021,52 @@ button.expiry-user-item:hover .expiry-user-action {
 
 .tte-page-wrapper {
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
   animation: fadeIn 0.2s ease-in-out;
+}
+
+@media (min-width: 1025px) {
+  .app-main-wrapper:has(.tte-page-wrapper) {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden !important;
+  }
+
+  .main-content:has(.tte-page-wrapper) {
+    flex: 1 1 0;
+    min-height: 0;
+    height: calc(100vh - var(--topbar-h));
+    max-height: calc(100vh - var(--topbar-h));
+    padding: 6px 24px 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
+  }
 }
 
 /* Header & Badges */
 .tte-page-header {
-  margin-bottom: 4px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.tte-page-header .page-title {
+  font-size: 19px;
+  line-height: 1.2;
+  margin-bottom: 1px;
+}
+
+.tte-page-header .page-subtitle {
+  font-size: 12px;
+  line-height: 1.3;
+  margin: 0;
 }
 
 .tte-title-badge-group {
@@ -7973,53 +8095,54 @@ button.expiry-user-item:hover .expiry-user-action {
 .tte-success-banner {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.14) 100%);
   border: 1.5px solid var(--ok);
-  border-radius: 12px;
-  padding: 20px 24px;
+  border-radius: 10px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 12px;
   flex-wrap: wrap;
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12);
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.1);
   animation: feedback-slide-in 0.25s ease-out;
 }
 
 .tte-success-banner-content {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex: 1;
-  min-width: 280px;
+  min-width: 240px;
 }
 
 .tte-success-icon-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background-color: var(--ok);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
 }
 
 .tte-success-texts {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .tte-success-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
 }
 
 .tte-success-subtitle {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-2);
 }
 
@@ -8046,37 +8169,384 @@ button.expiry-user-item:hover .expiry-user-action {
   font-weight: 600;
 }
 
-/* Two-Column Responsive Layout: Left is wider, Right (preview) is smaller */
+/* Two-Column Responsive Layout: Left (Form) 42%, Right (Preview) 58% */
 .tte-main-grid {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 390px);
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: minmax(0, 4.2fr) minmax(0, 5.8fr);
+  gap: 16px;
+  align-items: stretch;
   width: 100%;
   min-width: 0;
 }
 
-@media (max-width: 1180px) {
-  .tte-main-grid {
-    grid-template-columns: minmax(0, 1.25fr) minmax(300px, 350px);
-    gap: 16px;
-  }
+/* Stepper Navigasi Mobile (< 1025px) */
+.tte-mobile-stepper {
+  display: none;
 }
 
-@media (max-width: 860px) {
+.tte-mobile-preview-shortcut-wrap {
+  display: none;
+}
+
+.tte-mobile-preview-actions {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  /* TTE Mobile / Split-screen Scrolling & Natural Height */
+  .app-main-wrapper:has(.tte-page-wrapper) {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+  }
+
+  .main-content:has(.tte-page-wrapper) {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    padding: 10px 14px 40px !important;
+  }
+
+  .tte-page-wrapper {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    gap: 10px;
+  }
+
+  .tte-page-header {
+    margin-bottom: 2px;
+  }
+
+  .tte-page-header .page-title {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .tte-page-header .page-subtitle {
+    font-size: 11.5px;
+    line-height: 1.3;
+  }
+
   .tte-main-grid {
-    grid-template-columns: 100%;
-    gap: 16px;
+    grid-template-columns: 100% !important;
+    gap: 12px;
     width: 100%;
     min-width: 0;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .tte-left-col,
+  .tte-right-col,
+  .tte-config-panel {
+    height: auto !important;
+    min-height: unset !important;
+    overflow: visible !important;
+  }
+
+  .tte-step-card {
+    height: auto !important;
+    min-height: unset !important;
+    overflow: visible !important;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .tte-mobile-preview-shortcut-wrap {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background-color: var(--card);
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+  }
+
+  .tte-mobile-preview-shortcut-wrap:hover {
+    background-color: var(--active-tint);
+  }
+
+  /* Compact Stepper Navigasi Mobile */
+  .tte-mobile-stepper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    background-color: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .tte-mobile-stepper-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    min-height: 36px;
+  }
+
+  .tte-mobile-stepper-btn.is-active {
+    background: var(--accent);
+    color: #ffffff;
+    font-weight: 600;
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0, 104, 55, 0.25);
+  }
+
+  .tte-mobile-stepper-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .tte-stepper-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    background-color: var(--bg);
+    color: var(--text);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .tte-mobile-stepper-btn.is-active .tte-stepper-badge {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+  }
+
+  .tte-stepper-label {
+    white-space: nowrap;
+    font-size: 12.5px;
+  }
+
+  .tte-stepper-check {
+    font-size: 11px;
+    font-weight: 800;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tte-mobile-stepper-btn.is-active .tte-stepper-check {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .tte-stepper-page-badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 9999px;
+    background-color: rgba(0, 0, 0, 0.08);
+  }
+
+  .tte-mobile-stepper-btn.is-active .tte-stepper-page-badge {
+    background-color: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+  }
+
+  /* Alihkan kolom sesuai tab yang aktif di tablet / smartphone */
+  .tte-main-grid.tte-mobile-view-form .tte-right-col {
+    display: none !important;
+  }
+
+  .tte-main-grid.tte-mobile-view-preview .tte-left-col {
+    display: none !important;
+  }
+
+  .tte-main-grid.tte-mobile-view-preview .tte-right-col {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: unset !important;
+    flex: none !important;
+    overflow: visible !important;
+  }
+
+  /* Pratinjau Lembar PDF Responsif - Jangan pernah pipih / squish! */
+  .tte-preview-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: unset !important;
+    flex: none !important;
+    overflow: visible !important;
+    padding: 12px 14px 16px !important;
+  }
+
+  .tte-preview-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .tte-preview-title-wrap {
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  .tte-preview-heading {
+    font-size: 14.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin: 0 !important;
+  }
+
+  .tte-preview-pagination {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .tte-preview-body {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: unset !important;
+    flex: none !important;
+    overflow: visible !important;
+    gap: 10px !important;
+  }
+
+  .tte-sheet-scroll-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 480px !important;
+    flex: none !important;
+    padding: 12px 10px 14px !important;
+    overflow: visible !important;
+    gap: 10px !important;
+    background-color: #1e2430 !important;
+    border-radius: 10px !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .tte-sheet-status-bar {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .tte-a4-sheet {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    height: auto !important;
+    min-height: 340px !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+    flex: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+    background-color: #ffffff !important;
+    border-radius: 4px !important;
+  }
+
+  .tte-sheet-canvas {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 4px !important;
+  }
+
+  .tte-sheet-footer-hint {
+    margin-top: 4px !important;
+    width: 100% !important;
+    text-align: center !important;
+    font-size: 11px !important;
+  }
+
+  /* Tombol Aksi di bawah Lembar Pratinjau Mobile */
+  .tte-mobile-preview-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-top: 10px !important;
+    width: 100% !important;
+  }
+
+  .tte-mobile-btn-form {
+    flex: 1;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tte-mobile-btn-sign {
+    flex: 1.4;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: var(--accent);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 104, 55, 0.3);
   }
 }
 
 .tte-left-col {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 8px;
   min-width: 0;
+  min-height: 0;
   width: 100%;
 }
 
@@ -8084,22 +8554,17 @@ button.expiry-user-item:hover .expiry-user-action {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   width: 100%;
-}
-
-@media (min-width: 861px) {
-  .tte-right-col {
-    position: sticky;
-    top: 76px;
-    align-self: start;
-  }
 }
 
 .tte-config-panel {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 8px;
   min-width: 0;
+  min-height: 0;
   width: 100%;
 }
 
@@ -8107,12 +8572,12 @@ button.expiry-user-item:hover .expiry-user-action {
 .tte-step-card {
   background-color: var(--card);
   border-radius: 10px;
-  padding: 20px 22px;
+  padding: 10px 14px;
   box-shadow: var(--shadow);
   border: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
@@ -8122,19 +8587,19 @@ button.expiry-user-item:hover .expiry-user-action {
 .tte-step-header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
 }
 
 .tte-step-badge {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   background-color: var(--accent);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   flex-shrink: 0;
   margin-top: 1px;
@@ -8142,17 +8607,17 @@ button.expiry-user-item:hover .expiry-user-action {
 
 .tte-step-title {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
   line-height: 1.25;
 }
 
 .tte-step-desc {
-  margin: 3px 0 0 0;
-  font-size: 12.5px;
+  margin: 2px 0 0 0;
+  font-size: 12px;
   color: var(--text-2);
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 /* Step 1: Dropzone & File Card */
@@ -8205,23 +8670,46 @@ button.expiry-user-item:hover .expiry-user-action {
   color: var(--text-2);
 }
 
+.tte-stamp-dropzone {
+  padding: 12px 16px;
+  gap: 6px;
+}
+
+.tte-stamp-dropzone .tte-dropzone-icon-wrap {
+  width: 36px;
+  height: 36px;
+}
+
+.tte-stamp-dropzone .tte-dropzone-main {
+  font-size: 12.5px;
+}
+
+.tte-stamp-dropzone .tte-dropzone-hint {
+  font-size: 11.5px;
+}
+
 .tte-file-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 9px 12px;
   border-radius: 8px;
-  background-color: var(--input-bg);
-  border: 1px solid var(--line);
+  background-color: #EDF2F0;
+  border: 1px solid #CFD9D5;
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
 }
 
+[data-theme="dark"] .tte-file-card {
+  background-color: var(--input-bg);
+  border-color: var(--line);
+}
+
 .tte-file-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
   background-color: var(--active-tint);
   color: var(--accent);
   display: flex;
@@ -8305,101 +8793,209 @@ button.expiry-user-item:hover .expiry-user-action {
   background-color: var(--danger-fill);
 }
 
-/* Step 2: Page Selection Radio Cards */
-.tte-page-options-grid {
+/* Step 2: Mode TTE Cards: Visible vs Invisible */
+.tte-mode-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin-top: 4px;
 }
 
-@media (max-width: 540px) {
-  .tte-page-options-grid {
+@media (max-width: 580px) {
+  .tte-mode-cards-grid {
     grid-template-columns: 1fr;
   }
 }
 
-.tte-radio-card {
+.tte-mode-card {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
   border: 1.5px solid var(--line);
   background-color: var(--card);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
 
-.tte-radio-card:hover {
-  border-color: var(--accent);
+.tte-page-compact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.tte-radio-card.is-selected {
+.tte-target-input-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--input-bg);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.tte-inline-page-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.tte-inline-page-input {
+  width: 58px !important;
+  height: 30px !important;
+  padding: 2px 6px !important;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.tte-actions-row-inline {
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+  margin-top: 0 !important;
+}
+
+.tte-actions-row-inline .tte-submit-btn {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 13.5px;
+}
+
+.tte-reset-btn-inline {
+  padding: 10px 14px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.tte-mode-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.tte-mode-card.is-selected {
   border-color: var(--accent);
   background-color: var(--active-tint);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
-.tte-radio-card input[type="radio"] {
-  margin-top: 2px;
+.tte-mode-card input[type="radio"] {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
   accent-color: var(--accent);
   cursor: pointer;
 }
 
-.tte-radio-content {
+.tte-mode-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background-color: var(--input-bg);
+  color: var(--accent);
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
 }
 
-.tte-radio-content strong {
-  font-size: 12.5px;
-  font-weight: 600;
+.tte-mode-card.is-selected .tte-mode-card-icon {
+  background-color: var(--accent);
+  color: #ffffff;
+}
+
+.tte-mode-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: 16px;
+}
+
+.tte-mode-card-content strong {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text);
   line-height: 1.25;
 }
 
-.tte-radio-content span {
-  font-size: 11px;
+.tte-mode-card-content span {
+  font-size: 11.5px;
   color: var(--text-2);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
-.tte-specific-page-box {
+/* Page Selection Buttons & Input */
+.tte-page-quick-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.tte-target-page-input-wrap {
   padding: 12px 14px;
   background-color: var(--input-bg);
   border-radius: 8px;
   border: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
 }
 
-.tte-specific-page-input-row {
+.tte-target-input-row {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.tte-page-total-label {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+/* Visual Type Toggle */
+.tte-visual-type-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  flex-wrap: wrap;
+  padding: 4px;
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  border: 1px solid var(--line);
 }
 
-.tte-range-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-2);
-}
-
-.tte-specific-page-input-row input {
-  max-width: 76px;
+.tte-visual-type-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  text-align: center;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.tte-specific-page-helper {
-  font-size: 12px;
-  color: var(--text-2);
+.tte-visual-type-btn:hover {
+  color: var(--text);
+}
+
+.tte-visual-type-btn.is-active {
+  background-color: var(--card);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 /* Step 3: Footer Controls */
@@ -8627,7 +9223,8 @@ button.expiry-user-item:hover .expiry-user-action {
 
 /* Action Summary Card */
 .tte-summary-card {
-  gap: 12px;
+  padding: 8px 12px;
+  gap: 8px;
 }
 
 .tte-summary-title {
@@ -8708,10 +9305,14 @@ button.expiry-user-item:hover .expiry-user-action {
   border-radius: 10px;
   box-shadow: var(--shadow);
   border: 1px solid var(--line);
-  padding: 20px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .tte-preview-header {
@@ -8720,8 +9321,9 @@ button.expiry-user-item:hover .expiry-user-action {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding-bottom: 12px;
+  padding-bottom: 6px;
   border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
 }
 
 .tte-preview-heading {
@@ -8798,11 +9400,18 @@ button.expiry-user-item:hover .expiry-user-action {
 
 .tte-preview-body {
   width: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Empty State */
 .tte-empty-preview-card {
-  min-height: 440px;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
   border: 2px dashed var(--input-border);
   border-radius: 10px;
   background-color: var(--input-bg);
@@ -8811,7 +9420,7 @@ button.expiry-user-item:hover .expiry-user-action {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 28px 18px;
+  padding: 20px 16px;
 }
 
 .tte-empty-icon-wrap {
@@ -8878,12 +9487,15 @@ button.expiry-user-item:hover .expiry-user-action {
 .tte-sheet-scroll-container {
   background-color: #1e2430;
   border-radius: 10px;
-  padding: 16px 12px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  min-height: 480px;
+  justify-content: space-between;
+  gap: 6px;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   touch-action: none;
@@ -8892,7 +9504,7 @@ button.expiry-user-item:hover .expiry-user-action {
 
 .tte-sheet-status-bar {
   width: 100%;
-  max-width: 360px;
+  max-width: 580px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -8959,8 +9571,11 @@ button.expiry-user-item:hover .expiry-user-action {
 
 /* A4 Sheet & Footer Element */
 .tte-a4-sheet {
-  width: 100%;
-  max-width: 360px;
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 100%;
+  width: auto;
+  max-width: 100%;
   aspect-ratio: 1 / 1.4142;
   background-color: #ffffff;
   border-radius: 4px;
@@ -9083,49 +9698,215 @@ button.expiry-user-item:hover .expiry-user-action {
   pointer-events: none;
 }
 
-/* Footer TTE Box Inside Sheet */
-.tte-footer-box {
+/* Interactive Draggable & Resizable Signature Box */
+.tte-interactive-sig-box {
   position: absolute;
-  border: 1px dashed rgba(5, 150, 105, 0.65);
+  border: 1.5px solid transparent;
   background-color: transparent;
   border-radius: 4px;
-  box-shadow: none;
-  cursor: default;
+  cursor: pointer;
   user-select: none;
   box-sizing: border-box;
-  padding: 2px 4px;
   display: flex;
-  align-items: center;
-  overflow: hidden;
-  transition: all 0.15s ease;
-  z-index: 10;
+  flex-direction: column;
+  overflow: visible;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  z-index: 20;
+  touch-action: none;
+  outline: none;
 }
 
-.tte-footer-box:hover {
-  background-color: transparent;
+.tte-interactive-sig-box.is-unselected:hover {
+  border-color: rgba(5, 150, 105, 0.55);
+  border-style: dashed;
+}
+
+.tte-interactive-sig-box.is-selected {
+  border-color: #059669;
+  border-style: solid;
+  cursor: grab;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+.tte-interactive-sig-box.is-dragging {
+  cursor: grabbing;
   border-color: #047857;
+  border-style: solid;
 }
 
-.tte-footer-box.is-out {
+.tte-interactive-sig-box.is-resizing {
+  border-color: #2563eb;
+  border-style: solid;
+}
+
+.tte-interactive-sig-box.is-out {
   border-color: #ef4444;
-  background-color: transparent;
+  background-color: rgba(254, 242, 242, 0.4);
 }
 
-.tte-footer-inner {
+/* Floating bar for dragging di atas kotak TTE (hanya tampil saat QR dipilih) */
+.tte-sig-drag-bar {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 5px;
+  padding: 2px 7px;
+  background-color: #065f46;
+  border-radius: 4px;
+  cursor: grab;
+  height: 20px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.tte-sig-drag-bar.is-below {
+  bottom: auto;
+  top: calc(100% + 7px);
+}
+
+.tte-sig-drag-bar:active {
+  cursor: grabbing;
+}
+
+/* Hint bar di bawah lembar pratinjau dokumen */
+.tte-preview-bottom-hint {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  padding: 5px 10px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.tte-preview-bottom-hint strong {
+  color: #f8fafc;
+}
+
+.tte-preview-bottom-hint code {
+  font-size: 10px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #a7f3d0;
+}
+
+.tte-preview-bottom-hint.is-active {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #d1fae5;
+}
+
+.tte-preview-hint-icon {
+  flex-shrink: 0;
+  color: #34d399;
+}
+
+.tte-sig-drag-label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tte-sig-dim-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: #065f46;
+  background-color: #ffffff;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Box Content Area (Full & Transparan) */
+.tte-sig-box-content {
   width: 100%;
   height: 100%;
-  min-width: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.tte-sig-qr-layout {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
-.tte-footer-qr {
+.tte-sig-pure-qr-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.tte-pure-qr-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: fill;
+  display: block;
+}
+
+.tte-qr-center-logo-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30%;
+  height: 30%;
+  background: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.16);
+  border: none;
+  overflow: hidden;
+  padding: 1.5px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.tte-qr-center-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.tte-sig-qr-box {
   aspect-ratio: 1 / 1;
   background-color: transparent;
-  border: none;
-  padding: 0;
   color: #0f172a;
   flex-shrink: 0;
   display: flex;
@@ -9134,87 +9915,248 @@ button.expiry-user-item:hover .expiry-user-action {
   box-sizing: border-box;
 }
 
-.tte-footer-qr svg {
+.tte-sig-qr-box svg {
   width: 100%;
   height: 100%;
 }
 
-.tte-footer-stamp-thumb {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border-radius: 2px;
-  padding: 0;
-}
-
-.tte-footer-stamp-thumb img {
-  max-height: 100%;
-  max-width: 100%;
-  object-fit: contain;
-}
-
-.tte-footer-texts {
+.tte-sig-texts-col {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 1.5px;
   flex: 1;
   min-width: 0;
   overflow: hidden;
   line-height: 1.2;
 }
 
-.tte-footer-signer-name {
-  font-size: 8px;
+.tte-sig-name-text {
   font-weight: 700;
   color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
 }
 
-.tte-footer-org {
-  font-size: 7px;
-  color: #475569;
+.tte-sig-org-text {
+  color: #334155;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.15;
 }
 
-.tte-footer-time {
-  font-size: 6.5px;
+.tte-sig-time-text {
   color: #64748b;
   white-space: nowrap;
-  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.tte-drag-handle {
-  position: absolute;
-  top: 4px;
-  right: 4px;
+/* Image signature view inside box */
+.tte-sig-image-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.tte-sig-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.tte-sig-placeholder-wrap {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
-  opacity: 0.4;
-}
-
-.tte-drag-handle span {
-  width: 10px;
-  height: 2px;
-  background-color: #059669;
-  border-radius: 1px;
-}
-
-.tte-drag-hint {
-  font-size: 11.5px;
-  color: #94a3b8;
   text-align: center;
+}
+
+.tte-sig-placeholder-icon {
+  color: #059669;
+  opacity: 0.6;
+}
+
+.tte-sig-placeholder-text {
+  font-size: 9px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tte-sig-placeholder-sub {
+  font-size: 7.5px;
+  color: #64748b;
+}
+
+/* 4 Corner Resize Handles */
+.tte-resize-handle {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  background-color: #ffffff;
+  border: 2px solid #059669;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  z-index: 25;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.tte-resize-handle:hover {
+  transform: scale(1.3);
+  background-color: #059669;
+}
+
+.handle-se {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}
+
+.handle-sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.handle-ne {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+.handle-nw {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+/* Drag & Resize Instruction Box */
+.tte-drag-instruction-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background-color: var(--active-tint);
+  border: 1px solid var(--accent);
+  margin-top: 4px;
+}
+
+.tte-drag-instruction-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tte-drag-instruction-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.tte-drag-instruction-text p {
   margin: 0;
-  line-height: 1.4;
+}
+
+.tte-coords-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 4px;
+}
+
+.tte-coords-badge code {
+  background: var(--card);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Invisible Mode Info Box */
+.tte-invisible-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 10px;
+  background-color: var(--active-tint);
+  border: 1px solid var(--accent);
+}
+
+.tte-invisible-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--card);
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tte-invisible-info-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.tte-invisible-info-texts strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tte-invisible-info-texts p {
+  margin: 0;
+}
+
+.tte-invisible-sub {
+  font-size: 11.5px;
+  color: var(--text-2);
+  font-style: italic;
+}
+
+/* Invisible Pill & Jump Link */
+.tte-status-pill.is-invisible-pill {
+  background: rgba(147, 51, 234, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(147, 51, 234, 0.4);
+}
+
+.tte-jump-btn {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.15s ease;
+}
+
+.tte-jump-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.tte-jump-link {
+  color: #38bdf8;
+  margin-left: 4px;
 }
 
 /* Native PDF Iframe */
@@ -9296,7 +10238,8 @@ button.expiry-user-item:hover .expiry-user-action {
   gap: 14px;
 }
 
-.tte-summary-preview {
+.tte-summary-preview,
+.tte-modal-summary-box {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -9304,6 +10247,29 @@ button.expiry-user-item:hover .expiry-user-action {
   background-color: var(--input-bg);
   border-radius: 8px;
   border: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+
+.tte-modal-summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.tte-modal-summary-label {
+  color: var(--text-2);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.tte-modal-summary-val {
+  color: var(--text);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
 }
 
 .tte-field-group {
@@ -9489,44 +10455,136 @@ button.expiry-user-item:hover .expiry-user-action {
 
   /* Preview Panel */
   .tte-preview-panel {
-    padding: 14px 12px;
-    width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
+    padding: 12px 14px 16px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: unset !important;
+    flex: none !important;
+    overflow: visible !important;
   }
 
   .tte-preview-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+    flex-wrap: nowrap !important;
   }
 
-  .tte-preview-tab-group {
-    width: 100%;
-    justify-content: center;
+  .tte-preview-title-wrap {
+    min-width: 0 !important;
+    flex: 1 !important;
   }
 
-  .tte-preview-tab-btn {
-    flex: 1;
-    justify-content: center;
-    padding: 7px 8px;
-    font-size: 11.5px;
+  .tte-preview-heading {
+    font-size: 14.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin: 0 !important;
   }
 
   .tte-preview-pagination {
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .tte-preview-body {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: unset !important;
+    flex: none !important;
+    overflow: visible !important;
+    gap: 10px !important;
   }
 
   .tte-sheet-scroll-container {
-    padding: 14px 8px;
-    min-height: 400px;
-    width: 100%;
-    box-sizing: border-box;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 480px !important;
+    flex: none !important;
+    padding: 12px 10px 14px !important;
+    overflow: visible !important;
+    gap: 10px !important;
+    background-color: #1e2430 !important;
+    border-radius: 10px !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .tte-sheet-status-bar {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
   }
 
   .tte-a4-sheet {
-    max-width: min(290px, 100%);
-    padding: 0;
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    height: auto !important;
+    min-height: 340px !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+    flex: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+    background-color: #ffffff !important;
+    border-radius: 4px !important;
+  }
+
+  .tte-sheet-canvas {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 4px !important;
+  }
+
+  /* Sentuhan Pojok Resize TTE di Mobile */
+  .tte-resize-handle {
+    width: 15px;
+    height: 15px;
+    touch-action: none;
+  }
+
+  .tte-resize-handle::after {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+  }
+
+  .handle-se {
+    bottom: -7px;
+    right: -7px;
+  }
+
+  .handle-sw {
+    bottom: -7px;
+    left: -7px;
+  }
+
+  .handle-ne {
+    top: -7px;
+    right: -7px;
+  }
+
+  .handle-nw {
+    top: -7px;
+    left: -7px;
   }
 
   /* Summary Card */
@@ -9555,6 +10613,31 @@ button.expiry-user-item:hover .expiry-user-action {
 }
 
 @media (max-width: 480px) {
+  .custom-modal-dialog {
+    width: calc(100% - 20px) !important;
+    margin: auto 10px;
+  }
+
+  .dialog-header {
+    padding: 14px 16px;
+  }
+
+  .dialog-body {
+    padding: 16px;
+  }
+
+  .dialog-footer {
+    padding: 14px 16px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .dialog-footer .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+  }
+
   .tte-coords-grid {
     grid-template-columns: 1fr;
     gap: 8px;

@@ -7,6 +7,7 @@ export const statusSertifikat: Record<string, string> = {
   ACTIVE: 'Aktif',
   EXPIRED: 'Kedaluwarsa',
   REPLACED: 'Diganti',
+  DELETED: 'Dihapus',
 };
 
 export const peran: Record<string, string> = {

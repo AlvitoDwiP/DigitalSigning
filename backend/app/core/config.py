@@ -91,9 +91,9 @@ class Settings(BaseSettings):
     DEFAULT_PFX_PASS: str = os.getenv("DEFAULT_PFX_PASS", "Mkri006!")
     DEFAULT_USER_PASS: str = os.getenv("DEFAULT_USER_PASS", "Konstitusi100%")
 
-    # Feature Flags (Phase 1 vs Phase 2)
-    # TTE PDF is part of Phase 2 roadmap and is disabled by default in Phase 1.
-    ENABLE_PDF_SIGNING: bool = os.getenv("ENABLE_PDF_SIGNING", "false").lower() in ("true", "1")
+    # Feature Flags (Phase 2 Roadmap)
+    # TTE PDF is active in Phase 2 and enabled by default (can be toggled via ENABLE_PDF_SIGNING env var)
+    ENABLE_PDF_SIGNING: bool = os.getenv("ENABLE_PDF_SIGNING", "true").lower() in ("true", "1")
 
     @model_validator(mode="after")
     def validate_production_security(self):

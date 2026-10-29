@@ -318,7 +318,6 @@ export function UserDashboardView({
           <div className="user-sign-text">
             <div className="user-sign-title-row">
               <h2 id="user-sign-title" className="user-sign-title">Penandatanganan Dokumen</h2>
-              <span className="badge-soon">Soon</span>
             </div>
             <p style={{ fontSize: '12.5px', color: 'var(--muted)', marginTop: '2px', lineHeight: 1.4 }}>
               Sematkan tanda tangan digital dan stempel visual pada berkas PDF Anda.
@@ -332,9 +331,9 @@ export function UserDashboardView({
             onClick={() => {
               if (onNavigate) onNavigate('/signing');
             }}
-            aria-label="Mulai Penandatanganan Dokumen (Soon)"
+            aria-label="Mulai Penandatanganan Dokumen"
           >
-            Mulai Penandatanganan (Soon)
+            Mulai Penandatanganan
           </Button>
         </div>
       </div>
