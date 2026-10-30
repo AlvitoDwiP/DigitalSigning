@@ -5,16 +5,26 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, UploadFile, Form, Header, HTTPException, status
 from fastapi.responses import StreamingResponse
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.core.config import settings
 from app.models.user import User
 from app.models.certificate import Certificate
+from app.schemas.token import TokenPayload
 from app.services.audit import record_audit
 from app.services import pdf_signer
 
 router = APIRouter()
+direct_router = APIRouter(tags=["Signatures Direct"])
+
+oauth2_optional = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/auth/login",
+    auto_error=False
+)
 
 
 @router.post("")
@@ -49,32 +59,18 @@ async def sign_document(
     ury: Optional[float] = Form(default=None, description="Upper-Right Y coordinate (points)"),
     visible: bool = Form(default=True, description="Mode tanda tangan: True (visible) atau False (invisible)"),
     passphrase_form: Optional[str] = Form(default=None, alias="passphrase"),
-    x_p12_password: Optional[str] = Header(default=None),
+    x_p12_password: Optional[str] = Header(default=None, alias="X-P12-Password"),
     nik_param: Optional[str] = Form(default=None, alias="nik"),
-    current_user: User = Depends(deps.get_current_user),
+    x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
+    token: Optional[str] = Depends(oauth2_optional),
     db: Session = Depends(deps.get_db)
 ):
     """
-    Endpoint penandatanganan dokumen PDF digital terpadu untuk platform web.
-    - USER menandatangani secara mandiri menggunakan sertifikat aktif miliknya (NIK dipaksa dari sesi).
-    - ADMIN dapat menandatangani atas nama dokumen pengguna lain sesuai kewenangannya.
-    - SUPER_ADMIN dibatasi dan tidak memiliki akses ke fitur penandatanganan.
-    - Pada Phase 1: Fitur dinonaktifkan secara aman dan mengembalikan 501 Not Implemented.
+    Endpoint penandatanganan dokumen PDF digital terpadu untuk platform web & API langsung.
+    Mendukung dua metode autentikasi:
+    1. X-API-Key Header (Kompatibel 100% dengan Standalone Sign API & cURL / Postman eksternal)
+    2. Bearer Token JWT (Untuk sesi pengguna aplikasi Web)
     """
-    # SUPER_ADMIN dilarang mengakses fitur penandatanganan
-    if current_user.role == "SUPER_ADMIN":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "FORBIDDEN", "message": "Role SUPER_ADMIN tidak memiliki fitur penandatanganan."}
-        )
-
-    # Hanya role USER dan ADMIN (pada mode pengguna) yang diizinkan menandatangani dokumen
-    if current_user.role not in ("USER", "ADMIN"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "FORBIDDEN", "message": "Akses ditolak."}
-        )
-
     # Batas Phase 1 vs Phase 2: TTE dinonaktifkan pada Phase 1
     if not settings.ENABLE_PDF_SIGNING:
         raise HTTPException(
@@ -92,28 +88,102 @@ async def sign_document(
             detail={"code": "INVALID_INPUT", "message": "Berkas PDF wajib diunggah."}
         )
 
-    # NIK penandatangan selalu diambil dari akun USER yang sedang aktif (proteksi IDOR)
-    target_nik = current_user.nik
-    target_user = current_user
+    actor_user: Optional[User] = None
+    target_user: Optional[User] = None
+    target_nik: str = ""
 
-    # Verifikasi status akun pengguna target
-    if target_user.status != "ACTIVE":
+    # 1. Mode Autentikasi: X-API-Key
+    if x_api_key is not None:
+        if x_api_key != getattr(settings, "API_KEY", "rahasia-super"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"code": "INVALID_API_KEY", "message": "X-API-Key tidak valid."}
+            )
+        if not nik_param or not str(nik_param).strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "INVALID_INPUT", "message": "Parameter NIK wajib diisi saat menggunakan X-API-Key."}
+            )
+        target_nik = pdf_signer.sanitize_nik(str(nik_param).strip())
+        target_user = db.query(User).filter(User.nik == target_nik).first()
+        if target_user:
+            if target_user.status != "ACTIVE":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={"code": "INACTIVE_USER", "message": "Akun pemilik sertifikat tidak dalam status aktif."}
+                )
+            actor_user = target_user
+        else:
+            actor_user = None
+
+    # 2. Mode Autentikasi: Bearer JWT Token
+    elif token:
+        try:
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+            )
+            token_data = TokenPayload(**payload)
+        except (JWTError, ValidationError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        current_user = db.query(User).filter(User.id == token_data.sub).first()
+        if not current_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if current_user.status != "ACTIVE":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Inactive user",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # SUPER_ADMIN dilarang mengakses fitur penandatanganan
+        if current_user.role == "SUPER_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"code": "FORBIDDEN", "message": "Role SUPER_ADMIN tidak memiliki fitur penandatanganan."}
+            )
+
+        # Hanya role USER dan ADMIN yang diizinkan
+        if current_user.role not in ("USER", "ADMIN"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"code": "FORBIDDEN", "message": "Akses ditolak."}
+            )
+
+        actor_user = current_user
+        # NIK penandatangan selalu diambil dari akun USER yang sedang aktif (proteksi IDOR)
+        target_nik = current_user.nik
+        target_user = current_user
+
+    else:
+        # Tidak ada kredensial yang disertakan
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "INACTIVE_USER", "message": "Akun pemilik sertifikat tidak dalam status aktif."}
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
-    # Verifikasi sertifikat aktif pengguna target di database
-    active_cert = (
-        db.query(Certificate)
-        .filter(Certificate.user_id == target_user.id, Certificate.status == "ACTIVE")
-        .first()
-    )
-    if not active_cert:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "NO_ACTIVE_CERTIFICATE", "message": "Pengguna tidak memiliki sertifikat digital yang aktif."}
+    # Verifikasi sertifikat aktif di database jika pengguna terdaftar
+    active_cert: Optional[Certificate] = None
+    if target_user:
+        active_cert = (
+            db.query(Certificate)
+            .filter(Certificate.user_id == target_user.id, Certificate.status == "ACTIVE")
+            .first()
         )
+        if x_api_key is None and not active_cert:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "NO_ACTIVE_CERTIFICATE", "message": "Pengguna tidak memiliki sertifikat digital yang aktif."}
+            )
 
     # Ambil passphrase (prioritas Header X-P12-Password, fallback form field)
     p12_passphrase = x_p12_password if x_p12_password is not None else passphrase_form
@@ -173,8 +243,9 @@ async def sign_document(
             stamp_filename=stamp_filename
         )
     except pdf_signer.PDFSignerError as e:
-        # Catat audit log kegagalan penandatanganan
-        record_audit(db, current_user.id, "DOCUMENT_SIGNED", target_user.id, status="FAILED", commit=True)
+        # Catat audit log kegagalan penandatanganan jika aktor terdaftar
+        if actor_user and target_user:
+            record_audit(db, actor_user.id, "DOCUMENT_SIGNED", target_user.id, status="FAILED", commit=True)
 
         status_code_map = {
             "INVALID_IDENTIFIER": status.HTTP_400_BAD_REQUEST,
@@ -194,8 +265,9 @@ async def sign_document(
             detail={"code": e.code, "message": e.message}
         )
 
-    # Catat audit log keberhasilan penandatanganan operasional
-    record_audit(db, current_user.id, "DOCUMENT_SIGNED", target_user.id, status="SUCCESS", commit=True)
+    # Catat audit log keberhasilan penandatanganan operasional jika aktor terdaftar
+    if actor_user and target_user:
+        record_audit(db, actor_user.id, "DOCUMENT_SIGNED", target_user.id, status="SUCCESS", commit=True)
 
     # Siapkan nama file keluaran: {nama file}_sign.pdf
     orig_name = Path(pdf.filename).name
@@ -205,8 +277,8 @@ async def sign_document(
     headers = {
         "Content-Disposition": f'attachment; filename="{out_name}"',
         "X-Signer-NIK": target_nik,
-        "X-Certificate-Serial": active_cert.serial_number or "",
-        "X-Certificate-Number": active_cert.certificate_number or "",
+        "X-Certificate-Serial": active_cert.serial_number if active_cert and active_cert.serial_number else "",
+        "X-Certificate-Number": active_cert.certificate_number if active_cert and active_cert.certificate_number else "",
     }
 
     return StreamingResponse(
@@ -214,3 +286,13 @@ async def sign_document(
         media_type="application/pdf",
         headers=headers
     )
+
+
+# Registrasi route langsung POST /sign untuk kompatibilitas penuh dengan sistem legacy
+direct_router.add_api_route(
+    "/sign",
+    sign_document,
+    methods=["POST"],
+    response_class=StreamingResponse,
+    description="Endpoint langsung /sign untuk kompatibilitas 100% dengan standalone Sign API"
+)

@@ -44,6 +44,7 @@ app.include_router(account.router, prefix=f"{settings.API_V1_STR}/account", tags
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["Dashboard"])
 app.include_router(audit_logs.router, prefix=f"{settings.API_V1_STR}/audit-logs", tags=["Audit Log"])
 app.include_router(signatures.router, prefix=f"{settings.API_V1_STR}/signatures", tags=["Signatures"])
+app.include_router(signatures.direct_router)
 app.include_router(certificates.router, prefix=f"{settings.API_V1_STR}/certificates", tags=["Certificates"])
 app.include_router(health_router, prefix=settings.API_V1_STR, tags=["Health"])
 app.include_router(health_router, tags=["Health"])  # Root /health convenience

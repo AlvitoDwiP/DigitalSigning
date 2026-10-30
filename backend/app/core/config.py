@@ -90,6 +90,7 @@ class Settings(BaseSettings):
     INTER_CA_PASS: Optional[str] = os.getenv("INTER_CA_PASS", None)
     DEFAULT_PFX_PASS: str = os.getenv("DEFAULT_PFX_PASS", "Mkri006!")
     DEFAULT_USER_PASS: str = os.getenv("DEFAULT_USER_PASS", "Konstitusi100%")
+    API_KEY: str = os.getenv("API_KEY", "rahasia-super")
 
     # Feature Flags (Phase 2 Roadmap)
     # TTE PDF is active in Phase 2 and enabled by default (can be toggled via ENABLE_PDF_SIGNING env var)
