@@ -16,7 +16,7 @@ from app.models.user import User
 from app.models.certificate import Certificate
 from app.schemas.token import TokenPayload
 from app.services.audit import record_audit
-from app.services import pdf_signer
+from app.services.sign import pdf_signer
 
 router = APIRouter()
 direct_router = APIRouter(tags=["Signatures Direct"])

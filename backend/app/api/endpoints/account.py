@@ -9,7 +9,7 @@ from app.api import deps
 from app.models.user import User
 from app.models.certificate import Certificate
 from app.schemas.user import User as UserSchema, validate_password_policy
-from app.services import pki_api_client
+from app.services.pki import pki_api_client
 from app.services.audit import record_audit
 from app.core.security import verify_password, get_password_hash
 

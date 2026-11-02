@@ -71,7 +71,7 @@ export function FooterConfigPanel({
   onChangeTargetPage,
   visualType,
   onChangeVisualType,
-  placement: _placement,
+  placement,
   onPresetSelect: _onPresetSelect,
   displayOptions: _displayOptions,
   onChangeDisplayOptions: _onChangeDisplayOptions,
@@ -282,6 +282,45 @@ export function FooterConfigPanel({
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Indikator Koordinat Posisi TTE (Info Biru - Read-Only) */}
+        {signatureMode === 'visible' && placement && (
+          <div className="tte-coords-info-box">
+            <div className="tte-coords-header">
+              <span className="tte-coords-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                Koordinat TTE ({Math.round(placement.width)} × {Math.round(placement.height)} pt)
+              </span>
+              <span className="tte-coords-note">Otomatis dari Pratinjau</span>
+            </div>
+
+            <div className="tte-coords-grid">
+              <div className="tte-coord-cell">
+                <div className="tte-coord-label">Kiri (LLX)</div>
+                <div className="tte-coord-value">{Math.round(placement.x)}</div>
+              </div>
+
+              <div className="tte-coord-cell">
+                <div className="tte-coord-label">Bawah (LLY)</div>
+                <div className="tte-coord-value">{Math.round(placement.y)}</div>
+              </div>
+
+              <div className="tte-coord-cell">
+                <div className="tte-coord-label">Kanan (URX)</div>
+                <div className="tte-coord-value">{Math.round(placement.x + placement.width)}</div>
+              </div>
+
+              <div className="tte-coord-cell">
+                <div className="tte-coord-label">Atas (URY)</div>
+                <div className="tte-coord-value">{Math.round(placement.y + placement.height)}</div>
+              </div>
+            </div>
           </div>
         )}
       </div>

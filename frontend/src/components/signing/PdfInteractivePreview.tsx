@@ -76,6 +76,7 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
 
   const paperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const renderTaskRef = useRef<any>(null);
 
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
@@ -83,10 +84,31 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
     width: A4_WIDTH_PT,
     height: A4_HEIGHT_PT,
   });
+  const [viewportSize, setViewportSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [isLoadingDoc, setIsLoadingDoc] = useState(false);
   const [isRenderingPage, setIsRenderingPage] = useState(false);
-  const [sheetWidth, setSheetWidth] = useState(360);
   const [isSigBoxSelected, setIsSigBoxSelected] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(0.75);
+
+  const ZOOM_LEVELS = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => {
+      const next = ZOOM_LEVELS.find((lvl) => lvl > prev + 0.01);
+      return next !== undefined ? next : prev;
+    });
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => {
+      const prevLvls = ZOOM_LEVELS.filter((lvl) => lvl < prev - 0.01);
+      return prevLvls.length > 0 ? prevLvls[prevLvls.length - 1] : prev;
+    });
+  };
+
+  const handleZoomReset = () => {
+    setZoomLevel(0.75);
+  };
 
   const [detectedFont, setDetectedFont] = useState<DocumentFontInfo>({
     fontFamily: '"Bookman Old Style", "Times New Roman", serif',
@@ -94,22 +116,22 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
     fontSizePt: 11,
   });
 
-  // Pantau ukuran kanvas di layar untuk penskalaan presisi
+  // Pantau ukuran viewport container pratinjau untuk penskalaan presisi
   useEffect(() => {
-    if (!paperRef.current) return;
-    if (paperRef.current.clientWidth > 0) {
-      setSheetWidth(paperRef.current.clientWidth);
-    }
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect.width > 0) {
-          setSheetWidth(entry.contentRect.width);
+    if (!viewportRef.current) return;
+    const updateSize = () => {
+      if (viewportRef.current) {
+        const rect = viewportRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setViewportSize({ width: rect.width, height: rect.height });
         }
       }
-    });
-    observer.observe(paperRef.current);
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(viewportRef.current);
     return () => observer.disconnect();
-  }, [isVisibleTab, currentPage]);
+  }, [isVisibleTab]);
 
   // Muat dokumen PDF ke memory saat berkas dipilih
   useEffect(() => {
@@ -176,7 +198,7 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
             console.warn('Gagal membaca metadata font halaman:', err);
           });
 
-        const renderScale = 1.6;
+        const renderScale = Math.min(3.2, Math.max(1.6, 1.6 * zoomLevel));
         const viewport = page.getViewport({ scale: renderScale });
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
@@ -204,9 +226,6 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
       .then(() => {
         if (!isCancelled) {
           setIsRenderingPage(false);
-          if (paperRef.current && paperRef.current.clientWidth > 0) {
-            setSheetWidth(paperRef.current.clientWidth);
-          }
         }
       })
       .catch((err) => {
@@ -227,12 +246,44 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
         }
       }
     };
-  }, [pdfDoc, currentPage, isVisibleTab]);
+  }, [pdfDoc, currentPage, isVisibleTab, zoomLevel]);
 
   const effectiveWidth = pageDimensions.width || A4_WIDTH_PT;
   const effectiveHeight = pageDimensions.height || A4_HEIGHT_PT;
   const aspectRatioVal = effectiveWidth / effectiveHeight;
-  const scale = sheetWidth > 0 ? sheetWidth / effectiveWidth : 1;
+
+  // Hitung ukuran lembar pratinjau yang proporsional dan fit secara pixel-perfect
+  const sheetDimensions = useMemo(() => {
+    const rawW = viewportSize.width > 0 ? viewportSize.width : 700;
+    const rawH = viewportSize.height > 0 ? viewportSize.height : 600;
+    const availW = Math.max(300, rawW - 32);
+    const availH = Math.max(250, rawH - 16);
+
+    // Pada skala 75%: Seluruh kertas muat utuh di layar (Fit Whole Page) sehingga tidak perlu scroll
+    if (zoomLevel <= 0.75) {
+      let fitH = availH;
+      let fitW = fitH * aspectRatioVal;
+      if (fitW > availW) {
+        fitW = availW;
+        fitH = fitW / aspectRatioVal;
+      }
+      return {
+        width: Math.round(fitW),
+        height: Math.round(fitH),
+      };
+    }
+
+    // Pada rasio 70% kolom kanan, ukuran 100% ke atas dibuat besar dan nyaman dibaca (85-90% lebar area pratinjau)
+    const baseW = Math.min(availW, Math.max(460, Math.min(760, availW * 0.88)));
+    const baseH = baseW / aspectRatioVal;
+
+    return {
+      width: Math.max(200, Math.round(baseW * zoomLevel)),
+      height: Math.max(280, Math.round(baseH * zoomLevel)),
+    };
+  }, [viewportSize, aspectRatioVal, zoomLevel]);
+
+  const scale = sheetDimensions.width > 0 ? sheetDimensions.width / effectiveWidth : 1;
 
   const isSignatureOnCurrentPage = placement.page > 0 && currentPage === placement.page;
   const isOutOfBounds =
@@ -259,32 +310,75 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
           <h3 className="tte-preview-heading">Pratinjau Dokumen Real</h3>
         </div>
 
-        {/* Kontrol Navigasi Halaman */}
+        {/* Kontrol Navigasi Halaman & Zoom */}
         {pdfFile && pageCount > 0 && (
-          <div className="tte-preview-pagination">
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm tte-page-nav-btn"
-              onClick={() => onChangeCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage <= 1}
-              aria-label="Halaman sebelumnya"
-              title="Halaman sebelumnya"
-            >
-              <IconChevronLeft size={16} />
-            </button>
-            <span className="tte-page-counter">
-              Hal. <strong>{currentPage}</strong> dari {pageCount}
-            </span>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm tte-page-nav-btn"
-              onClick={() => onChangeCurrentPage(Math.min(pageCount, currentPage + 1))}
-              disabled={currentPage >= pageCount}
-              aria-label="Halaman berikutnya"
-              title="Halaman berikutnya"
-            >
-              <IconChevronRight size={16} />
-            </button>
+          <div className="tte-preview-header-actions">
+            {/* Kontrol Perbesar / Perkecil (Zoom) */}
+            <div className="tte-zoom-controls" role="group" aria-label="Kontrol Perbesar / Perkecil Pratinjau">
+              <button
+                type="button"
+                className="tte-zoom-btn"
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 0.75}
+                title="Perkecil pratinjau halaman (−)"
+                aria-label="Perkecil pratinjau"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                className="tte-zoom-val-btn"
+                onClick={handleZoomReset}
+                title="Klik untuk reset ke tampilan penuh (75%)"
+                aria-label={`Skala zoom saat ini ${Math.round(zoomLevel * 100)}%. Klik untuk reset 75%`}
+              >
+                {Math.round(zoomLevel * 100)}%
+              </button>
+
+              <button
+                type="button"
+                className="tte-zoom-btn"
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 2.0}
+                title="Perbesar pratinjau halaman (+)"
+                aria-label="Perbesar pratinjau"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Navigasi Halaman */}
+            <div className="tte-preview-pagination">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm tte-page-nav-btn"
+                onClick={() => onChangeCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1}
+                aria-label="Halaman sebelumnya"
+                title="Halaman sebelumnya"
+              >
+                <IconChevronLeft size={16} />
+              </button>
+              <span className="tte-page-counter">
+                Hal. <strong>{currentPage}</strong> dari {pageCount}
+              </span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm tte-page-nav-btn"
+                onClick={() => onChangeCurrentPage(Math.min(pageCount, currentPage + 1))}
+                disabled={currentPage >= pageCount}
+                aria-label="Halaman berikutnya"
+                title="Halaman berikutnya"
+              >
+                <IconChevronRight size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -370,39 +464,49 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
 
             {/* Lembar Dokumen dengan Isi PDF Asli (Canvas) */}
             <div
-              ref={paperRef}
-              className="tte-a4-sheet"
+              ref={viewportRef}
+              className="tte-sheet-viewport-scroll"
               style={{
-                aspectRatio: `${effectiveWidth} / ${effectiveHeight}`,
-                maxWidth: `min(100%, 560px, max(${Math.round(280 * aspectRatioVal)}px, calc((100vh - 290px) * ${aspectRatioVal.toFixed(4)})))`,
+                overflow: zoomLevel <= 0.75 ? 'hidden' : 'auto',
               }}
-              aria-label={`Lembar Dokumen Halaman ${currentPage}`}
             >
-              <canvas ref={canvasRef} className="tte-sheet-canvas" />
+              <div
+                ref={paperRef}
+                className="tte-a4-sheet"
+                style={{
+                  width: `${sheetDimensions.width}px`,
+                  height: `${sheetDimensions.height}px`,
+                  margin: 'auto',
+                  flexShrink: 0,
+                }}
+                aria-label={`Lembar Dokumen Halaman ${currentPage}`}
+              >
+                <canvas ref={canvasRef} className="tte-sheet-canvas" />
 
-              {/* Status Loading Render */}
-              {(isLoadingDoc || isRenderingPage) && (
-                <div className="tte-sheet-loading-overlay">
-                  <span className="tte-sheet-loading-text">Memuat pratinjau halaman {currentPage}...</span>
-                </div>
-              )}
+                {/* Status Loading Render */}
+                {(isLoadingDoc || isRenderingPage) && (
+                  <div className="tte-sheet-loading-overlay">
+                    <span className="tte-sheet-loading-text">Memuat pratinjau halaman {currentPage}...</span>
+                  </div>
+                )}
 
-              {/* KOTAK TTE INTERAKTIF (DRAGGABLE, RESIZABLE & KEYBOARD ACCESSIBLE) */}
-              {signatureMode === 'visible' && isSignatureOnCurrentPage && (
-                <InteractiveSignatureBox
-                  placement={placement}
-                  onChangePlacement={onChangePlacement}
-                  effectiveWidth={effectiveWidth}
-                  effectiveHeight={effectiveHeight}
-                  scale={scale}
-                  detectedFont={detectedFont}
-                  visualType={visualType}
-                  stampUrl={stampUrl}
-                  isSelected={isSigBoxSelected}
-                  onSelect={setIsSigBoxSelected}
-                  isOutOfBounds={isOutOfBounds}
-                />
-              )}
+                {/* KOTAK TTE INTERAKTIF (DRAGGABLE, RESIZABLE & KEYBOARD ACCESSIBLE) */}
+                {signatureMode === 'visible' && isSignatureOnCurrentPage && (
+                  <InteractiveSignatureBox
+                    placement={placement}
+                    onChangePlacement={onChangePlacement}
+                    effectiveWidth={effectiveWidth}
+                    effectiveHeight={effectiveHeight}
+                    scale={scale}
+                    detectedFont={detectedFont}
+                    visualType={visualType}
+                    stampUrl={stampUrl}
+                    isSelected={isSigBoxSelected}
+                    onSelect={setIsSigBoxSelected}
+                    isOutOfBounds={isOutOfBounds}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Hint di bawah lembar dokumen */}

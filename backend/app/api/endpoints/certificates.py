@@ -11,8 +11,7 @@ from app.models.certificate import Certificate
 from app.models.user import User
 from app.services.audit import record_audit
 from app.schemas.certificate import PublicCertificateItem
-from app.services import pki_api_client
-from app.services.pki_cleanup import cleanup_local_pki_materials
+from app.services.pki import pki_api_client, cleanup_local_pki_materials
 
 router = APIRouter()
 

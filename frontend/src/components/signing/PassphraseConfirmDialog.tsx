@@ -109,8 +109,16 @@ export function PassphraseConfirmDialog({
 
         <form onSubmit={handleSubmit}>
           <div className="dialog-body">
-            {/* Ringkasan Konfirmasi */}
-            <div className="tte-modal-summary-box">
+            {/* Ringkasan Konfirmasi (Tema Informasi Biru) */}
+            <div className="tte-modal-summary-box" role="region" aria-label="Informasi Dokumen & Penandatanganan">
+              <div className="tte-modal-summary-header">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                <span>Informasi Dokumen & Penandatanganan</span>
+              </div>
               <div className="tte-modal-summary-row">
                 <span className="tte-modal-summary-label">Dokumen:</span>
                 <span className="tte-modal-summary-val" title={documentName}>

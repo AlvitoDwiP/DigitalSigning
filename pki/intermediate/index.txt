@@ -428,3 +428,4 @@ V	281026131415Z		11A8	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
 V	281026133401Z		11A9	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
 V	281026133442Z		11AA	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
 V	281026135845Z		11AB	unknown	/C=ID/O=MK/CN=Dwinova/OU=Pustik
+V	281101061133Z		11AC	unknown	/C=ID/O=Universitas Ahmad Dahlan/CN=Rina Marlina/OU=Perpustakaan
