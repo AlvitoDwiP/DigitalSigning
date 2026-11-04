@@ -8,6 +8,7 @@ export const statusSertifikat: Record<string, string> = {
   EXPIRED: 'Kedaluwarsa',
   REPLACED: 'Diganti',
   DELETED: 'Dihapus',
+  REVOKED: 'Dicabut',
 };
 
 export const peran: Record<string, string> = {
@@ -26,6 +27,7 @@ export const aktivitas: Record<string, string> = {
   USER_DELETED: 'Pengguna dihapus',
   CERTIFICATE_GENERATED: 'Sertifikat diterbitkan',
   CERTIFICATE_REGENERATED: 'Sertifikat diterbitkan ulang',
+  CERTIFICATE_REVOKED: 'Sertifikat dicabut',
   CERTIFICATE_DELETED: 'Sertifikat dihapus',
   PFX_UPDATED: 'Passphrase diubah',
   PFX_PASSWORD_CHANGED: 'Passphrase diubah',

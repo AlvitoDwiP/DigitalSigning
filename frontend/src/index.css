@@ -4199,6 +4199,22 @@ button.expiry-user-item:hover .expiry-user-action {
   margin: 0;
 }
 
+.dialog-info-box-blue {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+[data-theme="dark"] .dialog-info-box-blue {
+  background-color: rgba(30, 58, 138, 0.25);
+  border-color: rgba(96, 165, 250, 0.35);
+  color: #93c5fd;
+}
+
 .dialog-error-banner {
   display: flex;
   align-items: center;
@@ -4376,19 +4392,25 @@ button.expiry-user-item:hover .expiry-user-action {
 .btn-danger-solid {
   background-color: #DC2626 !important;
   color: #FFFFFF !important;
-  border: 1px solid #B91C1C !important;
+  border: none !important;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
-  transition: all 0.2s ease;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
 }
 
 .btn-danger-solid:hover:not(:disabled) {
   background-color: #B91C1C !important;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.45);
-  transform: translateY(-1px);
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.btn-danger-solid:active:not(:disabled) {
+  background-color: #991B1B !important;
+  box-shadow: none !important;
+  transform: scale(0.96) !important;
 }
 
 /* Tablet and Mobile Table & Toolbar overrides */
@@ -8548,6 +8570,28 @@ button.expiry-user-item:hover .expiry-user-action {
   min-width: 0;
   min-height: 0;
   width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+
+.tte-left-col::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tte-left-col::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tte-left-col::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] .tte-left-col::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .tte-right-col {
@@ -8566,6 +8610,7 @@ button.expiry-user-item:hover .expiry-user-action {
   min-width: 0;
   min-height: 0;
   width: 100%;
+  flex-shrink: 0;
 }
 
 /* Step Card Base */
@@ -8581,7 +8626,8 @@ button.expiry-user-item:hover .expiry-user-action {
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  flex-shrink: 0;
+  overflow: visible;
 }
 
 .tte-step-header {
@@ -11157,6 +11203,8 @@ button.expiry-user-item:hover .expiry-user-action {
   border: 1px solid #bfdbfe;
   border-radius: 8px;
   font-size: 11px;
+  flex-shrink: 0;
+  overflow: visible;
 }
 
 [data-theme="dark"] .tte-coords-info-box {
@@ -11201,6 +11249,7 @@ button.expiry-user-item:hover .expiry-user-action {
   text-align: center;
   padding-top: 4px;
   border-top: 1px solid rgba(59, 130, 246, 0.2);
+  overflow: visible;
 }
 
 [data-theme="dark"] .tte-coords-grid {
@@ -11208,11 +11257,12 @@ button.expiry-user-item:hover .expiry-user-action {
 }
 
 .tte-coord-cell {
-  padding: 4px 2px;
+  padding: 5px 2px 6px;
   background: transparent !important;
   border: none !important;
   border-right: 1px solid rgba(59, 130, 246, 0.18) !important;
   border-radius: 0 !important;
+  overflow: visible;
 }
 
 .tte-coord-cell:last-child {
@@ -11243,8 +11293,10 @@ button.expiry-user-item:hover .expiry-user-action {
 .tte-coord-value {
   font-weight: 700;
   font-size: 13px;
+  line-height: 1.35;
   color: #1e3a8a;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  display: block;
 }
 
 [data-theme="dark"] .tte-coord-value {

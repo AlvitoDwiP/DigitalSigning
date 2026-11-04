@@ -112,10 +112,19 @@ export async function deleteUser(userId: string): Promise<DeleteUserApiResponse>
   });
 }
 
-export async function deleteUserCertificate(userId: string, certificateId: string): Promise<{ success: boolean; message: string }> {
-  return requestApi<{ success: boolean; message: string }>(`/api/v1/users/${userId}/certificates/${certificateId}`, {
-    method: 'DELETE',
-  });
+export async function revokeUserCertificate(
+  userId: string,
+  certificateId: string,
+  reason: string = 'unspecified',
+  adminPassword?: string
+): Promise<{ success: boolean; message: string; data?: any }> {
+  return requestApi<{ success: boolean; message: string; data?: any }>(
+    `/api/v1/users/${userId}/certificates/${certificateId}/revoke`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ reason, admin_password: adminPassword }),
+    }
+  );
 }
 
 

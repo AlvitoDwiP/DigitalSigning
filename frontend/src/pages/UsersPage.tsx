@@ -14,16 +14,26 @@ interface UsersPageProps {
   onNavigate: (path: string) => void;
   initialSort?: string;
   initialOrder?: 'asc' | 'desc';
+  initialCertificateStatus?: string;
+  initialUserStatus?: string;
 }
 
-export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPageProps) {
+export function UsersPage({
+  onNavigate,
+  initialSort,
+  initialOrder,
+  initialCertificateStatus,
+  initialUserStatus,
+}: UsersPageProps) {
   // Filter & Search states
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [userStatus, setUserStatus] = useState('');
-  const [certificateStatus, setCertificateStatus] = useState('');
+  const [userStatus, setUserStatus] = useState(initialUserStatus || '');
+  const [certificateStatus, setCertificateStatus] = useState(initialCertificateStatus || '');
   const [sortField, setSortField] = useState(initialSort || 'created_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialOrder || 'desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
+    initialOrder || (initialSort === 'nearest_expiry' ? 'asc' : 'desc')
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -133,6 +143,9 @@ export function UsersPage({ onNavigate, initialSort, initialOrder }: UsersPagePr
     setSortField('created_at');
     setSortOrder('desc');
     setCurrentPage(1);
+    if (typeof window !== 'undefined' && window.history) {
+      window.history.replaceState({}, '', '/users');
+    }
   };
 
   // Row action handlers

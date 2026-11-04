@@ -64,6 +64,8 @@ export function clearAuthSession(): void {
     localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem('access_token');
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('ds_admin_view_mode');
+    sessionStorage.removeItem('ds_admin_view_mode');
   } catch {
     // Storage access blocked
   }
@@ -182,6 +184,16 @@ export async function loginUser(email: string, password: string): Promise<LoginR
   if (res.success && res.data?.token) {
     setAuthToken(res.data.token);
     setAuthUser(res.data.user);
+    try {
+      localStorage.removeItem('ds_admin_view_mode');
+      sessionStorage.removeItem('ds_admin_view_mode');
+      if (res.data.user?.role === 'ADMIN' || res.data.user?.role === 'SUPER_ADMIN') {
+        localStorage.setItem('ds_admin_view_mode', 'admin');
+        sessionStorage.setItem('ds_admin_view_mode', 'admin');
+      }
+    } catch {
+      // ignore
+    }
   }
 
   return res;

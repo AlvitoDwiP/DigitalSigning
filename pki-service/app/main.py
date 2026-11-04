@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.core.config import settings
-from app.api.routes import router as pki_router
+from app.api.routes import router as pki_router, public_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -11,6 +11,7 @@ app = FastAPI(
 )
 
 app.include_router(pki_router)
+app.include_router(public_router)
 
 @app.get("/health", tags=["Health"])
 def health_check():

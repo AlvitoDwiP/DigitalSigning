@@ -2,6 +2,10 @@ import io
 import uuid
 import random
 from unittest.mock import patch
+from sqlalchemy.orm import Session
+from app.models.user import User
+from app.models.certificate import Certificate
+from app.models.audit_log import AuditLog
 from fastapi.testclient import TestClient
 
 
@@ -35,12 +39,14 @@ def test_single_generate_password_policy(client: TestClient, auth_headers: dict)
     assert res.status_code in [400, 422]
 
 
-def test_single_generate_success_and_no_secret_leak(client: TestClient, auth_headers: dict):
+def test_single_generate_success_and_no_secret_leak(client: TestClient, auth_headers: dict, db_session: Session):
+    from unittest.mock import patch
     str_suffix = uuid.uuid4().hex[:6]
     num_suffix = f"{random.randint(100000, 999999):06d}"
+    nik = f"8888777766{num_suffix}"
     payload = {
         "name": f"User Gen {str_suffix}",
-        "nik": f"8888777766{num_suffix}",
+        "nik": nik,
         "email": f"user_gen_{str_suffix}@mkri.go.id",
         "organization": "Mahkamah Konstitusi",
         "ou": "TTE",
@@ -60,18 +66,28 @@ def test_single_generate_success_and_no_secret_leak(client: TestClient, auth_hea
         "expires_at": "2028-10-01T00:00:00Z",
     }
 
-    with patch("app.api.endpoints.users.pki_api_client.generate_single", return_value=mock_pki_response):
-        response = client.post("/api/v1/users/generate", json=payload, headers=auth_headers["admin"])
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-        assert "user" in data["data"]
-        assert "certificate" in data["data"]
-        # Ensure password and pfx_password are NOT in response
-        response_str = response.text
-        assert "Password123!" not in response_str
-        assert "PfxPassword123!" not in response_str
-        assert "password_hash" not in data["data"]["user"]
+    created_user_id = None
+    try:
+        with patch("app.api.endpoints.users.pki_api_client.generate_single", return_value=mock_pki_response):
+            response = client.post("/api/v1/users/generate", json=payload, headers=auth_headers["admin"])
+            assert response.status_code == 200
+            data = response.json()
+            assert data["success"] is True
+            assert "user" in data["data"]
+            assert "certificate" in data["data"]
+            created_user_id = data["data"]["user"]["id"]
+            # Ensure password and pfx_password are NOT in response
+            response_str = response.text
+            assert "Password123!" not in response_str
+            assert "PfxPassword123!" not in response_str
+            assert "password_hash" not in data["data"]["user"]
+    finally:
+        if created_user_id:
+            u_uuid = uuid.UUID(created_user_id)
+            db_session.query(AuditLog).filter((AuditLog.user_id == u_uuid) | (AuditLog.target_id == u_uuid)).delete()
+            db_session.query(Certificate).filter(Certificate.user_id == u_uuid).delete()
+            db_session.query(User).filter(User.id == u_uuid).delete()
+            db_session.commit()
 
 
 def test_bulk_csv_validate_accepts_7_columns(client: TestClient, auth_headers: dict):
@@ -122,7 +138,8 @@ User Satu,9111222233334444,user1@mkri.go.id,MKRI,TTE,Password123!,PfxPass123!
     assert code == "INVALID_CSV_HEADER"
 
 
-def test_bulk_csv_generate_execution(client: TestClient, auth_headers: dict):
+def test_bulk_csv_generate_execution(client: TestClient, auth_headers: dict, db_session: Session):
+    from unittest.mock import patch
     str_suffix = uuid.uuid4().hex[:6]
     nik1 = f"9333444455{random.randint(100000, 999999):06d}"
     nik2 = f"9444555566{random.randint(100000, 999999):06d}"
@@ -165,14 +182,23 @@ Bulk User 2 {str_suffix},{nik2},bulk2_{str_suffix}@mkri.go.id,MKRI,TTE,Password1
     }
 
     files = {"file": ("users.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
-    with patch("app.api.endpoints.users.pki_api_client.generate_bulk", return_value=mock_pki_bulk_response):
-        response = client.post("/api/v1/users/generate-bulk", files=files, headers=auth_headers["admin"])
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-        assert data["data"]["total"] == 2
-        assert data["data"]["success"] == 2
-        assert data["data"]["failed"] == 0
+    try:
+        with patch("app.api.endpoints.users.pki_api_client.generate_bulk", return_value=mock_pki_bulk_response):
+            response = client.post("/api/v1/users/generate-bulk", files=files, headers=auth_headers["admin"])
+            assert response.status_code == 200
+            data = response.json()
+            assert data["success"] is True
+            assert data["data"]["total"] == 2
+            assert data["data"]["success"] == 2
+            assert data["data"]["failed"] == 0
+    finally:
+        users = db_session.query(User).filter(User.nik.in_([nik1, nik2])).all()
+        u_ids = [u.id for u in users]
+        if u_ids:
+            db_session.query(AuditLog).filter((AuditLog.user_id.in_(u_ids)) | (AuditLog.target_id.in_(u_ids))).delete(synchronize_session=False)
+            db_session.query(Certificate).filter(Certificate.user_id.in_(u_ids)).delete(synchronize_session=False)
+            db_session.query(User).filter(User.id.in_(u_ids)).delete(synchronize_session=False)
+            db_session.commit()
 
 
 def test_regenerate_certificate_uses_default_passphrase(client: TestClient, auth_headers: dict, seed_users: dict):
@@ -231,7 +257,7 @@ def test_change_user_pfx_passphrase(client: TestClient, auth_headers: dict, seed
 
 def test_single_generate_failure_leaves_database_clean(client: TestClient, auth_headers: dict, db_session):
     """Memastikan jika PKI engine gagal saat generate user/cert tunggal, user & cert tidak tersimpan di database."""
-    from app.services.pki_api_client import PKIEngineError
+    from app.services.pki.pki_api_client import PKIEngineError
     str_suffix = uuid.uuid4().hex[:6]
     test_nik = f"9988776655{random.randint(100000, 999999):06d}"
     payload = {

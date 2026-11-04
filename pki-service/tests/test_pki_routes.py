@@ -134,3 +134,66 @@ def test_delete_materials():
         )
         assert res.status_code == 200
         assert res.json()["data"]["deleted"] == ["/path/1.p12"]
+
+def test_revoke_certificate_route():
+    mock_revoke = {
+        "serial_number": "1001",
+        "status": "REVOKED",
+        "revocation_reason": "keyCompromise",
+        "certificate_path": "/path/cert.crt"
+    }
+    with patch("app.services.pki_engine.revoke_certificate", return_value=mock_revoke) as mock_r:
+        res = client.post(
+            "/internal/v1/pki/certificates/revoke",
+            json={"identifier": "1001", "reason": "keyCompromise"},
+            headers=AUTH_HEADER
+        )
+        assert res.status_code == 200
+        assert res.json()["success"] is True
+        assert res.json()["data"]["status"] == "REVOKED"
+        assert res.json()["data"]["revocation_reason"] == "keyCompromise"
+        mock_r.assert_called_once_with(identifier="1001", reason="keyCompromise")
+
+def test_verify_certificate_route():
+    mock_verify = {
+        "serial_number": "1001",
+        "certificate_path": "/path/cert.crt",
+        "is_valid": True,
+        "status": "VALID",
+        "message": "Certificate is valid and active"
+    }
+    with patch("app.services.pki_engine.verify_certificate", return_value=mock_verify) as mock_v:
+        res = client.post(
+            "/internal/v1/pki/certificates/verify",
+            json={"identifier": "1001"},
+            headers=AUTH_HEADER
+        )
+        assert res.status_code == 200
+        assert res.json()["success"] is True
+        assert res.json()["data"]["is_valid"] is True
+        mock_v.assert_called_once_with(identifier="1001")
+
+def test_crl_routes():
+    mock_crl_info = {
+        "crl_pem_path": "/path/intermediate-ca.crl",
+        "crl_der_path": "/path/intermediate-ca.crl.der",
+        "crl_number": "0x1000",
+        "last_update": "Nov 2 2026",
+        "next_update": "Dec 2 2026"
+    }
+    with patch("app.services.pki_engine.generate_crl", return_value=mock_crl_info):
+        res_gen = client.post("/internal/v1/pki/crl/generate", headers=AUTH_HEADER)
+        assert res_gen.status_code == 200
+        assert res_gen.json()["data"]["crl_number"] == "0x1000"
+
+    with patch("app.services.pki_engine.get_crl_content", return_value=b"-----BEGIN X509 CRL-----"):
+        # Internal CRL
+        res_crl = client.get("/internal/v1/pki/crl?format=pem", headers=AUTH_HEADER)
+        assert res_crl.status_code == 200
+        assert b"BEGIN X509 CRL" in res_crl.content
+
+        # Public CRL (no token required)
+        res_pub = client.get("/crl?format=pem")
+        assert res_pub.status_code == 200
+        assert b"BEGIN X509 CRL" in res_pub.content
+

@@ -73,6 +73,8 @@ def execute_script(script_name: str, input_data: str = None, args: list = None, 
         "bangkitkan_banyak.sh": "issue_cert_bulk.sh",
         "change_p12_passphrase-user.sh": "change_p12_passphrase_user.sh",
         "change_p12_passphrase-admin.sh": "change_p12_passphrase_admin.sh",
+        "revoke_cert.sh": "revoke_cert.sh",
+        "generate_crl.sh": "generate_crl.sh",
     }
     
     target_names = [script_name]
@@ -500,3 +502,153 @@ def delete_user_pki_materials(nik: str) -> dict:
         raise PKIEngineError("Partial cleanup failure", "PARTIAL_CLEANUP_FAILURE", 500)
 
     return {"success": True, "deleted": deleted_files}
+
+VALID_REVOCATION_REASONS = {
+    "unspecified",
+    "keyCompromise",
+    "CACompromise",
+    "affiliationChanged",
+    "superseded",
+    "cessationOfOperation",
+    "certificateHold",
+    "removeFromCRL"
+}
+
+def revoke_certificate(identifier: str, reason: str = "unspecified", env: dict = None) -> dict:
+    if not identifier or not str(identifier).strip():
+        raise PKIEngineError("Certificate identifier must be provided", "INVALID_INPUT", 400)
+
+    clean_reason = (reason or "unspecified").strip()
+    if clean_reason not in VALID_REVOCATION_REASONS:
+        raise PKIEngineError(
+            f"Invalid revocation reason '{reason}'. Valid reasons: {', '.join(sorted(VALID_REVOCATION_REASONS))}",
+            "INVALID_INPUT",
+            400
+        )
+
+    stdout = execute_script("revoke_cert.sh", args=[str(identifier).strip(), clean_reason], env=env)
+
+    serial_match = re.search(r"REVOKED_SERIAL\s*:\s*(.*)", stdout)
+    reason_match = re.search(r"REASON\s*:\s*(.*)", stdout)
+    cert_match = re.search(r"CERT_FILE\s*:\s*(.*)", stdout)
+    crl_pem_match = re.search(r"CRL_PEM\s*:\s*(.*)", stdout)
+    crl_der_match = re.search(r"CRL_DER\s*:\s*(.*)", stdout)
+
+    serial = serial_match.group(1).strip() if serial_match else ""
+    actual_reason = reason_match.group(1).strip() if reason_match else clean_reason
+    cert_file = cert_match.group(1).strip() if cert_match else ""
+    crl_pem = crl_pem_match.group(1).strip() if crl_pem_match else ""
+    crl_der = crl_der_match.group(1).strip() if crl_der_match else ""
+
+    return {
+        "serial_number": serial,
+        "status": "REVOKED",
+        "revocation_reason": actual_reason,
+        "certificate_path": cert_file,
+        "crl_pem_path": crl_pem,
+        "crl_der_path": crl_der,
+    }
+
+def generate_crl(env: dict = None) -> dict:
+    stdout = execute_script("generate_crl.sh", env=env)
+
+    crl_pem_match = re.search(r"CRL_PEM\s*:\s*(.*)", stdout)
+    crl_der_match = re.search(r"CRL_DER\s*:\s*(.*)", stdout)
+    crl_num_match = re.search(r"CRL_NUMBER\s*:\s*(.*)", stdout)
+    last_update_match = re.search(r"LAST_UPDATE\s*:\s*(.*)", stdout)
+    next_update_match = re.search(r"NEXT_UPDATE\s*:\s*(.*)", stdout)
+
+    return {
+        "crl_pem_path": crl_pem_match.group(1).strip() if crl_pem_match else "",
+        "crl_der_path": crl_der_match.group(1).strip() if crl_der_match else "",
+        "crl_number": crl_num_match.group(1).strip() if crl_num_match else "",
+        "last_update": last_update_match.group(1).strip() if last_update_match else "",
+        "next_update": next_update_match.group(1).strip() if next_update_match else "",
+    }
+
+def get_crl_content(format: str = "pem", env: dict = None) -> bytes:
+    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path, int_dir = get_pki_paths()
+    effective_int_dir = Path(env.get("INT_DIR", str(int_dir))).resolve() if env and "INT_DIR" in env else int_dir
+    crl_dir = effective_int_dir / "crl"
+    target_file = crl_dir / ("intermediate-ca.crl" if format.lower() == "pem" else "intermediate-ca.crl.der")
+
+    if not target_file.is_file():
+        generate_crl(env=env)
+
+    if not target_file.is_file():
+        raise PKIEngineError("CRL file could not be generated or found", "ARTIFACT_ERROR", 502)
+
+    return target_file.read_bytes()
+
+def verify_certificate(identifier: str, env: dict = None) -> dict:
+    if not identifier or not str(identifier).strip():
+        raise PKIEngineError("Certificate identifier must be provided", "INVALID_INPUT", 400)
+
+    pki_engine_dir, pki_dir, h_dir, issued_dir, p12_archive_dir, chain_path, int_dir = get_pki_paths()
+    effective_int_dir = Path(env.get("INT_DIR", str(int_dir))).resolve() if env and "INT_DIR" in env else int_dir
+    effective_chain = Path(env.get("CHAIN_PATH", str(chain_path))).resolve() if env and "CHAIN_PATH" in env else chain_path
+    crl_file = effective_int_dir / "crl" / "intermediate-ca.crl"
+
+    if not crl_file.is_file():
+        generate_crl(env=env)
+
+    target = str(identifier).strip()
+    cert_path = None
+    if Path(target).is_file():
+        cert_path = Path(target)
+    else:
+        norm_serial = re.sub(r'[^0-9A-Fa-f]', '', target).upper()
+        if norm_serial:
+            candidate = effective_int_dir / "newcerts" / f"{norm_serial}.pem"
+            if candidate.is_file():
+                cert_path = candidate
+        if not cert_path:
+            effective_issued = Path(env.get("ISSUED_ROOT", str(issued_dir))).resolve() if env and "ISSUED_ROOT" in env else issued_dir
+            for crt in effective_issued.glob(f"**/*{target}*.crt"):
+                cert_path = crt
+                break
+
+    if not cert_path or not cert_path.is_file():
+        raise PKIEngineError(f"Certificate '{identifier}' not found for verification", "CERTIFICATE_NOT_FOUND", 404)
+
+    cmd = [
+        "openssl", "verify",
+        "-CAfile", str(effective_chain),
+        "-CRLfile", str(crl_file),
+        "-crl_check",
+        str(cert_path)
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+
+    serial = ""
+    try:
+        serial_out = subprocess.run(["openssl", "x509", "-in", str(cert_path), "-noout", "-serial"], capture_output=True, text=True, check=True).stdout
+        if "serial=" in serial_out:
+            serial = serial_out.strip().split("=")[-1]
+    except Exception:
+        pass
+
+    output_combined = f"{res.stdout}\n{res.stderr}".strip()
+    if res.returncode == 0:
+        return {
+            "serial_number": serial,
+            "certificate_path": str(cert_path),
+            "is_valid": True,
+            "status": "VALID",
+            "message": "Certificate is valid and active"
+        }
+    else:
+        if "certificate revoked" in output_combined.lower() or "revoked" in output_combined.lower():
+            status_label = "REVOKED"
+        elif "has expired" in output_combined.lower() or "expired" in output_combined.lower():
+            status_label = "EXPIRED"
+        else:
+            status_label = "INVALID"
+        return {
+            "serial_number": serial,
+            "certificate_path": str(cert_path),
+            "is_valid": False,
+            "status": status_label,
+            "message": output_combined
+        }
+

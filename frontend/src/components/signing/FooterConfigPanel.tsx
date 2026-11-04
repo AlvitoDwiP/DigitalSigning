@@ -6,8 +6,6 @@ import {
   IconRefresh,
   IconEye,
   IconEyeOff,
-  IconQrCode,
-  IconImage,
   IconMove,
 } from '../icons/Icons';
 import {
@@ -31,8 +29,8 @@ export interface FooterConfigPanelProps {
   onChangeSignatureMode: (mode: SignatureMode) => void;
   targetPage: number;
   onChangeTargetPage: (page: number) => void;
-  visualType: SignatureVisualType;
-  onChangeVisualType: (type: SignatureVisualType) => void;
+  visualType?: SignatureVisualType;
+  onChangeVisualType?: (type: SignatureVisualType) => void;
   placement: SignaturePlacement;
   onChangePlacement: (placement: SignaturePlacement) => void;
   onPresetSelect: (preset: FooterPositionPreset) => void;
@@ -69,8 +67,8 @@ export function FooterConfigPanel({
   onChangeSignatureMode,
   targetPage,
   onChangeTargetPage,
-  visualType,
-  onChangeVisualType,
+  visualType: _visualType,
+  onChangeVisualType: _onChangeVisualType,
   placement,
   onPresetSelect: _onPresetSelect,
   displayOptions: _displayOptions,
@@ -142,7 +140,7 @@ export function FooterConfigPanel({
             </div>
             <div className="tte-mode-card-content">
               <strong>TTE Terlihat (Visible)</strong>
-              <span>Stempel QR / Paraf pada dokumen.</span>
+              <span>Gambar tanda tangan / stempel pada dokumen.</span>
             </div>
           </label>
 
@@ -163,125 +161,103 @@ export function FooterConfigPanel({
           </label>
         </div>
 
-        {/* Pilihan Format Visual di dalam kartu Mode Tanda Tangan (saat Visible aktif) */}
+        {/* Unggah Gambar Tanda Tangan (saat Visible aktif) */}
         {signatureMode === 'visible' && (
           <div className="tte-form-group" style={{ marginTop: '4px', paddingTop: '8px', borderTop: '1px solid var(--line)' }}>
-            <label className="input-label">Pilihan Format Visual:</label>
-            <div className="tte-visual-type-toggle" role="tablist">
-              <button
-                type="button"
-                className={`tte-visual-type-btn ${visualType === 'qr_text' ? 'is-active' : ''}`}
-                onClick={() => onChangeVisualType('qr_text')}
-                role="tab"
-                aria-selected={visualType === 'qr_text'}
-              >
-                <IconQrCode size={16} />
-                <span>QR Code</span>
-              </button>
-              <button
-                type="button"
-                className={`tte-visual-type-btn ${visualType === 'image' ? 'is-active' : ''}`}
-                onClick={() => onChangeVisualType('image')}
-                role="tab"
-                aria-selected={visualType === 'image'}
-              >
-                <IconImage size={16} />
-                <span>Gambar Tanda Tangan / Paraf</span>
-              </button>
+            <label className="input-label" htmlFor="stamp-file-input">
+              Unggah Gambar Tanda Tangan / Paraf:
+            </label>
+
+            <div style={{ marginTop: '6px' }}>
+              <input
+                id="stamp-file-input"
+                type="file"
+                accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                onChange={handleStampChange}
+                style={{ display: 'none' }}
+              />
+
+              {stampError && (
+                <p className="tte-error-text" role="alert" style={{ marginBottom: '6px' }}>
+                  {stampError}
+                </p>
+              )}
+
+              {!stampFile ? (
+                <div
+                  className={`tte-dropzone tte-stamp-dropzone ${isStampDragOver ? 'is-drag-over' : ''}`}
+                  onClick={() => document.getElementById('stamp-file-input')?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsStampDragOver(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsStampDragOver(false);
+                  }}
+                  onDrop={handleStampDrop}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      document.getElementById('stamp-file-input')?.click();
+                    }
+                  }}
+                  aria-label="Area unggah gambar tanda tangan"
+                >
+                  <div className="tte-dropzone-icon-wrap" aria-hidden="true">
+                    <IconUpload size={22} />
+                  </div>
+                  <div className="tte-dropzone-texts">
+                    <strong className="tte-dropzone-main">Pilih Gambar atau seret berkas ke sini</strong>
+                    <span className="tte-dropzone-hint">PNG / JPG · Maksimal 2 MB</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="tte-file-card">
+                  <img
+                    src={URL.createObjectURL(stampFile)}
+                    alt="Pratinjau gambar tanda tangan"
+                    className="tte-stamp-thumb"
+                  />
+                  <div className="tte-file-meta">
+                    <span className="tte-file-name" title={stampFile.name}>
+                      {stampFile.name}
+                    </span>
+                    <div className="tte-file-details">
+                      <span>{(stampFile.size / 1024).toFixed(1)} KB</span>
+                      <span className="tte-file-dot" aria-hidden="true">•</span>
+                      <span>Gambar Tanda Tangan</span>
+                    </div>
+                  </div>
+                  <div className="tte-file-actions">
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm tte-file-action-btn"
+                      onClick={() => document.getElementById('stamp-file-input')?.click()}
+                      title="Ganti gambar tanda tangan"
+                      aria-label="Ganti gambar tanda tangan"
+                    >
+                      <IconRefresh size={14} aria-hidden="true" />
+                      <span>Ganti</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm tte-file-action-btn is-danger"
+                      onClick={onRemoveStamp}
+                      title="Hapus gambar tanda tangan"
+                      aria-label="Hapus gambar tanda tangan"
+                    >
+                      <IconTrash size={14} aria-hidden="true" />
+                      <span>Hapus</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {visualType === 'image' && (
-              <div style={{ marginTop: '6px' }}>
-                <input
-                  id="stamp-file-input"
-                  type="file"
-                  accept=".png,.jpg,.jpeg,image/png,image/jpeg"
-                  onChange={handleStampChange}
-                  style={{ display: 'none' }}
-                />
-
-                {stampError && (
-                  <p className="tte-error-text" role="alert" style={{ marginBottom: '6px' }}>
-                    {stampError}
-                  </p>
-                )}
-
-                {!stampFile ? (
-                  <div
-                    className={`tte-dropzone tte-stamp-dropzone ${isStampDragOver ? 'is-drag-over' : ''}`}
-                    onClick={() => document.getElementById('stamp-file-input')?.click()}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsStampDragOver(true);
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsStampDragOver(false);
-                    }}
-                    onDrop={handleStampDrop}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        document.getElementById('stamp-file-input')?.click();
-                      }
-                    }}
-                    aria-label="Area unggah gambar tanda tangan"
-                  >
-                    <div className="tte-dropzone-icon-wrap" aria-hidden="true">
-                      <IconUpload size={22} />
-                    </div>
-                    <div className="tte-dropzone-texts">
-                      <strong className="tte-dropzone-main">Pilih Gambar atau seret berkas ke sini</strong>
-                      <span className="tte-dropzone-hint">PNG / JPG · Maksimal 5 MB</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="tte-file-card">
-                    <img
-                      src={URL.createObjectURL(stampFile)}
-                      alt="Pratinjau gambar tanda tangan"
-                      className="tte-stamp-thumb"
-                    />
-                    <div className="tte-file-meta">
-                      <span className="tte-file-name" title={stampFile.name}>
-                        {stampFile.name}
-                      </span>
-                      <div className="tte-file-details">
-                        <span>{(stampFile.size / 1024).toFixed(1)} KB</span>
-                        <span className="tte-file-dot" aria-hidden="true">•</span>
-                        <span>Gambar Paraf</span>
-                      </div>
-                    </div>
-                    <div className="tte-file-actions">
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm tte-file-action-btn"
-                        onClick={() => document.getElementById('stamp-file-input')?.click()}
-                        title="Ganti gambar tanda tangan"
-                        aria-label="Ganti gambar tanda tangan"
-                      >
-                        <IconRefresh size={14} aria-hidden="true" />
-                        <span>Ganti</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm tte-file-action-btn is-danger"
-                        onClick={onRemoveStamp}
-                        title="Hapus gambar tanda tangan"
-                        aria-label="Hapus gambar tanda tangan"
-                      >
-                        <IconTrash size={14} aria-hidden="true" />
-                        <span>Hapus</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 

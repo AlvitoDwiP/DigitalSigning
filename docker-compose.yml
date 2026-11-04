@@ -79,7 +79,6 @@ services:
       - ./backend/tests:/app/tests:ro
       - ./pki/issued:/app/pki/issued:ro
       - ./sign-api/p12:/app/sign-api/p12:ro
-      - ./frontend/dist:/app/frontend/dist:ro
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       postgres:
@@ -101,8 +100,6 @@ services:
       dockerfile: docker/Dockerfile.frontend
     container_name: digital_signature_frontend
     restart: always
-    profiles:
-      - frontend-standalone
     ports:
       - "3000:3000"
     environment:

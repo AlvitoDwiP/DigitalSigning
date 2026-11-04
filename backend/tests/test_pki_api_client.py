@@ -1,7 +1,7 @@
 import pytest
 import httpx
 from unittest.mock import patch, MagicMock
-from app.services.pki_api_client import PKIApiClient, PKIEngineError
+from app.services.pki.pki_api_client import PKIApiClient, PKIEngineError
 
 @pytest.fixture
 def pki_client():
@@ -141,3 +141,63 @@ def test_delete_user_materials(pki_client):
             "http://test-pki:8001/internal/v1/pki/materials/1234567890123456",
             headers=pki_client._headers()
         )
+
+def test_revoke_certificate(pki_client):
+    mock_resp = MagicMock(spec=httpx.Response)
+    mock_resp.is_success = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "success": True,
+        "data": {
+            "serial_number": "1001",
+            "status": "REVOKED",
+            "revocation_reason": "keyCompromise"
+        }
+    }
+
+    with patch.object(httpx.Client, "post", return_value=mock_resp) as mock_post:
+        res = pki_client.revoke_certificate("1001", reason="keyCompromise")
+        assert res["status"] == "REVOKED"
+        assert res["serial_number"] == "1001"
+        mock_post.assert_called_once_with(
+            "http://test-pki:8001/internal/v1/pki/certificates/revoke",
+            json={"identifier": "1001", "reason": "keyCompromise"},
+            headers=pki_client._headers()
+        )
+
+def test_verify_certificate(pki_client):
+    mock_resp = MagicMock(spec=httpx.Response)
+    mock_resp.is_success = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "success": True,
+        "data": {
+            "is_valid": True,
+            "status": "VALID",
+            "serial_number": "1001"
+        }
+    }
+
+    with patch.object(httpx.Client, "post", return_value=mock_resp) as mock_post:
+        res = pki_client.verify_certificate("1001")
+        assert res["is_valid"] is True
+        mock_post.assert_called_once_with(
+            "http://test-pki:8001/internal/v1/pki/certificates/verify",
+            json={"identifier": "1001"},
+            headers=pki_client._headers()
+        )
+
+def test_get_crl(pki_client):
+    mock_resp = MagicMock(spec=httpx.Response)
+    mock_resp.is_success = True
+    mock_resp.status_code = 200
+    mock_resp.content = b"CRL_CONTENT_DATA"
+
+    with patch.object(httpx.Client, "get", return_value=mock_resp) as mock_get:
+        content = pki_client.get_crl(format="der")
+        assert content == b"CRL_CONTENT_DATA"
+        mock_get.assert_called_once_with(
+            "http://test-pki:8001/internal/v1/pki/crl?format=der",
+            headers=pki_client._headers()
+        )
+

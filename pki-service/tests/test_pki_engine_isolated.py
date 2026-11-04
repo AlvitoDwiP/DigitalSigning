@@ -73,6 +73,7 @@ def test_generate_bulk_with_isolated_ca(isolated_ca):
     assert idx_before == idx_after
     assert ser_before == ser_after
 
+
 def test_regenerate_staged_commit_cleanup(isolated_ca):
     idx_before, ser_before = get_primary_ca_hashes()
 
@@ -113,3 +114,59 @@ def test_regenerate_staged_commit_cleanup(isolated_ca):
     idx_after, ser_after = get_primary_ca_hashes()
     assert idx_before == idx_after
     assert ser_before == ser_after
+
+def test_revoke_and_crl_with_isolated_ca(isolated_ca):
+    idx_before, ser_before = get_primary_ca_hashes()
+
+    # 1. Issue certificate
+    cert_info = pki_engine.generate_single(
+        name="Revoke User Iso",
+        nik="1122334455667705",
+        email="revokeiso@mkri.go.id",
+        organization="TEST ORG",
+        ou="TEST OU",
+        pfx_password="PfxPassword123!"
+    )
+    cert_path = cert_info["certificate_path"]
+    serial = cert_info["serial_number"]
+    assert Path(cert_path).is_file()
+
+    # Verify certificate initially valid
+    verify_init = pki_engine.verify_certificate(cert_path)
+    assert verify_init["is_valid"] is True
+    assert verify_init["status"] == "VALID"
+
+    # 2. Revoke certificate
+    revoke_res = pki_engine.revoke_certificate(
+        identifier=cert_path,
+        reason="keyCompromise"
+    )
+    assert revoke_res["status"] == "REVOKED"
+    assert revoke_res["serial_number"].upper() == serial.upper()
+    assert revoke_res["revocation_reason"] == "keyCompromise"
+
+    # Check test CA index.txt shows 'R' for this certificate
+    test_idx = (isolated_ca.int_dir / "index.txt").read_text()
+    assert f"\tR\t" in test_idx or test_idx.startswith("R\t")
+
+    # 3. Verify certificate is now REVOKED via CRL
+    verify_revoked = pki_engine.verify_certificate(cert_path)
+    assert verify_revoked["is_valid"] is False
+    assert verify_revoked["status"] == "REVOKED"
+
+    # 4. Generate CRL and get content
+    crl_info = pki_engine.generate_crl()
+    assert Path(crl_info["crl_pem_path"]).is_file()
+    assert Path(crl_info["crl_der_path"]).is_file()
+
+    pem_bytes = pki_engine.get_crl_content(format="pem")
+    assert b"BEGIN X509 CRL" in pem_bytes
+
+    der_bytes = pki_engine.get_crl_content(format="der")
+    assert len(der_bytes) > 0
+
+    # Primary CA tetap aman
+    idx_after, ser_after = get_primary_ca_hashes()
+    assert idx_before == idx_after
+    assert ser_before == ser_after
+

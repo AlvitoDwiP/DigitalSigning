@@ -210,6 +210,35 @@ class PKIApiClient:
         nik_safe = re.sub(r'[^0-9]', '', nik)
         return self._delete(f"/internal/v1/pki/materials/{nik_safe}")
 
+    def revoke_certificate(self, identifier: str, reason: str = "unspecified") -> dict:
+        return self._post("/internal/v1/pki/certificates/revoke", {
+            "identifier": str(identifier),
+            "reason": reason or "unspecified"
+        })
+
+    def verify_certificate(self, identifier: str) -> dict:
+        return self._post("/internal/v1/pki/certificates/verify", {
+            "identifier": str(identifier)
+        })
+
+    def generate_crl(self) -> dict:
+        return self._post("/internal/v1/pki/crl/generate", {})
+
+    def get_crl(self, format: str = "der") -> bytes:
+        url = f"{self._base_url}/internal/v1/pki/crl?format={format}"
+        try:
+            with httpx.Client(timeout=self._timeout) as client:
+                resp = client.get(url, headers=self._headers())
+                if resp.is_success:
+                    return resp.content
+                self._handle_response(resp)
+        except httpx.ConnectError:
+            raise PKIEngineError("PKI Service is currently unreachable.", code="PKI_SERVICE_UNAVAILABLE", status_code=502)
+        except httpx.TimeoutException:
+            raise PKIEngineError("PKI Service request timed out.", code="TIMEOUT", status_code=504)
+        except httpx.RequestError as e:
+            raise PKIEngineError(f"PKI Service communication error: {str(e)}", code="PKI_SERVICE_UNAVAILABLE", status_code=502)
+
 # Global singleton client instance
 pki_api_client = PKIApiClient()
 
@@ -223,3 +252,7 @@ change_p12_passphrase_user = pki_api_client.change_p12_passphrase_user
 change_p12_passphrase_admin = pki_api_client.change_p12_passphrase_admin
 delete_user_materials = pki_api_client.delete_user_materials
 delete_user_pki_materials = pki_api_client.delete_user_materials
+revoke_certificate = pki_api_client.revoke_certificate
+verify_certificate = pki_api_client.verify_certificate
+generate_crl = pki_api_client.generate_crl
+get_crl = pki_api_client.get_crl

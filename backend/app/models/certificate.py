@@ -31,6 +31,8 @@ class Certificate(Base):
     issued_at = Column(DateTime(timezone=True), nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     status = Column(String(20), nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    revocation_reason = Column(String(255), nullable=True)
     replaced_by = Column(UUID(as_uuid=True), ForeignKey("certificates.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -40,7 +42,7 @@ class Certificate(Base):
     replacement_certificate = relationship("Certificate", remote_side=[id])
 
     __table_args__ = (
-        CheckConstraint("status IN ('ACTIVE', 'EXPIRED', 'REPLACED', 'DELETED')", name="certificates_status_check"),
+        CheckConstraint("status IN ('ACTIVE', 'EXPIRED', 'REPLACED', 'DELETED', 'REVOKED')", name="certificates_status_check"),
         CheckConstraint("expires_at > issued_at", name="certificates_validity_check"),
         Index("certificates_user_idx", "user_id"),
         Index("certificates_status_idx", "status"),

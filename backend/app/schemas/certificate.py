@@ -15,6 +15,8 @@ class CertificateBase(BaseModel):
     issued_at: datetime
     expires_at: datetime
     status: str
+    revoked_at: Optional[datetime] = None
+    revocation_reason: Optional[str] = None
 
 
 class CertificateResponse(CertificateBase):
@@ -71,3 +73,25 @@ class PublicCertificateItem(CertificateBase):
 
 class PublicCertificateDetail(PublicCertificateItem):
     is_valid: bool
+
+
+class RevokeCertificateRequest(BaseModel):
+    reason: Optional[str] = "unspecified"
+    admin_password: str
+
+
+class RevokeCertificateResponse(BaseModel):
+    success: bool = True
+    message: str
+    data: CertificateResponse
+
+
+class CertificateVerifyResponse(BaseModel):
+    is_valid: bool
+    status: str
+    serial_number: Optional[str] = None
+    certificate_number: Optional[str] = None
+    revoked_at: Optional[datetime] = None
+    revocation_reason: Optional[str] = None
+    message: Optional[str] = None
+

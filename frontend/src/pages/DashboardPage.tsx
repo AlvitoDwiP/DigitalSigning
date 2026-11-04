@@ -167,14 +167,22 @@ export function DashboardPage({ onNavigate, viewMode = 'admin' }: DashboardPageP
           {/* 1. Statistics Cards (Total User, Active, Expired) */}
           <StatsSection
             statistics={data.statistics}
-            onCardClick={() => onNavigate('/users')}
+            onCardClick={(type) => {
+              if (type === 'active') {
+                onNavigate('/users?certificate_status=ACTIVE');
+              } else if (type === 'expired') {
+                onNavigate('/users?certificate_status=EXPIRED');
+              } else {
+                onNavigate('/users');
+              }
+            }}
           />
 
           {/* 2. Expiry Section (Nearest Expiry & Buckets Side-by-Side) */}
           <section className="dashboard-expiry-grid" aria-label="Informasi Masa Berlaku Sertifikat">
             <NearestExpiryCard
               expiringUsers={data.expiring_certificates}
-              onViewUsers={() => onNavigate('/users')}
+              onViewUsers={() => onNavigate('/users?sort=nearest_expiry&order=asc')}
               onSelectUser={(userId) => onNavigate(`/users/${userId}?tab=certificate`)}
             />
             <ExpiryBucketsCard buckets={data.expiry_buckets} />

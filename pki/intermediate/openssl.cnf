@@ -15,6 +15,7 @@ default_days      = 1825
 unique_subject    = no
 crl_dir           = $dir/crl
 crl               = $dir/crl/intermediate-ca.crl
+default_crl_days  = 30
 x509_extensions   = v3_intermediate_ca
 
 [ policy_loose ]

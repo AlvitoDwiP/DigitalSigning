@@ -522,7 +522,7 @@ export function PdfInteractivePreview(props: PdfInteractivePreviewProps): JSX.El
                   </span>
                 ) : (
                   <span>
-                    <strong>Petunjuk:</strong> Jika ingin mengubah tempat dan ukurannya, <strong>tekan pratinjau QR terlebih dahulu</strong>.
+                    <strong>Petunjuk:</strong> Jika ingin mengubah tempat dan ukurannya, <strong>tekan kotak tanda tangan terlebih dahulu</strong>.
                   </span>
                 )}
               </div>

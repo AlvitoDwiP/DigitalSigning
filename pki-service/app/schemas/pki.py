@@ -92,3 +92,11 @@ class ChangePassphraseAdminRequest(BaseModel):
         if not re.fullmatch(r"\d{16}", cleaned):
             raise ValueError("NIK must be exactly 16 numeric digits.")
         return cleaned
+
+class RevokeCertRequest(BaseModel):
+    identifier: str
+    reason: Optional[str] = "unspecified"
+
+class VerifyCertRequest(BaseModel):
+    identifier: str
+

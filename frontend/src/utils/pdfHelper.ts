@@ -25,8 +25,8 @@ export const A4_WIDTH_PT = 595.28;
 export const A4_HEIGHT_PT = 841.89;
 
 // Default dimensi kotak tanda tangan elektronik (TTE)
-export const DEFAULT_TTE_WIDTH = 100;
-export const DEFAULT_TTE_HEIGHT = 100;
+export const DEFAULT_TTE_WIDTH = 120;
+export const DEFAULT_TTE_HEIGHT = 60;
 export const MIN_TTE_WIDTH = 45;
 export const MIN_TTE_HEIGHT = 45;
 export const MAX_TTE_WIDTH = 380;

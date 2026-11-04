@@ -15,6 +15,7 @@ default_days      = 3650
 unique_subject    = no
 crl_dir           = /home/sysadmin/pki/root/crl
 crl               = /home/sysadmin/pki/root/crl/root-ca.crl
+default_crl_days  = 30
 x509_extensions   = v3_ca
 
 [ policy_strict ]

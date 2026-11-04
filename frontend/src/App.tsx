@@ -41,8 +41,9 @@ export default function App() {
   // Path state initialized from browser window.location.pathname
   const [currentPath, setCurrentPath] = useState<string>(() => {
     if (typeof window !== 'undefined' && window.location.pathname) {
+      const full = window.location.pathname + window.location.search;
       const p = normalizePath(window.location.pathname);
-      return p === '/' ? '/dashboard' : p;
+      return p === '/' ? '/dashboard' : full;
     }
     return '/dashboard';
   });
@@ -62,7 +63,9 @@ export default function App() {
   // Mode state for Admin accounts ('admin' | 'user')
   const [adminViewMode, setAdminViewMode] = useState<'admin' | 'user'>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ds_admin_view_mode');
+      // Proactively clear any legacy persistent localStorage so admin always defaults to admin mode
+      localStorage.removeItem('ds_admin_view_mode');
+      const saved = sessionStorage.getItem('ds_admin_view_mode');
       if (saved === 'user' || saved === 'admin') return saved;
     }
     return 'admin';
@@ -89,6 +92,7 @@ export default function App() {
   // Handle browser popstate (back/forward)
   useEffect(() => {
     const handlePopState = () => {
+      const full = (window.location.pathname || '/dashboard') + (window.location.search || '');
       const path = normalizePath(window.location.pathname || '/dashboard');
       if (path === '/account') {
         const hash = window.location.hash;
@@ -108,7 +112,7 @@ export default function App() {
         const token = getAuthToken();
         setIsAuthenticated(!!token);
       }
-      setCurrentPath(path === '/' ? '/dashboard' : path);
+      setCurrentPath(full === '/' ? '/dashboard' : full);
     };
 
     const handleUnauthorized = (event: Event) => {
@@ -144,7 +148,7 @@ export default function App() {
         setAccountInitialTab('passphrase');
       }
     }
-    setCurrentPath(norm);
+    setCurrentPath(path);
     if (typeof window !== 'undefined' && window.history) {
       window.history.pushState({}, '', path);
     }
@@ -156,6 +160,13 @@ export default function App() {
   const handleLoginSuccess = (_email: string) => {
     setSessionNotice(null);
     setIsAuthenticated(true);
+    // Selalu pastikan role ADMIN default ke Dashboard Admin saat login
+    setAdminViewMode('admin');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ds_admin_view_mode');
+      sessionStorage.removeItem('ds_admin_view_mode');
+      sessionStorage.setItem('ds_admin_view_mode', 'admin');
+    }
     const user = getAuthUser();
     if (user && user.must_change_password) {
       setShowPasswordAlertModal(true);
@@ -176,8 +187,11 @@ export default function App() {
     setSessionNotice(null);
     clearAuthSession();
     setIsAuthenticated(false);
+    setAdminViewMode('admin');
     setShowPasswordAlertModal(false);
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('ds_admin_view_mode');
+      sessionStorage.removeItem('ds_admin_view_mode');
       sessionStorage.removeItem('ds_show_pwd_alert');
       sessionStorage.removeItem('ds_pwd_alert_dismissed');
     }
@@ -192,6 +206,86 @@ export default function App() {
   };
 
   const activeNormalizedPath = normalizePath(currentPath);
+
+  const authUser = getAuthUser();
+  const currentRole = authUser?.role || 'USER';
+
+  // Effective view mode: SUPER_ADMIN is always 'admin', USER is always 'user', ADMIN follows state
+  const effectiveViewMode: 'admin' | 'user' =
+    currentRole === 'ADMIN' ? adminViewMode : currentRole === 'SUPER_ADMIN' ? 'admin' : 'user';
+
+  // Sinkronisasi judul halaman browser (Tab Title / document.title)
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    if (!isAuthenticated) {
+      if (activeNormalizedPath === '/login' || isKnownRoute(activeNormalizedPath)) {
+        document.title = 'Login | DSMKRI';
+      } else {
+        document.title = 'Halaman Tidak Ditemukan | DSMKRI';
+      }
+      return;
+    }
+
+    if (activeNormalizedPath === '/login') {
+      document.title = 'Login | DSMKRI';
+    } else if (activeNormalizedPath === '/dashboard') {
+      if (currentRole === 'SUPER_ADMIN') {
+        document.title = 'Dashboard Super Admin | DSMKRI';
+      } else if (currentRole === 'ADMIN') {
+        document.title =
+          effectiveViewMode === 'admin'
+            ? 'Dashboard Admin | DSMKRI'
+            : 'Dashboard User | DSMKRI';
+      } else {
+        document.title = 'Dashboard User | DSMKRI';
+      }
+    } else if (activeNormalizedPath === '/users') {
+      if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
+        document.title = 'Akses Ditolak | DSMKRI';
+      } else {
+        document.title = 'Kelola Pengguna | DSMKRI';
+      }
+    } else if (activeNormalizedPath.startsWith('/users/')) {
+      if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
+        document.title = 'Akses Ditolak | DSMKRI';
+      } else {
+        document.title = 'Detail Pengguna | DSMKRI';
+      }
+    } else if (activeNormalizedPath === '/generate') {
+      if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
+        document.title = 'Akses Ditolak | DSMKRI';
+      } else {
+        document.title = 'Generate Pengguna | DSMKRI';
+      }
+    } else if (activeNormalizedPath === '/admins') {
+      if (currentRole !== 'SUPER_ADMIN') {
+        document.title = 'Akses Ditolak | DSMKRI';
+      } else {
+        document.title = 'Kelola Admin | DSMKRI';
+      }
+    } else if (activeNormalizedPath === '/audit-log' || activeNormalizedPath === '/audit-logs') {
+      if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
+        document.title = 'Akses Ditolak | DSMKRI';
+      } else {
+        document.title = 'Log Audit | DSMKRI';
+      }
+    } else if (activeNormalizedPath === '/account') {
+      if (currentRole === 'ADMIN' && effectiveViewMode === 'admin') {
+        document.title = 'Akses Ditolak | DSMKRI';
+      } else {
+        document.title = 'Kelola Akun | DSMKRI';
+      }
+    } else if (activeNormalizedPath === '/signing') {
+      if (currentRole === 'SUPER_ADMIN' || (currentRole === 'ADMIN' && effectiveViewMode === 'admin')) {
+        document.title = 'Akses Ditolak | DSMKRI';
+      } else {
+        document.title = 'Penandatanganan Dokumen | DSMKRI';
+      }
+    } else {
+      document.title = 'Halaman Tidak Ditemukan | DSMKRI';
+    }
+  }, [activeNormalizedPath, isAuthenticated, effectiveViewMode, currentRole]);
 
   // If unauthenticated:
   if (!isAuthenticated) {
@@ -231,13 +325,6 @@ export default function App() {
     );
   }
 
-  const authUser = getAuthUser();
-  const currentRole = authUser?.role || 'USER';
-
-  // Effective view mode: SUPER_ADMIN is always 'admin', USER is always 'user', ADMIN follows state
-  const effectiveViewMode: 'admin' | 'user' =
-    currentRole === 'ADMIN' ? adminViewMode : currentRole === 'SUPER_ADMIN' ? 'admin' : 'user';
-
   const handleToggleViewMode = () => {
     if (currentRole !== 'ADMIN' || isSwitchingMode) return;
     const nextMode = effectiveViewMode === 'admin' ? 'user' : 'admin';
@@ -249,7 +336,7 @@ export default function App() {
     const performModeChange = () => {
       setAdminViewMode(nextMode);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('ds_admin_view_mode', nextMode);
+        sessionStorage.setItem('ds_admin_view_mode', nextMode);
       }
       // If switching to user mode and on an administrative page, route to /dashboard
       const p = normalizePath(currentPath);
@@ -299,7 +386,25 @@ export default function App() {
       if (effectiveViewMode === 'user' || (currentRole !== 'SUPER_ADMIN' && currentRole !== 'ADMIN')) {
         return <ForbiddenPage onNavigate={navigateTo} />;
       }
-      return <UsersPage onNavigate={navigateTo} />;
+      const searchStr = currentPath.includes('?')
+        ? currentPath.slice(currentPath.indexOf('?'))
+        : (typeof window !== 'undefined' ? window.location.search : '');
+      const queryParams = new URLSearchParams(searchStr);
+      const certStatus = queryParams.get('certificate_status') || undefined;
+      const userStatus = queryParams.get('status') || undefined;
+      const sort = queryParams.get('sort') || undefined;
+      const order = (queryParams.get('order') as 'asc' | 'desc') || undefined;
+
+      return (
+        <UsersPage
+          key={`${certStatus || ''}_${userStatus || ''}_${sort || ''}_${order || ''}`}
+          onNavigate={navigateTo}
+          initialCertificateStatus={certStatus}
+          initialUserStatus={userStatus}
+          initialSort={sort}
+          initialOrder={order}
+        />
+      );
     }
 
     if (path.startsWith('/users/')) {
@@ -375,7 +480,7 @@ export default function App() {
     if (currentRole === 'ADMIN' && effectiveViewMode === 'admin') {
       setAdminViewMode('user');
       if (typeof window !== 'undefined') {
-        localStorage.setItem('ds_admin_view_mode', 'user');
+        sessionStorage.setItem('ds_admin_view_mode', 'user');
       }
     }
     setAccountInitialTab('password');

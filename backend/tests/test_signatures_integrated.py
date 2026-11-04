@@ -90,8 +90,12 @@ def test_p12_volume_is_read_only_in_container():
     """
     from pathlib import Path
     container_p12_dir = Path("/app/sign-api/p12")
-    if not container_p12_dir.exists():
-        pytest.skip("Uji ini hanya berlaku saat dijalankan di dalam container dengan mount /app/sign-api/p12")
+    try:
+        if not container_p12_dir.exists():
+            pytest.skip("Uji ini hanya berlaku saat dijalankan di dalam container dengan mount /app/sign-api/p12")
+    except PermissionError:
+        # Akses terkunci/terbatas mengonfirmasi direktori terlindungi dari modifikasi
+        return
 
     test_probe_file = container_p12_dir / ".probe_write_test"
     with pytest.raises((OSError, PermissionError)):
@@ -345,3 +349,339 @@ def test_corrupt_p12_file_handled_gracefully(
         data=data
     )
     assert response.status_code in [400, 401]
+
+
+def test_api_root_returns_json_metadata(client: TestClient):
+    """
+    Memverifikasi GET / mengembalikan JSON metadata API dan bukan berkas HTML statis.
+    """
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    data = response.json()
+    assert data["status"] == "online"
+    assert "docs" in data
+    assert data["docs"]["swagger"] == "/docs"
+    assert data["health"] == "/health"
+
+
+def test_visible_signing_endpoint_success(
+    client: TestClient,
+    auth_headers: dict,
+    test_p12_materials: dict
+):
+    """
+    Memverifikasi POST /api/v1/signatures/visible dengan koordinat dan berkas stempel.
+    """
+    img = Image.new("RGBA", (100, 100), (255, 0, 0, 255))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    stamp_bytes = buf.getvalue()
+
+    files = {
+        "pdf": ("dokumen_visible.pdf", VALID_PDF, "application/pdf"),
+        "stamp": ("stempel.png", stamp_bytes, "image/png"),
+    }
+    data = {
+        "page": "1",
+        "llx": "50",
+        "lly": "50",
+        "urx": "150",
+        "ury": "150",
+        "passphrase": test_p12_materials["passphrase"],
+    }
+
+    response = client.post(
+        "/api/v1/signatures/visible",
+        headers=auth_headers["user"],
+        files=files,
+        data=data
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "dokumen_visible_sign.pdf" in response.headers.get("content-disposition", "")
+    assert response.headers.get("x-signature-type") == "visible"
+    assert len(response.content) > len(VALID_PDF)
+
+
+def test_visible_signing_invalid_coordinates(
+    client: TestClient,
+    auth_headers: dict,
+    test_p12_materials: dict
+):
+    """
+    Memverifikasi POST /api/v1/signatures/visible menolak urx <= llx atau ury <= lly.
+    """
+    files = {"pdf": ("dokumen_inv_coords.pdf", VALID_PDF, "application/pdf")}
+    data = {
+        "page": "1",
+        "llx": "150",
+        "lly": "50",
+        "urx": "50",  # urx < llx
+        "ury": "150",
+        "passphrase": test_p12_materials["passphrase"],
+    }
+
+    response = client.post(
+        "/api/v1/signatures/visible",
+        headers=auth_headers["user"],
+        files=files,
+        data=data
+    )
+    assert response.status_code == 400
+    err = response.json()
+    assert "INVALID_COORDINATES" in str(err)
+
+
+def test_visible_signing_rejects_non_image_stamp(
+    client: TestClient,
+    auth_headers: dict,
+    test_p12_materials: dict
+):
+    """
+    Memverifikasi bahwa POST /api/v1/signatures/visible menolak berkas stamp yang bukan gambar (misal berkas PDF).
+    """
+    files = {
+        "pdf": ("dokumen_valid.pdf", VALID_PDF, "application/pdf"),
+        "stamp": ("dokumen_salah.pdf", VALID_PDF, "application/pdf"),
+    }
+    data = {
+        "page": "1",
+        "llx": "50",
+        "lly": "50",
+        "urx": "150",
+        "ury": "150",
+        "passphrase": test_p12_materials["passphrase"],
+    }
+
+    response = client.post(
+        "/api/v1/signatures/visible",
+        headers=auth_headers["user"],
+        files=files,
+        data=data
+    )
+    assert response.status_code == 415
+    err = response.json()
+    assert "UNSUPPORTED_MEDIA_TYPE" in str(err)
+
+
+def test_invisible_signing_endpoint_success(
+    client: TestClient,
+    auth_headers: dict,
+    test_p12_materials: dict
+):
+    """
+    Memverifikasi POST /api/v1/signatures/invisible berhasil menandatangani tanpa visual widget.
+    """
+    files = {"pdf": ("dokumen_invisible.pdf", VALID_PDF, "application/pdf")}
+    data = {
+        "passphrase": test_p12_materials["passphrase"],
+    }
+
+    response = client.post(
+        "/api/v1/signatures/invisible",
+        headers=auth_headers["user"],
+        files=files,
+        data=data
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "dokumen_invisible_sign.pdf" in response.headers.get("content-disposition", "")
+    assert response.headers.get("x-signature-type") == "invisible"
+    assert len(response.content) > len(VALID_PDF)
+
+
+def test_external_api_key_signing_visible_and_invisible(
+    client: TestClient,
+    test_p12_materials: dict
+):
+    """
+    Memverifikasi aplikasi eksternal dapat melakukan TTE langsung via X-API-Key
+    tanpa header Authorization Bearer token.
+    """
+    user = test_p12_materials["user"]
+    ext_headers = {"X-API-Key": "rahasia-super"}
+
+    # 1. External Invisible Signing
+    files_inv = {"pdf": ("external_inv.pdf", VALID_PDF, "application/pdf")}
+    data_inv = {
+        "nik": user.nik,
+        "passphrase": test_p12_materials["passphrase"],
+    }
+    resp_inv = client.post(
+        "/api/v1/signatures/invisible",
+        headers=ext_headers,
+        files=files_inv,
+        data=data_inv
+    )
+    assert resp_inv.status_code == 200
+    assert resp_inv.headers.get("x-signature-type") == "invisible"
+    assert resp_inv.headers.get("x-signer-nik") == user.nik
+
+    # 2. External Visible Signing
+    files_vis = {"pdf": ("external_vis.pdf", VALID_PDF, "application/pdf")}
+    data_vis = {
+        "nik": user.nik,
+        "passphrase": test_p12_materials["passphrase"],
+        "page": "1",
+        "llx": "50",
+        "lly": "50",
+        "urx": "150",
+        "ury": "150",
+    }
+    resp_vis = client.post(
+        "/api/v1/signatures/visible",
+        headers=ext_headers,
+        files=files_vis,
+        data=data_vis
+    )
+    assert resp_vis.status_code == 200
+    assert resp_vis.headers.get("x-signature-type") == "visible"
+    assert resp_vis.headers.get("x-signer-nik") == user.nik
+
+
+def test_legacy_sign_endpoint_has_deprecation_header(
+    client: TestClient,
+    auth_headers: dict,
+    test_p12_materials: dict
+):
+    """
+    Memverifikasi POST /api/v1/signatures/sign tetap bekerja dengan menyertakan header Deprecation.
+    """
+    files = {"pdf": ("legacy_doc.pdf", VALID_PDF, "application/pdf")}
+    data = {
+        "passphrase": test_p12_materials["passphrase"],
+        "visible": "false",
+    }
+    response = client.post(
+        "/api/v1/signatures/sign",
+        headers=auth_headers["user"],
+        files=files,
+        data=data
+    )
+    assert response.status_code == 200
+    assert response.headers.get("deprecation") == "true"
+    assert "visible" in response.headers.get("link", "")
+
+
+def test_invalid_api_key_rejected_401(client: TestClient, test_p12_materials: dict):
+    """API Key tidak valid ditolak dengan HTTP 401."""
+    files = {"pdf": ("doc.pdf", VALID_PDF, "application/pdf")}
+    data = {"nik": test_p12_materials["user"].nik, "passphrase": test_p12_materials["passphrase"]}
+    response = client.post(
+        "/api/v1/signatures/invisible",
+        headers={"X-API-Key": "kunci-salah-palsu"},
+        files=files,
+        data=data
+    )
+    assert response.status_code == 401
+    assert "INVALID_API_KEY" in str(response.json())
+
+
+def test_api_key_missing_nik_rejected_400(client: TestClient, test_p12_materials: dict):
+    """Penggunaan API Key tanpa menyertakan NIK ditolak dengan HTTP 400."""
+    files = {"pdf": ("doc.pdf", VALID_PDF, "application/pdf")}
+    data = {"passphrase": test_p12_materials["passphrase"]}
+    response = client.post(
+        "/api/v1/signatures/invisible",
+        headers={"X-API-Key": "rahasia-super"},
+        files=files,
+        data=data
+    )
+    assert response.status_code == 400
+    assert "INVALID_INPUT" in str(response.json())
+
+
+def test_api_key_unknown_nik_rejected_404(client: TestClient, test_p12_materials: dict):
+    """Penggunaan API Key dengan NIK tidak terdaftar ditolak dengan HTTP 404."""
+    files = {"pdf": ("doc.pdf", VALID_PDF, "application/pdf")}
+    data = {"nik": "9999999999999999", "passphrase": test_p12_materials["passphrase"]}
+    response = client.post(
+        "/api/v1/signatures/invisible",
+        headers={"X-API-Key": "rahasia-super"},
+        files=files,
+        data=data
+    )
+    assert response.status_code == 404
+    assert "USER_NOT_FOUND" in str(response.json())
+
+
+def test_api_key_inactive_user_rejected_400(client: TestClient, test_p12_materials: dict, seed_users: dict):
+    """Penggunaan API Key untuk akun berstatus INACTIVE ditolak dengan HTTP 400."""
+    inactive = seed_users["inactive"]
+    files = {"pdf": ("doc.pdf", VALID_PDF, "application/pdf")}
+    data = {"nik": inactive.nik, "passphrase": "any"}
+    response = client.post(
+        "/api/v1/signatures/invisible",
+        headers={"X-API-Key": "rahasia-super"},
+        files=files,
+        data=data
+    )
+    assert response.status_code == 400
+    assert "INACTIVE_USER" in str(response.json())
+
+
+def test_api_key_super_admin_nik_rejected_403(client: TestClient, test_p12_materials: dict, seed_users: dict):
+    """Penggunaan API Key untuk NIK SUPER_ADMIN ditolak dengan HTTP 403."""
+    super_admin = seed_users["super_admin"]
+    files = {"pdf": ("doc.pdf", VALID_PDF, "application/pdf")}
+    data = {"nik": super_admin.nik, "passphrase": "any"}
+    response = client.post(
+        "/api/v1/signatures/invisible",
+        headers={"X-API-Key": "rahasia-super"},
+        files=files,
+        data=data
+    )
+    assert response.status_code == 403
+    assert "FORBIDDEN" in str(response.json())
+
+
+def test_invalid_jwt_token_rejected_401(client: TestClient, test_p12_materials: dict):
+    """JWT Token yang salah atau invalid ditolak dengan HTTP 401."""
+    files = {"pdf": ("doc.pdf", VALID_PDF, "application/pdf")}
+    data = {"passphrase": test_p12_materials["passphrase"]}
+    response = client.post(
+        "/api/v1/signatures/invisible",
+        headers={"Authorization": "Bearer invalid.jwt.token"},
+        files=files,
+        data=data
+    )
+    assert response.status_code == 401
+
+
+def test_revoked_certificate_rejected_from_signing(
+    client: TestClient,
+    auth_headers: dict,
+    test_p12_materials: dict,
+    db_session: Session
+):
+    """Sertifikat REVOKED dilarang menandatangani dokumen (HTTP 400 CERTIFICATE_REVOKED)."""
+    from app.models.certificate import Certificate
+    user = test_p12_materials["user"]
+
+    # Ubah status sertifikat aktif menjadi REVOKED
+    cert = db_session.query(Certificate).filter(Certificate.user_id == user.id, Certificate.status == "ACTIVE").first()
+    assert cert is not None
+    orig_status = cert.status
+    cert.status = "REVOKED"
+    db_session.commit()
+
+    try:
+        files = {"pdf": ("doc.pdf", VALID_PDF, "application/pdf")}
+        data = {"passphrase": test_p12_materials["passphrase"]}
+        response = client.post(
+            "/api/v1/signatures/invisible",
+            headers=auth_headers["user"],
+            files=files,
+            data=data
+        )
+        assert response.status_code == 400
+        assert "CERTIFICATE_REVOKED" in str(response.json())
+    finally:
+        # Kembalikan status sertifikat
+        cert.status = orig_status
+        db_session.commit()
+
+

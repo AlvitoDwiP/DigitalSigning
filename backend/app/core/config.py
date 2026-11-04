@@ -92,9 +92,54 @@ class Settings(BaseSettings):
     DEFAULT_USER_PASS: str = os.getenv("DEFAULT_USER_PASS", "Konstitusi100%")
     API_KEY: str = os.getenv("API_KEY", "rahasia-super")
 
+    # Security Hardening & PDF Signing Limits
+    MAX_PDF_SIZE_MB: int = int(os.getenv("MAX_PDF_SIZE_MB", "25"))
+    MAX_STAMP_SIZE_MB: int = int(os.getenv("MAX_STAMP_SIZE_MB", "2"))
+    MAX_STAMP_WIDTH: int = int(os.getenv("MAX_STAMP_WIDTH", "4096"))
+    MAX_STAMP_HEIGHT: int = int(os.getenv("MAX_STAMP_HEIGHT", "4096"))
+    MAX_STAMP_PIXELS: int = int(os.getenv("MAX_STAMP_PIXELS", "16777216"))
+    MAX_PDF_PAGES: int = int(os.getenv("MAX_PDF_PAGES", "1000"))
+    MAX_CONCURRENT_SIGNING: int = int(os.getenv("MAX_CONCURRENT_SIGNING", "10"))
+    SIGNING_TIMEOUT_SECONDS: int = int(os.getenv("SIGNING_TIMEOUT_SECONDS", "60"))
+
     # Feature Flags (Phase 2 Roadmap)
     # TTE PDF is active in Phase 2 and enabled by default (can be toggled via ENABLE_PDF_SIGNING env var)
     ENABLE_PDF_SIGNING: bool = os.getenv("ENABLE_PDF_SIGNING", "true").lower() in ("true", "1")
+
+    @field_validator("MAX_PDF_SIZE_MB")
+    @classmethod
+    def validate_max_pdf_size(cls, v: int) -> int:
+        if v < 1 or v > 200:
+            raise ValueError("MAX_PDF_SIZE_MB harus bernilai antara 1 dan 200 MB.")
+        return v
+
+    @field_validator("MAX_STAMP_SIZE_MB")
+    @classmethod
+    def validate_max_stamp_size(cls, v: int) -> int:
+        if v < 1 or v > 50:
+            raise ValueError("MAX_STAMP_SIZE_MB harus bernilai antara 1 dan 50 MB.")
+        return v
+
+    @field_validator("MAX_PDF_PAGES")
+    @classmethod
+    def validate_max_pdf_pages(cls, v: int) -> int:
+        if v < 1 or v > 10000:
+            raise ValueError("MAX_PDF_PAGES harus bernilai antara 1 dan 10000 halaman.")
+        return v
+
+    @field_validator("MAX_CONCURRENT_SIGNING")
+    @classmethod
+    def validate_max_concurrent_signing(cls, v: int) -> int:
+        if v < 1 or v > 100:
+            raise ValueError("MAX_CONCURRENT_SIGNING harus bernilai antara 1 dan 100.")
+        return v
+
+    @field_validator("SIGNING_TIMEOUT_SECONDS")
+    @classmethod
+    def validate_signing_timeout(cls, v: int) -> int:
+        if v < 5 or v > 300:
+            raise ValueError("SIGNING_TIMEOUT_SECONDS harus bernilai antara 5 dan 300 detik.")
+        return v
 
     @model_validator(mode="after")
     def validate_production_security(self):
@@ -125,6 +170,10 @@ class Settings(BaseSettings):
             ):
                 raise ValueError(
                     "Production environment requires a strong and non-default INTER_CA_PASS."
+                )
+            if not self.API_KEY or self.API_KEY in {"rahasia-super", "secret", "changeme", "default"} or len(self.API_KEY) < 16:
+                raise ValueError(
+                    "Production environment requires a strong and non-default API_KEY (at least 16 characters)."
                 )
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
 from app.core.security import verify_internal_token
 from app.schemas.pki import (
     SingleCertRequest,
@@ -7,10 +7,14 @@ from app.schemas.pki import (
     RegenerateCommitRequest,
     RegenerateCleanupRequest,
     ChangePassphraseUserRequest,
-    ChangePassphraseAdminRequest
+    ChangePassphraseAdminRequest,
+    RevokeCertRequest,
+    VerifyCertRequest
 )
 from app.services import pki_engine
 from app.services.pki_engine import PKIEngineError
+
+public_router = APIRouter(tags=["Public PKI Distribution"])
 
 router = APIRouter(
     prefix="/internal/v1/pki",
@@ -164,3 +168,100 @@ def delete_materials(nik: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "INTERNAL_ERROR", "message": f"Unexpected error: {str(e)}"}
         )
+
+@router.post("/certificates/revoke")
+def revoke_cert(req: RevokeCertRequest):
+    try:
+        data = pki_engine.revoke_certificate(
+            identifier=req.identifier,
+            reason=req.reason or "unspecified"
+        )
+        return {"success": True, "data": data}
+    except PKIEngineError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"code": e.code, "message": e.message}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": f"Unexpected error: {str(e)}"}
+        )
+
+@router.post("/certificates/verify")
+def verify_cert(req: VerifyCertRequest):
+    try:
+        data = pki_engine.verify_certificate(identifier=req.identifier)
+        return {"success": True, "data": data}
+    except PKIEngineError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"code": e.code, "message": e.message}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": f"Unexpected error: {str(e)}"}
+        )
+
+@router.post("/crl/generate")
+def generate_crl():
+    try:
+        data = pki_engine.generate_crl()
+        return {"success": True, "data": data}
+    except PKIEngineError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"code": e.code, "message": e.message}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": f"Unexpected error: {str(e)}"}
+        )
+
+@router.get("/crl")
+def get_internal_crl(format: str = Query("der", description="Format: der atau pem")):
+    try:
+        content = pki_engine.get_crl_content(format=format)
+        media_type = "application/x-pem-file" if format.lower() == "pem" else "application/pkix-crl"
+        filename = "intermediate-ca.crl" if format.lower() == "pem" else "intermediate-ca.crl.der"
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    except PKIEngineError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"code": e.code, "message": e.message}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": f"Unexpected error: {str(e)}"}
+        )
+
+@public_router.get("/crl")
+@public_router.get("/crl/intermediate-ca.crl")
+def get_public_crl(format: str = Query("der", description="Format: der atau pem")):
+    try:
+        content = pki_engine.get_crl_content(format=format)
+        media_type = "application/x-pem-file" if format.lower() == "pem" else "application/pkix-crl"
+        filename = "intermediate-ca.crl" if format.lower() == "pem" else "intermediate-ca.crl.der"
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    except PKIEngineError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"code": e.code, "message": e.message}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": f"Unexpected error: {str(e)}"}
+        )
+

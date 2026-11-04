@@ -422,7 +422,7 @@ def test_super_admin_forbidden_from_signatures_endpoints(client: TestClient, aut
     assert res_root.status_code == 403
     assert res_root.json()["error"]["code"] == "FORBIDDEN"
 
-    # 2. Sign document endpoint
+    # 2. Sign document endpoint (legacy)
     res_sign = client.post(
         "/api/v1/signatures/sign",
         headers=super_admin_headers,
@@ -431,4 +431,24 @@ def test_super_admin_forbidden_from_signatures_endpoints(client: TestClient, aut
     )
     assert res_sign.status_code == 403
     assert res_sign.json()["error"]["code"] == "FORBIDDEN"
+
+    # 3. Visible endpoint
+    res_vis = client.post(
+        "/api/v1/signatures/visible",
+        headers=super_admin_headers,
+        files={"pdf": ("doc.pdf", b"%PDF-1.4...", "application/pdf")},
+        data={"passphrase": "secret"}
+    )
+    assert res_vis.status_code == 403
+    assert res_vis.json()["error"]["code"] == "FORBIDDEN"
+
+    # 4. Invisible endpoint
+    res_invis = client.post(
+        "/api/v1/signatures/invisible",
+        headers=super_admin_headers,
+        files={"pdf": ("doc.pdf", b"%PDF-1.4...", "application/pdf")},
+        data={"passphrase": "secret"}
+    )
+    assert res_invis.status_code == 403
+    assert res_invis.json()["error"]["code"] == "FORBIDDEN"
 

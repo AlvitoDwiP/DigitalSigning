@@ -15,11 +15,14 @@ import {
   getPresetPlacement,
   placementToCoordinates,
   countPdfPages,
-  generateQrStampBlob,
+  MIN_TTE_WIDTH,
+  MAX_TTE_WIDTH,
+  MIN_TTE_HEIGHT,
+  MAX_TTE_HEIGHT,
   A4_WIDTH_PT,
   A4_HEIGHT_PT,
 } from '../utils/pdfHelper';
-import { signPdfDocument } from '../services/signatures';
+import { signPdfVisible, signPdfInvisible } from '../services/signatures';
 import { PdfDropzone } from '../components/signing/PdfDropzone';
 import {
   FooterConfigPanel,
@@ -48,13 +51,13 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
 
   // 2. State TTE: Mode, Target Page (1 Halaman Saja), & Penempatan Kotak
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('visible');
-  const [visualType, setVisualType] = useState<SignatureVisualType>('qr_text');
+  const [visualType, setVisualType] = useState<SignatureVisualType>('image');
   const [targetPage, setTargetPage] = useState<number>(1);
   const [placement, setPlacement] = useState<SignaturePlacement>(() => getDefaultPlacement(1));
 
   // 3. State Tampilan & Aset Gambar
   const [displayOptions, setDisplayOptions] = useState<FooterDisplayOptions>({
-    showQr: true,
+    showQr: false,
     showSignerName: true,
     showOrganization: true,
     showTimestamp: true,
@@ -105,6 +108,51 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     setErrorMsg(null);
   };
 
+  const handleSelectStamp = (file: File) => {
+    setStampFile(file);
+    setErrorMsg(null);
+
+    // Deteksi rasio aspek gambar untuk menyesuaikan ukuran kotak TTE pada lembar pratinjau
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const nw = img.naturalWidth || 120;
+      const nh = img.naturalHeight || 60;
+      const ratio = nw / nh;
+
+      let newW = 120;
+      let newH = Math.round(newW / ratio);
+
+      if (newH > 100) {
+        newH = 100;
+        newW = Math.round(newH * ratio);
+      } else if (newH < 40) {
+        newH = 40;
+        newW = Math.round(newH * ratio);
+      }
+
+      newW = Math.max(MIN_TTE_WIDTH, Math.min(MAX_TTE_WIDTH, Math.round(newW)));
+      newH = Math.max(MIN_TTE_HEIGHT, Math.min(MAX_TTE_HEIGHT, Math.round(newH)));
+
+      setPlacement((prev) => {
+        const maxX = Math.max(0, A4_WIDTH_PT - newW);
+        const maxY = Math.max(0, A4_HEIGHT_PT - newH);
+        return {
+          ...prev,
+          width: newW,
+          height: newH,
+          x: Math.min(prev.x, maxX),
+          y: Math.min(prev.y, maxY),
+        };
+      });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+
   const handlePresetSelect = (preset: FooterPositionPreset) => {
     setPlacement((prev) =>
       getPresetPlacement(preset, prev.page, A4_WIDTH_PT, A4_HEIGHT_PT, prev.width, prev.height)
@@ -119,16 +167,24 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     }
   };
 
-  const isFormValid = Boolean(pdfFile) && targetPage >= 1 && targetPage <= pageCount;
+  const isFormValid =
+    Boolean(pdfFile) &&
+    targetPage >= 1 &&
+    targetPage <= pageCount &&
+    (signatureMode === 'invisible' || Boolean(stampFile));
 
   // Buka modal konfirmasi passphrase
   const handleOpenConfirm = () => {
-    if (!isFormValid) {
-      if (!pdfFile) {
-        setErrorMsg('Pilih dokumen PDF terlebih dahulu.');
-      } else if (targetPage < 1 || targetPage > pageCount) {
-        setErrorMsg(`Masukkan nomor halaman target yang valid (1 – ${pageCount}).`);
-      }
+    if (!pdfFile) {
+      setErrorMsg('Pilih dokumen PDF terlebih dahulu.');
+      return;
+    }
+    if (targetPage < 1 || targetPage > pageCount) {
+      setErrorMsg(`Masukkan nomor halaman target yang valid (1 – ${pageCount}).`);
+      return;
+    }
+    if (signatureMode === 'visible' && !stampFile) {
+      setErrorMsg('Unggah gambar tanda tangan terlebih dahulu untuk TTE Terlihat.');
       return;
     }
     setErrorMsg(null);
@@ -150,41 +206,35 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     try {
       let stampToSend: File | Blob | null = null;
       if (signatureMode === 'visible') {
-        if (visualType === 'image' && stampFile) {
-          stampToSend = stampFile;
-        } else if (visualType === 'qr_text') {
-          const currentDateStr = new Date().toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          });
-          const currentTimeStr = new Date().toLocaleTimeString('id-ID', {
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-          stampToSend = await generateQrStampBlob({
-            signerName,
-            organization,
-            dateStr: `${currentDateStr} ${currentTimeStr} WIB`,
-            width: placement.width,
-            height: placement.height,
-          });
+        if (!stampFile) {
+          setErrorMsg('Unggah gambar tanda tangan terlebih dahulu untuk TTE Terlihat.');
+          setIsSubmitting(false);
+          return;
         }
+        stampToSend = stampFile;
       }
 
       const coords = placementToCoordinates(placement);
+      const targetNikParam = isAdmin && !isUserView && adminTargetNik ? adminTargetNik : undefined;
 
-      const result = await signPdfDocument({
-        pdf: pdfFile,
-        stamp: stampToSend,
-        page: placement.page,
-        llx: signatureMode === 'visible' ? coords.llx : undefined,
-        lly: signatureMode === 'visible' ? coords.lly : undefined,
-        urx: signatureMode === 'visible' ? coords.urx : undefined,
-        ury: signatureMode === 'visible' ? coords.ury : undefined,
-        visible: signatureMode === 'visible',
-        passphrase: _passphrase,
-      });
+      const result =
+        signatureMode === 'visible'
+          ? await signPdfVisible({
+              pdf: pdfFile,
+              stamp: stampToSend,
+              page: placement.page,
+              llx: coords.llx,
+              lly: coords.lly,
+              urx: coords.urx,
+              ury: coords.ury,
+              passphrase: _passphrase,
+              nik: targetNikParam,
+            })
+          : await signPdfInvisible({
+              pdf: pdfFile,
+              passphrase: _passphrase,
+              nik: targetNikParam,
+            });
 
       const blobUrl = window.URL.createObjectURL(result.blob);
       setSignedResult({
@@ -213,7 +263,7 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     setCurrentPage(1);
     setTargetPage(1);
     setSignatureMode('visible');
-    setVisualType('qr_text');
+    setVisualType('image');
     setPlacement(getDefaultPlacement(1));
     setSignedResult(null);
     setErrorMsg(null);
@@ -226,11 +276,9 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
     signatureMode === 'visible' ? 'Terlihat (Visible Signature)' : 'Tak Terlihat (Invisible Signature)';
   const visualFormatLabel =
     signatureMode === 'visible'
-      ? visualType === 'qr_text'
-        ? 'QR Code'
-        : stampFile
-          ? `Gambar Paraf (${stampFile.name})`
-          : 'Gambar Paraf'
+      ? stampFile
+        ? `Gambar Tanda Tangan (${stampFile.name})`
+        : 'Gambar Tanda Tangan'
       : undefined;
   const dimensionsLabel =
     signatureMode === 'visible' ? `${placement.width} × ${placement.height} pt` : undefined;
@@ -352,7 +400,7 @@ export function SigningPage({ onNavigate: _onNavigate, viewMode }: SigningPagePr
               displayOptions={displayOptions}
               onChangeDisplayOptions={setDisplayOptions}
               stampFile={stampFile}
-              onSelectStamp={setStampFile}
+              onSelectStamp={handleSelectStamp}
               onRemoveStamp={() => setStampFile(null)}
               signerName={signerName}
               organization={organization}

@@ -2,14 +2,14 @@ import { useState } from 'react';
 import type { UserCertificate } from '../../../types/users';
 import { formatDate } from '../UsersTable';
 import { StatusChip } from '../../ui/StatusChip';
-import { IconRefresh, IconLock, IconCopy, IconCheckCircle, IconCertificate, IconTrash } from '../../icons/Icons';
+import { IconRefresh, IconLock, IconCopy, IconCheckCircle, IconCertificate, IconAlertTriangle } from '../../icons/Icons';
 import { parseSubjectDetails, statusSertifikat } from '../../../lib/labels';
 
 interface ActiveCertificateCardProps {
   certificate: UserCertificate | null;
   onRegenerate: () => void;
   onChangePfx: () => void;
-  onDeleteCertificate?: () => void;
+  onRevokeCertificate?: () => void;
   disabled?: boolean;
 }
 
@@ -40,7 +40,7 @@ export function ActiveCertificateCard({
   certificate,
   onRegenerate,
   onChangePfx,
-  onDeleteCertificate,
+  onRevokeCertificate,
   disabled = false,
 }: ActiveCertificateCardProps) {
   const [copiedFingerprint, setCopiedFingerprint] = useState(false);
@@ -135,16 +135,16 @@ export function ActiveCertificateCard({
         </div>
 
         <div className="cert-actions-group">
-          {onDeleteCertificate && (
+          {onRevokeCertificate && certificate.status === 'ACTIVE' && (
             <button
               type="button"
-              className="btn btn-ghost btn-danger-text btn-cert-action"
-              onClick={onDeleteCertificate}
+              className="btn btn-cert-action btn-danger-solid"
+              onClick={onRevokeCertificate}
               disabled={disabled}
-              aria-label="Hapus sertifikat aktif"
+              aria-label="Cabut sertifikat aktif"
             >
-              <IconTrash size={16} aria-hidden="true" />
-              <span>Hapus sertifikat</span>
+              <IconAlertTriangle size={16} aria-hidden="true" />
+              <span>Cabut sertifikat</span>
             </button>
           )}
           <button
@@ -232,6 +232,16 @@ export function ActiveCertificateCard({
             <dt className="cert-detail-label">Berlaku sampai</dt>
             <dd className="cert-detail-value">{formatDate(certificate.expires_at)}</dd>
           </div>
+
+          {certificate.status === 'REVOKED' && (
+            <div className="cert-detail-item col-span-2" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
+              <dt className="cert-detail-label font-semibold" style={{ color: '#ef4444' }}>Informasi Pencabutan (CRL)</dt>
+              <dd className="cert-detail-value" style={{ marginTop: '4px' }}>
+                <div><strong>Waktu Dicabut:</strong> {certificate.revoked_at ? formatDate(certificate.revoked_at) : '-'}</div>
+                <div><strong>Alasan Pencabutan:</strong> {certificate.revocation_reason || 'unspecified'}</div>
+              </dd>
+            </div>
+          )}
 
           {/* Technical Section: Full Fingerprint with Copy Button */}
           <div className="cert-detail-item col-span-2 cert-tech-fingerprint-box">

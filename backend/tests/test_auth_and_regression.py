@@ -81,19 +81,33 @@ def test_production_config_rejects_default_secrets():
             SECRET_KEY="strong-random-secret-key-production-32bytes-long",
             PKI_SERVICE_TOKEN="strong-random-pki-service-token-32bytes-long",
             INTER_CA_PASS="short",
+            API_KEY="ProductionSecureApiKey32CharsLong!",
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
 
-    # 5. Production mode berhasil jika konfigurasi secret valid dan non-default
+    # 5. Production mode harus menolak default API_KEY ("rahasia-super")
+    with pytest.raises(ValueError, match="API_KEY"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="strong-random-secret-key-production-32bytes-long",
+            PKI_SERVICE_TOKEN="strong-random-pki-service-token-32bytes-long",
+            INTER_CA_PASS="ProductionSecurePassphrase2026!",
+            API_KEY="rahasia-super",
+            DATABASE_URL="postgresql://user:pass@localhost:5432/db",
+        )
+
+    # 6. Production mode berhasil jika konfigurasi secret valid dan non-default
     prod_settings = Settings(
         ENVIRONMENT="production",
         SECRET_KEY="strong-random-secret-key-production-32bytes-long",
         PKI_SERVICE_TOKEN="strong-random-pki-service-token-32bytes-long",
         INTER_CA_PASS="ProductionSecurePassphrase2026!",
+        API_KEY="ProductionSecureApiKey32CharsLong!",
         DATABASE_URL="postgresql://user:pass@localhost:5432/db",
     )
     assert prod_settings.SECRET_KEY == "strong-random-secret-key-production-32bytes-long"
     assert prod_settings.INTER_CA_PASS == "ProductionSecurePassphrase2026!"
+    assert prod_settings.API_KEY == "ProductionSecureApiKey32CharsLong!"
 
 
 def test_pki_script_production_rejects_ca_secret_fallback():

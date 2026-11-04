@@ -19,7 +19,7 @@ export interface InteractiveSignatureBoxProps {
   effectiveHeight: number;
   scale: number;
   detectedFont: DocumentFontInfo;
-  visualType: SignatureVisualType;
+  visualType?: SignatureVisualType;
   stampUrl: string | null;
   isSelected: boolean;
   onSelect: (selected: boolean) => void;
@@ -72,59 +72,6 @@ export function calculateResizedPlacement(
   };
 }
 
-/**
- * Elemen visual QR Code dengan logo MKRI di tengah.
- */
-function TteQrVisual() {
-  return (
-    <div className="tte-sig-pure-qr-wrap" aria-hidden="true">
-      <svg viewBox="0 0 25 25" width="100%" height="100%" fill="#0f172a" className="tte-pure-qr-svg">
-        <rect x="1" y="1" width="7" height="7" rx="0.8" fill="none" stroke="#0f172a" strokeWidth="1.4" />
-        <rect x="3" y="3" width="3" height="3" fill="#0f172a" />
-        <rect x="17" y="1" width="7" height="7" rx="0.8" fill="none" stroke="#0f172a" strokeWidth="1.4" />
-        <rect x="19" y="3" width="3" height="3" fill="#0f172a" />
-        <rect x="1" y="17" width="7" height="7" rx="0.8" fill="none" stroke="#0f172a" strokeWidth="1.4" />
-        <rect x="3" y="19" width="3" height="3" fill="#0f172a" />
-        {/* Timing & Alignment */}
-        <rect x="9" y="4" width="1.2" height="1.2" fill="#0f172a" />
-        <rect x="11" y="4" width="1.2" height="1.2" fill="#0f172a" />
-        <rect x="13" y="4" width="1.2" height="1.2" fill="#0f172a" />
-        <rect x="15" y="4" width="1.2" height="1.2" fill="#0f172a" />
-        <rect x="4" y="9" width="1.2" height="1.2" fill="#0f172a" />
-        <rect x="4" y="11" width="1.2" height="1.2" fill="#0f172a" />
-        <rect x="4" y="13" width="1.2" height="1.2" fill="#0f172a" />
-        <rect x="4" y="15" width="1.2" height="1.2" fill="#0f172a" />
-        <rect x="17" y="17" width="5" height="5" rx="0.5" fill="none" stroke="#0f172a" strokeWidth="1.2" />
-        <rect x="19" y="19" width="1" height="1" fill="#0f172a" />
-        {/* Data pattern dots */}
-        <rect x="9" y="1" width="1.2" height="2.4" fill="#0f172a" />
-        <rect x="11" y="2" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="14" y="1" width="1.2" height="2.4" fill="#0f172a" />
-        <rect x="1" y="9" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="2" y="12" width="1.2" height="2.4" fill="#0f172a" />
-        <rect x="1" y="15" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="9" y="7" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="13" y="7" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="7" y="9" width="1.2" height="2.4" fill="#0f172a" />
-        <rect x="7" y="13" width="1.2" height="2.4" fill="#0f172a" />
-        <rect x="17" y="9" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="21" y="10" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="18" y="13" width="1.2" height="2.4" fill="#0f172a" />
-        <rect x="22" y="14" width="1.2" height="2.4" fill="#0f172a" />
-        <rect x="9" y="17" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="13" y="18" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="10" y="21" width="1.2" height="2.4" fill="#0f172a" />
-        <rect x="13" y="22" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="17" y="23" width="2.4" height="1.2" fill="#0f172a" />
-        <rect x="21" y="22" width="2.4" height="1.2" fill="#0f172a" />
-      </svg>
-      <div className="tte-qr-center-logo-wrap" title="Logo Mahkamah Konstitusi RI">
-        <img src="/logo.png" alt="Logo MKRI" className="tte-qr-center-logo" />
-      </div>
-    </div>
-  );
-}
-
 const RESIZE_HANDLES: ResizeHandleType[] = ['se', 'sw', 'ne', 'nw'];
 
 export function InteractiveSignatureBox({
@@ -134,7 +81,7 @@ export function InteractiveSignatureBox({
   effectiveHeight,
   scale,
   detectedFont,
-  visualType,
+  visualType: _visualType,
   stampUrl,
   isSelected,
   onSelect,
@@ -298,22 +245,18 @@ export function InteractiveSignatureBox({
         </div>
       )}
 
-      {/* Konten Kotak: Gambar Stempel atau QR Code */}
+      {/* Konten Kotak: Gambar Tanda Tangan */}
       <div className="tte-sig-box-content">
-        {visualType === 'image' ? (
-          stampUrl ? (
-            <div className="tte-sig-image-wrap" aria-hidden="true">
-              <img src={stampUrl} alt="Stempel tanda tangan" className="tte-sig-image" />
-            </div>
-          ) : (
-            <div className="tte-sig-placeholder-wrap">
-              <IconImage size={24} className="tte-sig-placeholder-icon" />
-              <span className="tte-sig-placeholder-text">Gambar Paraf</span>
-              <span className="tte-sig-placeholder-sub">Unggah di panel kiri</span>
-            </div>
-          )
+        {stampUrl ? (
+          <div className="tte-sig-image-wrap" aria-hidden="true">
+            <img src={stampUrl} alt="Stempel tanda tangan" className="tte-sig-image" />
+          </div>
         ) : (
-          <TteQrVisual />
+          <div className="tte-sig-placeholder-wrap">
+            <IconImage size={24} className="tte-sig-placeholder-icon" />
+            <span className="tte-sig-placeholder-text">Gambar Tanda Tangan</span>
+            <span className="tte-sig-placeholder-sub">Unggah gambar di panel kiri</span>
+          </div>
         )}
       </div>
 

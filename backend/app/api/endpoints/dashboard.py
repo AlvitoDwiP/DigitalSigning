@@ -70,7 +70,11 @@ def get_dashboard(
 
         # Expiring certificates: active certs expiring within <= 30 days (closest first, max 5)
         expiring_rows = (
-            db.query(Certificate, User)
+            db.query(
+                User.id.label("user_id"),
+                User.name.label("name"),
+                Certificate.expires_at.label("expires_at")
+            )
             .join(User, Certificate.user_id == User.id)
             .filter(
                 Certificate.status == "ACTIVE",
@@ -84,11 +88,11 @@ def get_dashboard(
 
         expiring_certificates = [
             {
-                "user_id": str(user.id),
-                "name": user.name,
-                "expires_at": cert.expires_at.isoformat()
+                "user_id": str(row.user_id),
+                "name": row.name,
+                "expires_at": row.expires_at.isoformat()
             }
-            for cert, user in expiring_rows
+            for row in expiring_rows
         ]
 
         # Recent activities (6 activities per DESIGN.md spec)

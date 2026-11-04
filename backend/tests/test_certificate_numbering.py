@@ -236,33 +236,32 @@ def test_public_api_search_and_verification(client: TestClient, auth_headers: di
     db_session.add(test_cert)
     db_session.commit()
 
-    # 1. Verifikasi via nomor sertifikat publik baru
-    res1 = client.get(f"/api/v1/certificates/{test_cert.certificate_number}", headers=auth_headers["admin"])
-    assert res1.status_code == 200
-    data1 = res1.json()["data"]
-    assert data1["id"] == str(test_cert.id)
-    assert data1["certificate_number"] == test_cert.certificate_number
-    assert data1["serial_number"] == test_cert.serial_number
-    assert data1["is_valid"] is True
+    try:
+        # 1. Verifikasi via nomor sertifikat publik baru
+        res1 = client.get(f"/api/v1/certificates/{test_cert.certificate_number}", headers=auth_headers["admin"])
+        assert res1.status_code == 200
+        data1 = res1.json()["data"]
+        assert data1["id"] == str(test_cert.id)
+        assert data1["certificate_number"] == test_cert.certificate_number
+        assert data1["serial_number"] == test_cert.serial_number
+        assert data1["is_valid"] is True
 
-    # 2. Verifikasi via serial X.509 lama
-    res2 = client.get(f"/api/v1/certificates/{test_cert.serial_number}", headers=auth_headers["admin"])
-    assert res2.status_code == 200
-    data2 = res2.json()["data"]
-    assert data2["id"] == str(test_cert.id)
-    assert data2["certificate_number"] == test_cert.certificate_number
+        # 2. Verifikasi via serial X.509 lama
+        res2 = client.get(f"/api/v1/certificates/{test_cert.serial_number}", headers=auth_headers["admin"])
+        assert res2.status_code == 200
+        data2 = res2.json()["data"]
+        assert data2["id"] == str(test_cert.id)
+        assert data2["certificate_number"] == test_cert.certificate_number
 
-    # 3. Pencarian via query parameter search pada list endpoint
-    res3 = client.get(f"/api/v1/certificates?search={test_cert.certificate_number}", headers=auth_headers["admin"])
-    assert res3.status_code == 200
-    items3 = res3.json()["data"]["items"]
-    assert any(item["certificate_number"] == test_cert.certificate_number for item in items3)
-
-    # 3. Pencarian via query parameter search pada list endpoint
-    res3 = client.get(f"/api/v1/certificates?search={test_cert.certificate_number}", headers=auth_headers["admin"])
-    assert res3.status_code == 200
-    items3 = res3.json()["data"]["items"]
-    assert any(item["certificate_number"] == test_cert.certificate_number for item in items3)
+        # 3. Pencarian via query parameter search pada list endpoint
+        res3 = client.get(f"/api/v1/certificates?search={test_cert.certificate_number}", headers=auth_headers["admin"])
+        assert res3.status_code == 200
+        items3 = res3.json()["data"]["items"]
+        assert any(item["certificate_number"] == test_cert.certificate_number for item in items3)
+    finally:
+        db_session.query(Certificate).filter(Certificate.id == test_cert.id).delete()
+        db_session.query(User).filter(User.id == verify_user.id).delete()
+        db_session.commit()
 
 
 def test_regenerate_creates_new_number_and_keeps_old(client: TestClient, auth_headers: dict, db_session: Session, seed_users: dict, monkeypatch):

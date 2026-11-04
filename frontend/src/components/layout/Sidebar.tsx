@@ -192,8 +192,9 @@ export function Sidebar({
   }, [isOpenMobile, onCloseMobile]);
 
   const isPathActive = (itemPath: string) => {
-    if (currentPath === itemPath) return true;
-    if (itemPath === '/audit-log' && (currentPath === '/audit-logs' || currentPath === '/audit-log')) return true;
+    const cleanCurrent = currentPath.split('?')[0].split('#')[0];
+    if (cleanCurrent === itemPath) return true;
+    if (itemPath === '/audit-log' && (cleanCurrent === '/audit-logs' || cleanCurrent === '/audit-log')) return true;
     return false;
   };
 

@@ -17,7 +17,7 @@ from app.schemas.user import (
     GenerateUserResponseData,
     ChangeUserPfxPasswordRequest,
 )
-from app.schemas.certificate import CertificateResponse, RegenerateCertificateRequest, RegenerateCertificateResponse
+from app.schemas.certificate import CertificateResponse, RegenerateCertificateRequest, RegenerateCertificateResponse, RevokeCertificateRequest
 from app.services.pki import (
     pki_api_client,
     cleanup_local_pki_materials,
@@ -83,7 +83,7 @@ def get_users(
     search: Optional[str] = Query(None, description="Search across name, nik, or email"),
     role: Optional[str] = Query(None, description="Filter by role: SUPER_ADMIN, ADMIN, USER"),
     status: Optional[str] = Query(None, description="Filter by user status: ACTIVE, INACTIVE"),
-    certificate_status: Optional[str] = Query(None, description="Filter by certificate status: ACTIVE, EXPIRED, REPLACED"),
+    certificate_status: Optional[str] = Query(None, description="Filter by certificate status: ACTIVE, EXPIRED, REPLACED, REVOKED, DELETED"),
     sort: Optional[str] = Query("created_at", description="Sort field: name, created_at, nearest_expiry, expires_at"),
     order: Optional[str] = Query("desc", description="Sort order: asc, desc"),
     page: Optional[int] = Query(None, ge=1, description="Page number (1-based)"),
@@ -553,6 +553,25 @@ def delete_user_certificate(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"]))
 ):
+    """
+    Operasi hapus sertifikat telah ditiadakan dan digantikan dengan Cabut Sertifikat (Revoke).
+    """
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={
+            "code": "DEPRECATED_OPERATION",
+            "message": "Operasi hapus sertifikat telah ditiadakan dan digantikan dengan Cabut Sertifikat (Revoke). Gunakan POST /api/v1/users/{user_id}/certificates/{certificate_id}/revoke."
+        }
+    )
+
+@router.post("/{user_id}/certificates/{certificate_id}/revoke", response_model=dict)
+def revoke_user_certificate(
+    user_id: uuid.UUID,
+    certificate_id: uuid.UUID,
+    req: RevokeCertificateRequest,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.require_roles(["SUPER_ADMIN", "ADMIN"]))
+):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -561,30 +580,58 @@ def delete_user_certificate(
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found for this user")
 
-    cert_paths = []
-    if cert.certificate_path:
-        cert_paths.append(cert.certificate_path)
-    if cert.p12_reference:
-        cert_paths.append(cert.p12_reference)
+    if cert.status == "REVOKED":
+        raise HTTPException(status_code=400, detail={"code": "ALREADY_REVOKED", "message": "Sertifikat ini sudah dalam status dicabut (REVOKED)."})
 
-    # 1. Bersihkan file fisik di sign-api/p12 dan pki/issued
-    try:
-        pki_api_client.delete_user_materials(user.nik)
-    except Exception:
-        pass
-    cleanup_local_pki_materials(user.nik, cert_paths=cert_paths)
+    if cert.status == "DELETED":
+        raise HTTPException(status_code=400, detail={"code": "INVALID_STATE", "message": "Sertifikat yang telah dihapus tidak dapat dicabut."})
 
-    # 2. Perbarui status sertifikat menjadi DELETED agar tetap tercatat di riwayat sertifikat dan audit log
+    if not req.admin_password or not req.admin_password.strip():
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "ADMIN_PASSWORD_REQUIRED", "message": "Kata sandi admin wajib diisi untuk mencabut sertifikat."}
+        )
+
+    if not verify_password(req.admin_password, current_user.password_hash):
+        _record_audit(db, current_user.id, "CERTIFICATE_REVOKED", user_id, "FAILED", target_type="certificate")
+        raise HTTPException(status_code=400, detail={"code": "INVALID_CREDENTIALS", "message": "Kata sandi admin salah. Verifikasi gagal."})
+
+    reason = (req.reason or "unspecified").strip()
+
+    # Panggil PKI Service untuk revoke pada CA dan regenerasi CRL
     try:
-        db.query(Certificate).filter(Certificate.replaced_by == certificate_id).update({"replaced_by": None}, synchronize_session=False)
-        cert.status = "DELETED"
-        cert.updated_at = datetime.datetime.now(datetime.timezone.utc)
-        _record_audit(db, current_user.id, "CERTIFICATE_DELETED", user_id, "SUCCESS", target_type="user")
-        db.commit()
-        return {"success": True, "message": "Sertifikat berhasil dihapus"}
+        pki_api_client.revoke_certificate(cert.serial_number, reason=reason)
     except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail={"code": "INTERNAL_ERROR", "message": f"Failed to delete certificate: {str(e)}"})
+        from app.core.config import BASE_DIR
+        import os, subprocess
+        script = BASE_DIR / "pki" / "scripts" / "revoke_cert.sh"
+        if script.is_file():
+            run_env = os.environ.copy()
+            run_env["H"] = str(BASE_DIR)
+            run_env["INT_DIR"] = str(BASE_DIR / "pki" / "intermediate")
+            res = subprocess.run(["bash", str(script), cert.serial_number, reason], env=run_env, capture_output=True, text=True)
+            if res.returncode != 0:
+                _record_audit(db, current_user.id, "CERTIFICATE_REVOKED", user_id, "FAILED", target_type="certificate")
+                raise HTTPException(status_code=502, detail={"code": "PKI_REVOCATION_FAILED", "message": f"Gagal mencabut sertifikat pada CA: {res.stderr}"})
+        else:
+            _record_audit(db, current_user.id, "CERTIFICATE_REVOKED", user_id, "FAILED", target_type="certificate")
+            raise HTTPException(status_code=502, detail={"code": "PKI_SERVICE_UNAVAILABLE", "message": f"Layanan PKI tidak dapat dihubungi: {str(e)}"})
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    cert.status = "REVOKED"
+    cert.revoked_at = now
+    cert.revocation_reason = reason
+    cert.updated_at = now
+
+    _record_audit(db, current_user.id, "CERTIFICATE_REVOKED", user_id, "SUCCESS", target_type="certificate")
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Sertifikat {cert.certificate_number} berhasil dicabut (REVOKED)",
+        "data": CertificateResponse.model_validate(cert).model_dump()
+    }
+
 
 @router.get("/{user_id}/certificates", response_model=dict)
 def get_user_certificates(

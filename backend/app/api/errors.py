@@ -70,9 +70,14 @@ def setup_exception_handlers(app: FastAPI):
             403: "FORBIDDEN",
             404: "NOT_FOUND",
             409: "CERTIFICATE_ALREADY_EXISTS",
+            413: "FILE_TOO_LARGE",
+            415: "UNSUPPORTED_MEDIA_TYPE",
+            429: "RESOURCE_BUSY",
             500: "INTERNAL_ERROR",
             501: "NOT_IMPLEMENTED",
-            502: "PKI_SERVICE_UNAVAILABLE"
+            502: "PKI_SERVICE_UNAVAILABLE",
+            503: "SERVICE_UNAVAILABLE",
+            504: "SIGNING_TIMEOUT",
         }
         code = code_map.get(exc.status_code, "INTERNAL_ERROR")
         if isinstance(exc.detail, dict):
