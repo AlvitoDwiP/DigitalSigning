@@ -131,3 +131,11 @@ AGENTS.md
 # Documentation
 # ==========================================
 docs/
+
+# ==========================================
+# PKI Backups & Production Secrets
+# ==========================================
+pki/cold_storage_backups/
+*.enc
+.env.production
+
